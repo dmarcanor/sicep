@@ -1,0 +1,130 @@
+.reportes-modulo{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+  
+  .reporte-etiqueta{
+    display:inline-block;
+    margin-bottom:10px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.5px;
+    color:var(--blue);
+    text-transform:uppercase;
+  }
+  
+  .accionesReportes{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  
+  .reporte-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+  
+  .reporte-panel{
+    padding:18px;
+  }
+  
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:12px;
+    margin-bottom:16px;
+  }
+  
+  .panel-head h3{
+    font-size:16px;
+    color:var(--navy);
+  }
+  
+  .panel-head span{
+    font-size:12px;
+    color:var(--muted);
+  }
+  
+  .grafico-box{
+    width:100%;
+    height:320px;
+  }
+  
+  .tabla-wrap{
+    width:100%;
+    overflow:auto;
+  }
+  
+  .tabla-reportes{
+    width:100%;
+    border-collapse:collapse;
+    min-width:760px;
+  }
+  
+  .tabla-reportes thead th{
+    background:#F4F8FD;
+    color:#41556E;
+    font-size:12px;
+    text-align:left;
+    padding:12px;
+    border-bottom:1px solid var(--line-2);
+  }
+  
+  .tabla-reportes tbody td{
+    padding:12px;
+    font-size:12px;
+    color:#223043;
+    border-bottom:1px solid #EEF2F7;
+  }
+  
+  .tabla-reportes tbody tr:hover{
+    background:#FAFCFF;
+  }
+  
+  .fila-alerta{
+    background:#FFF1F1;
+  }
+  
+  .badge-alerta{
+    display:inline-flex;
+    align-items:center;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+    background:#FFE7E7;
+    color:#B54949;
+    border:1px solid #F4C9C9;
+  }
+  
+  .badge-normal{
+    display:inline-flex;
+    align-items:center;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+    background:#EAF8EF;
+    color:#2E8B57;
+    border:1px solid #D0EDD9;
+  }
+  
+  @media (max-width: 1000px){
+    .reporte-grid{
+      grid-template-columns:1fr;
+    }
+  
+    .accionesReportes{
+      width:100%;
+      justify-content:flex-start;
+      flex-wrap:wrap;
+    }
+  
+    .panel-head{
+      flex-direction:column;
+      align-items:flex-start;
+    }
+  }

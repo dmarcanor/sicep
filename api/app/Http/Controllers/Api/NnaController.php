@@ -1,0 +1,98 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Historial;
+use App\Models\Nna;
+use Illuminate\Http\Request;
+
+class NnaController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Nna::query();
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nombres', 'like', "%{$search}%")
+                  ->orWhere('apellidos', 'like', "%{$search}%")
+                  ->orWhere('documento_identidad', 'like', "%{$search}%");
+            });
+        }
+
+        return response()->json($query->orderBy('created_at', 'desc')->get());
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'documento_identidad' => 'required|string|unique:nna',
+            'nombres' => 'required|string|max:255',
+            'apellidos' => 'required|string|max:255',
+            'fecha_nacimiento' => 'required|date',
+            'sexo' => 'required|in:Masculino,Femenino',
+            'lugar_nacimiento' => 'nullable|string|max:255',
+            'observaciones' => 'nullable|string',
+        ]);
+
+        $nna = Nna::create($request->all());
+
+        Historial::create([
+            'usuario_id' => $request->user()->id,
+            'accion' => 'Registro de NNA',
+            'modulo' => 'nna',
+            'registro_tipo' => 'Nna',
+            'registro_id' => $nna->id,
+            'detalles' => "NNA {$nna->nombres} {$nna->apellidos} registrado",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json($nna, 201);
+    }
+
+    public function show(Nna $nna)
+    {
+        return response()->json($nna->load('expedientes'));
+    }
+
+    public function update(Request $request, Nna $nna)
+    {
+        $request->validate([
+            'documento_identidad' => 'sometimes|string|unique:nna,documento_identidad,' . $nna->id,
+            'nombres' => 'sometimes|string|max:255',
+            'apellidos' => 'sometimes|string|max:255',
+            'fecha_nacimiento' => 'sometimes|date',
+            'sexo' => 'sometimes|in:Masculino,Femenino',
+            'lugar_nacimiento' => 'nullable|string|max:255',
+            'observaciones' => 'nullable|string',
+        ]);
+
+        $nna->update($request->all());
+
+        Historial::create([
+            'usuario_id' => $request->user()->id,
+            'accion' => 'Actualización de NNA',
+            'modulo' => 'nna',
+            'registro_tipo' => 'Nna',
+            'registro_id' => $nna->id,
+            'detalles' => "NNA {$nna->nombres} {$nna->apellidos} actualizado",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json($nna);
+    }
+
+    public function verificarDocumento($documento)
+    {
+        $nna = Nna::where('documento_identidad', $documento)->with('expedientes')->first();
+        
+        return response()->json([
+            'existe' => $nna !== null,
+            'nna' => $nna,
+            'tiene_historial' => $nna && $nna->expedientes->count() > 0,
+            'cantidad_expedientes' => $nna ? $nna->expedientes->count() : 0,
+        ]);
+    }
+}

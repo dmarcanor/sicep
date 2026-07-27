@@ -1,0 +1,165 @@
+.usuarios{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+  }
+  
+  .usuarios-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+    background:#fff;
+    border:1px solid var(--line-2);
+    border-radius:18px;
+    padding:20px;
+    box-shadow:var(--shadow-soft);
+  }
+  
+  .usuarios-header h2{
+    font-size:18px;
+    color:var(--navy);
+    margin:6px 0;
+  }
+  
+  .usuarios-header p{
+    font-size:13px;
+    color:var(--muted);
+  }
+  
+  .usuarios-badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:var(--blue);
+  }
+  
+  .usuarios-toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    padding:10px 12px;
+    background:var(--surface);
+    border:1px solid var(--line-2);
+    border-radius:14px;
+    box-shadow:var(--shadow-soft);
+  }
+  
+  .usuarios-card{
+    background:#fff;
+    border:1px solid var(--line-2);
+    border-radius:16px;
+    box-shadow:var(--shadow-soft);
+    overflow:auto;
+  }
+  
+  .usuarios-table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:950px;
+  }
+  
+  .usuarios-table th,
+  .usuarios-table td{
+    padding:14px 12px;
+    font-size:12px;
+    text-align:left;
+    border-bottom:1px solid #E8EEF5;
+    color:var(--text);
+  }
+  
+  .usuarios-table th{
+    background:#F4F8FD;
+    color:var(--navy);
+    font-weight:700;
+  }
+  
+  .usuario-nombre{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  
+  .usuario-nombre small{
+    color:var(--muted);
+  }
+  
+  .usuarios-actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  
+  .chip.activo{
+    background:#EAF8EF;
+    color:#2E8B57;
+  }
+  
+  .chip.inactivo{
+    background:#FFE9E9;
+    color:#B54949;
+  }
+  
+  .chip.rol-administrador{
+    background:#EAF2FF;
+    color:#2457A6;
+  }
+  
+  .chip.rol-coordinador{
+    background:#FFF5E3;
+    color:#A86B00;
+  }
+  
+  .chip.rol-facilitador{
+    background:#EAF8EF;
+    color:#2E8B57;
+  }
+  
+  .chip.rol-consulta{
+    background:#F1F3F7;
+    color:#5B6675;
+  }
+  
+  .usuarios-vacio{
+    text-align:center;
+    color:var(--muted);
+    padding:20px;
+  }
+  
+  .switch-box{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    height:38px;
+    padding:0 12px;
+    border:1px solid #D6E1EC;
+    border-radius:10px;
+    background:#FBFDFF;
+  }
+  
+  .modal-usuarios{
+    width:min(900px, 96vw);
+  }
+  
+  @media (max-width: 900px){
+    .usuarios-header{
+      flex-direction:column;
+      align-items:stretch;
+    }
+  }
+
+  /* Modales más compactos */
+
+.modal,
+.modal-content,
+.modal-dialog,
+[role="dialog"] {
+  max-width: 750px !important;
+  width: calc(100% - 200px) !important;
+  margin-left: 100px !important;
+  margin-top: 25px !important;
+  margin-right: auto !important;
+}

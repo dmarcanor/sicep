@@ -1,0 +1,115 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Historial;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+
+class UsuarioController extends Controller
+{
+    public function index()
+    {
+        return response()->json(User::all());
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users',
+            'email' => 'required|email|max:255|unique:users',
+            'password' => 'required|string|min:8',
+            'pin' => 'required|string|min:4|max:6|regex:/^[0-9]+$/',
+            'role' => 'required|in:administrador,supervisor,consejero',
+            'display_name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'position' => 'nullable|string|max:255',
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'pin' => Hash::make($request->pin),
+            'pin_configurado' => true,
+            'role' => $request->role,
+            'display_name' => $request->display_name ?? $request->name,
+            'phone' => $request->phone,
+            'position' => $request->position,
+            'active' => true,
+        ]);
+
+        Historial::create([
+            'usuario_id' => $request->user()->id,
+            'accion' => 'Creación de usuario',
+            'modulo' => 'usuarios',
+            'registro_tipo' => 'User',
+            'registro_id' => $user->id,
+            'detalles' => "Usuario '{$user->username}' creado",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json($user, 201);
+    }
+
+    public function show(User $user)
+    {
+        return response()->json($user);
+    }
+
+    public function update(Request $request, User $user)
+    {
+        $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'username' => 'sometimes|string|max:255|unique:users,username,' . $user->id,
+            'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'sometimes|string|min:8',
+            'role' => 'sometimes|in:administrador,supervisor,consejero',
+            'display_name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'position' => 'nullable|string|max:255',
+            'active' => 'sometimes|boolean',
+        ]);
+
+        $data = $request->all();
+        if (isset($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        }
+
+        $user->update($data);
+
+        Historial::create([
+            'usuario_id' => $request->user()->id,
+            'accion' => 'Actualización de usuario',
+            'modulo' => 'usuarios',
+            'registro_tipo' => 'User',
+            'registro_id' => $user->id,
+            'detalles' => "Usuario '{$user->username}' actualizado",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json($user);
+    }
+
+    public function destroy(Request $request, User $user)
+    {
+        $username = $user->username;
+        $user->delete();
+
+        Historial::create([
+            'usuario_id' => $request->user()->id,
+            'accion' => 'Eliminación de usuario',
+            'modulo' => 'usuarios',
+            'registro_tipo' => 'User',
+            'registro_id' => $username,
+            'detalles' => "Usuario '{$username}' eliminado",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json(['message' => 'Usuario eliminado']);
+    }
+}

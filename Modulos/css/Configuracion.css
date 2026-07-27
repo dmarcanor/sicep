@@ -1,0 +1,282 @@
+.config-modulo {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.config-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.config-sidebar {
+  background: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.config-categoria-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  font-size: 14px;
+  color: #495057;
+}
+
+.config-categoria-btn:hover {
+  background: #e9ecef;
+}
+
+.config-categoria-btn.active {
+  background: #1e3a8a;
+  color: white;
+  font-weight: 600;
+}
+
+.config-icono {
+  font-size: 20px;
+}
+
+.config-nombre {
+  flex: 1;
+}
+
+.config-content {
+  padding: 30px;
+}
+
+.config-header {
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.config-header h3 {
+  margin: 0;
+  color: #1e3a8a;
+  font-size: 24px;
+}
+
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.config-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-campo label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.config-campo input[type="text"],
+.config-campo input[type="number"],
+.config-campo textarea {
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.config-campo input:focus,
+.config-campo textarea:focus {
+  outline: none;
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+.config-campo textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.color-input-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.color-input-wrapper input[type="color"] {
+  width: 60px;
+  height: 40px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.color-input-wrapper input[type="text"] {
+  flex: 1;
+}
+
+.config-help {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.config-vacio {
+  text-align: center;
+  color: #6c757d;
+  padding: 40px;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .config-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .config-sidebar {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 10px;
+  }
+
+  .config-categoria-btn {
+    white-space: nowrap;
+    padding: 10px 15px;
+  }
+}
+
+/* Permisos por Rol */
+.permisos-container {
+  padding: 20px;
+}
+
+.permisos-header {
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.permisos-header h3 {
+  margin: 0;
+  color: #1e3a8a;
+  font-size: 24px;
+}
+
+.permisos-header p {
+  margin: 0;
+  color: #6c757d;
+}
+
+.permisos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.permisos-rol {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.rol-titulo {
+  margin: 0 0 20px 0;
+  color: #1e3a8a;
+  font-size: 18px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.permisos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.permiso-item {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.permiso-item:hover {
+  background: #e9ecef;
+}
+
+.switch-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  position: relative;
+}
+
+.switch-input {
+  display: none;
+}
+
+.switch-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #ced4da;
+  border-radius: 24px;
+  transition: background 0.3s;
+  flex-shrink: 0;
+}
+
+.switch-slider::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.switch-input:checked + .switch-slider {
+  background: #1e3a8a;
+}
+
+.switch-input:checked + .switch-slider::before {
+  transform: translateX(20px);
+}
+
+.permiso-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.permiso-info strong {
+  color: #495057;
+  font-size: 14px;
+}
+
+.permiso-info small {
+  color: #6c757d;
+  font-size: 12px;
+}

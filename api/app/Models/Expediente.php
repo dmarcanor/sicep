@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Expediente extends Model
+{
+    protected $fillable = [
+        'nna_id',
+        'representante_id',
+        'codigo',
+        'fecha',
+        'hora_registro',
+        'nino',
+        'representante',
+        'sector',
+        'estatus',
+        'prioridad',
+        'tipificacion',
+        'causa',
+        'observaciones',
+        'registrado_por',
+        'asignado_a',
+    ];
+
+    protected $casts = [
+        'fecha' => 'date',
+    ];
+
+    public function nna(): BelongsTo
+    {
+        return $this->belongsTo(Nna::class);
+    }
+
+    public function representante(): BelongsTo
+    {
+        return $this->belongsTo(Representante::class);
+    }
+
+    public function registradoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'registrado_por');
+    }
+
+    public function asignadoA(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'asignado_a');
+    }
+
+    public function casos(): HasMany
+    {
+        return $this->hasMany(Caso::class);
+    }
+
+    public function solicitudesArchivo(): HasMany
+    {
+        return $this->hasMany(SolicitudArchivo::class);
+    }
+}
