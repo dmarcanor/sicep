@@ -216,11 +216,24 @@ export default function Nna() {
       />
 
       {mostrarModal && (
-        <div className="modal-overlay" onClick={() => setMostrarModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
-            <h3>{nnaSeleccionado ? "Editar NNA" : "Nuevo NNA"}</h3>
+        <div className="expedientes-modal-overlay" onClick={() => setMostrarModal(false)}>
+          <div className="expedientes-modal modal-nuevo" onClick={(e) => e.stopPropagation()}>
+            <div className="expedientes-modal-header">
+              <div>
+                <span className="expedientes-badge">Registro de NNA</span>
+                <h3>{nnaSeleccionado ? "Editar NNA" : "Nuevo NNA"}</h3>
+                <p>
+                  Datos del niño, niña o adolescente. Los campos marcados con{" "}
+                  <b>*</b> son obligatorios.
+                </p>
+              </div>
 
-            <div className="form-grid">
+              <button className="btn-close" onClick={() => setMostrarModal(false)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="form-nuevo-expediente">
               <div className="campo">
                 <label>Documento de Identidad *</label>
                 <input
@@ -326,7 +339,7 @@ export default function Nna() {
               </div>
             </div>
 
-            <div className="modal-actions">
+            <div className="detalle-footer">
               <button className="btn-secondary" onClick={() => setMostrarModal(false)}>
                 Cancelar
               </button>
@@ -339,9 +352,21 @@ export default function Nna() {
       )}
 
       {mostrarDetalle && nnaSeleccionado && (
-        <div className="modal-overlay" onClick={() => setMostrarDetalle(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px" }}>
-            <h3>Detalle de NNA</h3>
+        <div className="expedientes-modal-overlay" onClick={() => setMostrarDetalle(false)}>
+          <div className="expedientes-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="expedientes-modal-header">
+              <div>
+                <span className="expedientes-badge">Detalle de NNA</span>
+                <h3>
+                  {nnaSeleccionado.nombres} {nnaSeleccionado.apellidos}
+                </h3>
+                <p>{nnaSeleccionado.documento_identidad}</p>
+              </div>
+
+              <button className="btn-close" onClick={() => setMostrarDetalle(false)}>
+                ✕
+              </button>
+            </div>
 
             <div className="detalle-grid">
               <div>
@@ -396,7 +421,7 @@ export default function Nna() {
               </div>
             )}
 
-            <div className="modal-actions">
+            <div className="detalle-footer">
               <button className="btn-secondary" onClick={() => setMostrarDetalle(false)}>
                 Cerrar
               </button>

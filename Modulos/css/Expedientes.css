@@ -285,10 +285,10 @@
   }
   
   .expedientes-modal{
-/*     width:min(1180px, 96vw);
- */    max-height:85vh !important;
- margin-top: 50px;
- margin-left: 100px;
+    max-height:85vh !important;
+    /* El overlay ya centra con flex; un margen fijo aquí solo descoloca la
+       ventana (un margin-left de 100px la corre 50px del centro). */
+    margin:0;
     overflow:auto;
     background:#fff;
     border:1px solid var(--line-2);
