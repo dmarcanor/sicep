@@ -4,6 +4,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
+import { formatearFecha } from "../src/formato";
+import "./css/Expedientes.css";
 import "./css/Representantes.css";
 
 export default function Representantes() {
@@ -281,11 +283,24 @@ export default function Representantes() {
       </div>
 
       {mostrarModal && (
-        <div className="modal-overlay" onClick={() => setMostrarModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px" }}>
-            <h3>{representanteSeleccionado ? "Editar Representante" : "Nuevo Representante"}</h3>
+        <div className="expedientes-modal-overlay" onClick={() => setMostrarModal(false)}>
+          <div className="expedientes-modal modal-nuevo" onClick={(e) => e.stopPropagation()}>
+            <div className="expedientes-modal-header">
+              <div>
+                <span className="expedientes-badge">Registro de representante</span>
+                <h3>{representanteSeleccionado ? "Editar Representante" : "Nuevo Representante"}</h3>
+                <p>
+                  Datos del representante legal. Los campos marcados con <b>*</b>{" "}
+                  son obligatorios.
+                </p>
+              </div>
 
-            <div className="form-grid">
+              <button className="btn-close" onClick={() => setMostrarModal(false)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="form-nuevo-expediente">
               <div className="campo">
                 <label>Cédula *</label>
                 <input
@@ -389,7 +404,7 @@ export default function Representantes() {
               </div>
             </div>
 
-            <div className="modal-actions">
+            <div className="detalle-footer">
               <button className="btn-secondary" onClick={() => setMostrarModal(false)}>
                 Cancelar
               </button>
@@ -402,9 +417,22 @@ export default function Representantes() {
       )}
 
       {mostrarDetalle && representanteSeleccionado && (
-        <div className="modal-overlay" onClick={() => setMostrarDetalle(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "800px" }}>
-            <h3>Detalle del Representante</h3>
+        <div className="expedientes-modal-overlay" onClick={() => setMostrarDetalle(false)}>
+          <div className="expedientes-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="expedientes-modal-header">
+              <div>
+                <span className="expedientes-badge">Detalle del representante</span>
+                <h3>
+                  {representanteSeleccionado.nombres}{" "}
+                  {representanteSeleccionado.apellidos}
+                </h3>
+                <p>{representanteSeleccionado.cedula}</p>
+              </div>
+
+              <button className="btn-close" onClick={() => setMostrarDetalle(false)}>
+                ✕
+              </button>
+            </div>
 
             <div className="detalle-grid">
               <div>
@@ -454,8 +482,8 @@ export default function Representantes() {
                     {representanteSeleccionado.expedientes.map((exp) => (
                       <tr key={exp.id}>
                         <td>{exp.codigo}</td>
-                        <td>{exp.nino}</td>
-                        <td>{exp.fecha}</td>
+                        <td>{exp.nna_nombre}</td>
+                        <td>{formatearFecha(exp.fecha)}</td>
                         <td>{exp.estatus}</td>
                         <td>{exp.prioridad}</td>
                       </tr>
@@ -465,7 +493,7 @@ export default function Representantes() {
               </div>
             )}
 
-            <div className="modal-actions">
+            <div className="detalle-footer">
               <button className="btn-secondary" onClick={() => setMostrarDetalle(false)}>
                 Cerrar
               </button>
