@@ -18,9 +18,11 @@ export default function PinModal({ isOpen, onClose, onConfirm, title = "Confirma
     try {
       const response = await api.verifyPin(pin);
       if (response.valid) {
-        onConfirm(pin);
         setPin("");
-        onClose();
+        // Cerrar aquí llamaría a onClose (cancelación) antes de que onConfirm
+        // termine, rechazando la promesa de la acción ya en curso: el cierre lo
+        // hace usePinAction cuando la acción resuelve.
+        await onConfirm(pin);
       } else {
         setError("PIN incorrecto");
       }

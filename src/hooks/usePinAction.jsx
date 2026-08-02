@@ -28,20 +28,23 @@ export function usePinAction() {
   }, []);
 
   const handlePinConfirm = async (pin) => {
-    if (pendingAction) {
-      try {
-        const result = await pendingAction.action(pin);
-        pendingAction.resolve(result);
-      } catch (error) {
-        // Si el error es que el PIN no está configurado, mostrar modal de configuración
-        if (error.message === 'PIN_NOT_CONFIGURED') {
-          setShowPinModal(false);
-          setShowPinSetupModal(true);
-          return;
-        }
-        pendingAction.reject(error);
-      }
+    if (!pendingAction) return;
+
+    try {
+      const result = await pendingAction.action(pin);
+      setShowPinModal(false);
       setPendingAction(null);
+      pendingAction.resolve(result);
+    } catch (error) {
+      // Si el error es que el PIN no está configurado, mostrar modal de configuración
+      if (error.message === 'PIN_NOT_CONFIGURED') {
+        setShowPinModal(false);
+        setShowPinSetupModal(true);
+        return;
+      }
+      setShowPinModal(false);
+      setPendingAction(null);
+      pendingAction.reject(error);
     }
   };
 
@@ -63,7 +66,9 @@ export function usePinAction() {
     }
   };
 
-  const PinModalWrapper = () => (
+  // Memoizado: una identidad nueva en cada render desmonta PinModal y borra el
+  // PIN que el usuario esté escribiendo si el componente padre se re-renderiza.
+  const PinModalWrapper = useCallback(() => (
     <>
       <PinModal
         isOpen={showPinModal}
@@ -83,7 +88,7 @@ export function usePinAction() {
         onSuccess={handlePinSetupSuccess}
       />
     </>
-  );
+  ), [showPinModal, showPinSetupModal, pendingAction]);
 
   return {
     executeWithPin,
