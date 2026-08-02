@@ -2,15 +2,13 @@ import { useEffect, useState } from "react";
 import "./css/RecepcionURD.css";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
-import { formatearFecha } from "../src/formato";
+import { formatearFecha, hoyISO } from "../src/formato";
 import SelectorConAlta, {
   CAMPOS_NNA,
   CAMPOS_REPRESENTANTE,
   etiquetaNna,
   etiquetaRepresentante,
 } from "../componentes/SelectorConAlta";
-
-const hoy = () => new Date().toISOString().slice(0, 10);
 
 export default function RecepcionURD() {
   const [errores, setErrores] = useState({});
@@ -28,7 +26,7 @@ export default function RecepcionURD() {
   const [formulario, setFormulario] = useState({
     nna_id: null,
     representante_id: null,
-    fecha: hoy(),
+    fecha: hoyISO(),
     sector: "",
     prioridad: "Media",
     tipificacion: "",
@@ -92,7 +90,11 @@ export default function RecepcionURD() {
 
     if (!formulario.nna_id) nuevosErrores.nna_id = true;
     if (!formulario.representante_id) nuevosErrores.representante_id = true;
-    if (!formulario.fecha) nuevosErrores.fecha = true;
+    if (!formulario.fecha) {
+      nuevosErrores.fecha = "Indique la fecha de ingreso.";
+    } else if (formulario.fecha > hoyISO()) {
+      nuevosErrores.fecha = "La fecha del expediente no puede ser futura.";
+    }
     if (!formulario.sector.trim()) nuevosErrores.sector = true;
     if (!formulario.prioridad) nuevosErrores.prioridad = true;
 
@@ -124,7 +126,7 @@ export default function RecepcionURD() {
         setFormulario({
           nna_id: null,
           representante_id: null,
-          fecha: hoy(),
+          fecha: hoyISO(),
           sector: "",
           prioridad: "Media",
           tipificacion: "",
@@ -262,8 +264,14 @@ export default function RecepcionURD() {
                 name="fecha"
                 value={formulario.fecha}
                 onChange={actualizar}
+                max={hoyISO()}
                 className={errores.fecha ? "error" : ""}
               />
+              {errores.fecha && (
+                <small style={{ color: "#c0392b", display: "block", marginTop: "4px" }}>
+                  {errores.fecha}
+                </small>
+              )}
             </div>
 
             <div className="campo">

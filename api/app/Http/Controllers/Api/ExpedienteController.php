@@ -57,12 +57,14 @@ class ExpedienteController extends Controller
             'nna_id' => 'required|exists:nna,id',
             'representante_id' => 'required|exists:representantes,id',
             'sector' => 'required|string|max:255',
-            'fecha' => 'required|date',
+            'fecha' => 'required|date|before_or_equal:today',
             'hora_registro' => 'nullable|date_format:H:i',
             'prioridad' => 'required|in:Alta,Media,Baja',
             'tipificacion' => 'nullable|in:Maltrato Físico,Abuso Sexual,Negligencia,Acoso Escolar,Trabajo Infantil,Violencia Psicológica,Abandono,Explotación,Otro',
             'causa' => 'nullable|string',
             'observaciones' => 'nullable|string',
+        ], [
+            'fecha.before_or_equal' => 'La fecha del expediente no puede ser futura.',
         ]);
 
         $codigo = 'SICEP-URD-' . str_pad(Expediente::max('id') + 1 ?? 1, 6, '0', STR_PAD_LEFT);
@@ -105,6 +107,9 @@ class ExpedienteController extends Controller
         $request->validate([
             'nna_id' => 'sometimes|exists:nna,id',
             'representante_id' => 'sometimes|exists:representantes,id',
+            // update() hace update($request->all()) y 'fecha' es asignable: sin
+            // esta regla se podía cambiar a cualquier valor desde la edición.
+            'fecha' => 'sometimes|date|before_or_equal:today',
             'sector' => 'sometimes|string|max:255',
             'estatus' => 'sometimes|in:Registrado,En revisión,Aprobado,Observado,Cerrado',
             'prioridad' => 'sometimes|in:Alta,Media,Baja',
@@ -112,6 +117,8 @@ class ExpedienteController extends Controller
             'causa' => 'nullable|string',
             'observaciones' => 'nullable|string',
             'asignado_a' => 'nullable|exists:users,id',
+        ], [
+            'fecha.before_or_equal' => 'La fecha del expediente no puede ser futura.',
         ]);
 
         $expediente->update($request->all());

@@ -6,7 +6,7 @@ import autoTable from "jspdf-autotable";
 import "./css/Expedientes.css";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
-import { formatearFecha } from "../src/formato";
+import { formatearFecha, hoyISO } from "../src/formato";
 import SelectorConAlta, {
   CAMPOS_NNA,
   CAMPOS_REPRESENTANTE,
@@ -369,7 +369,12 @@ export default function Expedientes() {
   const validarNuevoExpediente = () => {
     const errores = {};
 
-    if (!nuevoExpediente.fecha) errores.fecha = true;
+    if (!nuevoExpediente.fecha) {
+      errores.fecha = "Indique la fecha del expediente.";
+    } else if (nuevoExpediente.fecha > hoyISO()) {
+      errores.fecha = "La fecha del expediente no puede ser futura.";
+    }
+
     if (!nuevoExpediente.nna_id) errores.nna_id = true;
     if (!nuevoExpediente.representante_id) errores.representante_id = true;
     if (!nuevoExpediente.sector.trim()) errores.sector = true;
@@ -670,8 +675,14 @@ export default function Expedientes() {
                   name="fecha"
                   value={nuevoExpediente.fecha}
                   onChange={actualizarNuevo}
+                  max={hoyISO()}
                   className={erroresNuevo.fecha ? "error" : ""}
                 />
+                {erroresNuevo.fecha && (
+                  <small style={{ color: "#c0392b", display: "block", marginTop: "4px" }}>
+                    {erroresNuevo.fecha}
+                  </small>
+                )}
               </div>
 
               <div className="campo">

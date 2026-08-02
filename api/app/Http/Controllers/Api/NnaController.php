@@ -35,10 +35,12 @@ class NnaController extends Controller
             'documento_identidad' => 'required|string|unique:nna',
             'nombres' => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
-            'fecha_nacimiento' => 'required|date',
+            'fecha_nacimiento' => 'required|date|before_or_equal:today',
             'sexo' => 'required|in:Masculino,Femenino',
             'lugar_nacimiento' => 'nullable|string|max:255',
             'observaciones' => 'nullable|string',
+        ], [
+            'fecha_nacimiento.before_or_equal' => 'La fecha de nacimiento no puede ser futura.',
         ]);
 
         $nna = Nna::create($request->all());
@@ -67,10 +69,12 @@ class NnaController extends Controller
             'documento_identidad' => 'sometimes|string|unique:nna,documento_identidad,' . $nna->id,
             'nombres' => 'sometimes|string|max:255',
             'apellidos' => 'sometimes|string|max:255',
-            'fecha_nacimiento' => 'sometimes|date',
+            'fecha_nacimiento' => 'sometimes|date|before_or_equal:today',
             'sexo' => 'sometimes|in:Masculino,Femenino',
             'lugar_nacimiento' => 'nullable|string|max:255',
             'observaciones' => 'nullable|string',
+        ], [
+            'fecha_nacimiento.before_or_equal' => 'La fecha de nacimiento no puede ser futura.',
         ]);
 
         $nna->update($request->all());
