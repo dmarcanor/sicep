@@ -41,10 +41,13 @@ const getHeaders = (pin = null) => {
   return headers;
 };
 
-const handleResponse = async (response) => {
+const handleResponse = async (response, opciones = {}) => {
+  // En /login un 401 significa "credenciales incorrectas", no "sesión vencida":
+  // redirigir allí recargaría la pantalla de login y borraría el mensaje.
+  const { cerrarSesionSi401 = true } = opciones;
   const data = await response.json().catch(() => ({}));
-  
-  if (response.status === 401) {
+
+  if (response.status === 401 && cerrarSesionSi401) {
     if (data.pin_required) {
       throw new Error('PIN_REQUIRED');
     }
@@ -76,7 +79,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
-    const data = await handleResponse(response);
+    const data = await handleResponse(response, { cerrarSesionSi401: false });
     setAuthToken(data.token);
     return data;
   },

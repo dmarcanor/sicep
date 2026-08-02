@@ -209,6 +209,8 @@ export default function SistemaInstitucional() {
     user: "",
     pass: "",
   });
+  const [loginError, setLoginError] = useState("");
+  const [ingresando, setIngresando] = useState(false);
 
   const rolUsuario = usuario?.rol || null;
 
@@ -272,6 +274,39 @@ export default function SistemaInstitucional() {
     localStorage.removeItem("sicep_user");
   };
 
+  const ingresar = async () => {
+    if (ingresando) return;
+
+    if (!loginData.user.trim() || !loginData.pass) {
+      setLoginError("Indique usuario y clave de acceso.");
+      return;
+    }
+
+    setIngresando(true);
+    setLoginError("");
+
+    try {
+      const data = await api.login(loginData.user, loginData.pass);
+      setUsuario(data.user);
+      setPinConfigurado(data.user.pin_configurado);
+      setModuloActivo("principal");
+      setVista("app");
+    } catch (error) {
+      // Una cuenta deshabilitada (403) se informa tal cual para que el usuario
+      // sepa que debe acudir al administrador; el 401 se mantiene genérico y no
+      // revela si el usuario existe o si falló la clave.
+      if (error.status === 403) {
+        setLoginError(error.message);
+      } else if (error.status === 401) {
+        setLoginError("Credenciales inválidas.");
+      } else {
+        setLoginError(error.message || "No fue posible iniciar sesión.");
+      }
+    } finally {
+      setIngresando(false);
+    }
+  };
+
   if (vista === "login") {
     return (
       <div className="login-root">
@@ -328,35 +363,34 @@ export default function SistemaInstitucional() {
               <label>Usuario</label>
               <input
                 placeholder="Código institucional"
-                onChange={(e) =>
-                  setLoginData({ ...loginData, user: e.target.value })
-                }
+                value={loginData.user}
+                onChange={(e) => {
+                  setLoginData({ ...loginData, user: e.target.value });
+                  setLoginError("");
+                }}
+                onKeyDown={(e) => e.key === "Enter" && ingresar()}
               />
 
               <label>Clave de acceso</label>
               <input
                 type="password"
                 placeholder="••••••••••"
-                onChange={(e) =>
-                  setLoginData({ ...loginData, pass: e.target.value })
-                }
+                value={loginData.pass}
+                onChange={(e) => {
+                  setLoginData({ ...loginData, pass: e.target.value });
+                  setLoginError("");
+                }}
+                onKeyDown={(e) => e.key === "Enter" && ingresar()}
               />
 
-              <button
-                className="login-btn"
-                onClick={async () => {
-                  try {
-                    const data = await api.login(loginData.user, loginData.pass);
-                    setUsuario(data.user);
-                    setPinConfigurado(data.user.pin_configurado);
-                    setModuloActivo("principal");
-                    setVista("app");
-                  } catch (error) {
-                    alert("Credenciales inválidas");
-                  }
-                }}
-              >
-                Acceder al sistema
+              {loginError && (
+                <div className="login-error" role="alert">
+                  {loginError}
+                </div>
+              )}
+
+              <button className="login-btn" onClick={ingresar} disabled={ingresando}>
+                {ingresando ? "Verificando..." : "Acceder al sistema"}
               </button>
             </div>
 

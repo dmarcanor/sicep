@@ -1155,6 +1155,17 @@ tbody tr:hover{
   box-shadow:0 0 0 4px rgba(47,128,237,.15);
 }
 
+.login-error{
+  margin-top:14px;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid #f0b3ab;
+  background:#fdecea;
+  color:#a33227;
+  font-size:13px;
+  line-height:1.4;
+}
+
 .login-btn{
   margin-top:12px;
   height:46px;

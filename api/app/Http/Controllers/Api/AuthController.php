@@ -27,7 +27,8 @@ class AuthController extends Controller
 
         if (!$user->active) {
             return response()->json([
-                'message' => 'Usuario inactivo',
+                'message' => 'Su cuenta está deshabilitada. Contacte al administrador del sistema.',
+                'cuenta_deshabilitada' => true,
             ], 403);
         }
 
