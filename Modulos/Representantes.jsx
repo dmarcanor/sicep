@@ -168,9 +168,17 @@ export default function Representantes() {
     setMostrarModal(true);
   };
 
-  const abrirDetalle = (item) => {
+  const abrirDetalle = async (item) => {
     setRepresentanteSeleccionado(item);
     setMostrarDetalle(true);
+
+    // El listado solo trae el conteo; los expedientes asociados vienen del
+    // detalle, así que se pide aparte para poder mostrarlos.
+    try {
+      setRepresentanteSeleccionado(await api.getRepresentante(item.id));
+    } catch (error) {
+      console.error("Error cargando el detalle del representante:", error);
+    }
   };
 
   const guardar = async () => {

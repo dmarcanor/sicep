@@ -135,9 +135,17 @@ export default function Nna() {
     setMostrarModal(true);
   };
 
-  const abrirDetalle = (item) => {
+  const abrirDetalle = async (item) => {
     setNnaSeleccionado(item);
     setMostrarDetalle(true);
+
+    // El listado solo trae el conteo; los expedientes asociados vienen del
+    // detalle, así que se pide aparte para poder mostrarlos.
+    try {
+      setNnaSeleccionado(await api.getNnaById(item.id));
+    } catch (error) {
+      console.error("Error cargando el detalle del NNA:", error);
+    }
   };
 
   const guardar = async () => {
