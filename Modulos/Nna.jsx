@@ -463,6 +463,7 @@ export default function Nna() {
             {nnaSeleccionado.expedientes && nnaSeleccionado.expedientes.length > 0 && (
               <div style={{ marginTop: "20px" }}>
                 <h4>Expedientes Asociados ({nnaSeleccionado.expedientes.length})</h4>
+                <div className="tabla-scroll">
                 <table className="tabla-simple">
                   <thead>
                     <tr>
@@ -483,6 +484,7 @@ export default function Nna() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
 

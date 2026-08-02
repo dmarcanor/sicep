@@ -476,6 +476,7 @@ export default function Representantes() {
             {representanteSeleccionado.expedientes && representanteSeleccionado.expedientes.length > 0 && (
               <div style={{ marginTop: "20px" }}>
                 <h4>Expedientes Asociados ({representanteSeleccionado.expedientes.length})</h4>
+                <div className="tabla-scroll">
                 <table className="tabla-simple">
                   <thead>
                     <tr>
@@ -498,6 +499,7 @@ export default function Representantes() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
 
