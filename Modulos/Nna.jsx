@@ -70,7 +70,14 @@ export default function Nna() {
       nuevosErrores.documento_identidad = "El documento es obligatorio";
     } else if (!validarDocumento(form.documento_identidad)) {
       nuevosErrores.documento_identidad = "Formato inválido (V-12345678 o E-12345678)";
-    } else if (!nnaSeleccionado && nna.some(n => n.documento_identidad === form.documento_identidad)) {
+    } else if (
+      // Al editar, el propio registro no cuenta como duplicado de sí mismo.
+      nna.some(
+        (n) =>
+          n.documento_identidad === form.documento_identidad.trim() &&
+          n.id !== nnaSeleccionado?.id
+      )
+    ) {
       nuevosErrores.documento_identidad = "Este documento ya está registrado";
     }
 
@@ -243,7 +250,6 @@ export default function Nna() {
                     setForm({ ...form, documento_identidad: e.target.value });
                     setErrores({ ...errores, documento_identidad: "" });
                   }}
-                  disabled={!!nnaSeleccionado}
                   placeholder="V-12345678"
                   className={errores.documento_identidad ? "error" : ""}
                 />

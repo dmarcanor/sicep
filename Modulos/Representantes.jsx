@@ -61,7 +61,12 @@ export default function Representantes() {
       nuevosErrores.cedula = "La cédula es obligatoria";
     } else if (!validarCedula(form.cedula)) {
       nuevosErrores.cedula = "Formato inválido (V-12345678 o E-12345678)";
-    } else if (!representanteSeleccionado && representantes.some(r => r.cedula === form.cedula)) {
+    } else if (
+      // Al editar, el propio registro no cuenta como duplicado de sí mismo.
+      representantes.some(
+        (r) => r.cedula === form.cedula.trim() && r.id !== representanteSeleccionado?.id
+      )
+    ) {
       nuevosErrores.cedula = "Esta cédula ya está registrada";
     }
 
@@ -256,7 +261,6 @@ export default function Representantes() {
                     setForm({ ...form, cedula: e.target.value });
                     setErrores({ ...errores, cedula: "" });
                   }}
-                  disabled={!!representanteSeleccionado}
                   placeholder="V-12345678"
                   className={errores.cedula ? "error" : ""}
                 />
