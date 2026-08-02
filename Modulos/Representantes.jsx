@@ -193,21 +193,6 @@ export default function Representantes() {
     }
   };
 
-  const eliminar = async (id) => {
-    if (!confirm("¿Está seguro de eliminar este representante?")) return;
-
-    try {
-      await executeWithPin(async (pin) => {
-        await api.deleteRepresentante(id, pin);
-      }, "Eliminar Representante");
-      await cargarRepresentantes();
-    } catch (error) {
-      if (error.message !== "Acción cancelada") {
-        alert(error.message || "Error al eliminar");
-      }
-    }
-  };
-
   if (cargando) {
     return <div className="modulo">Cargando representantes...</div>;
   }
@@ -244,7 +229,8 @@ export default function Representantes() {
           <thead>
             <tr>
               <th>Cédula</th>
-              <th>Nombre Completo</th>
+              <th>Nombres</th>
+              <th>Apellidos</th>
               <th>Teléfono</th>
               <th>Email</th>
               <th>Expedientes</th>
@@ -254,7 +240,7 @@ export default function Representantes() {
           <tbody>
             {representantesFiltrados.length === 0 ? (
               <tr>
-                <td colSpan="6" className="sinRegistros">
+                <td colSpan="7" className="sinRegistros">
                   No hay representantes registrados
                 </td>
               </tr>
@@ -262,7 +248,8 @@ export default function Representantes() {
               representantesFiltrados.map((rep) => (
                 <tr key={rep.id}>
                   <td>{rep.cedula}</td>
-                  <td>{rep.nombres} {rep.apellidos}</td>
+                  <td>{rep.nombres}</td>
+                  <td>{rep.apellidos}</td>
                   <td>{rep.telefono || "-"}</td>
                   <td>{rep.email || "-"}</td>
                   <td>
@@ -283,12 +270,6 @@ export default function Representantes() {
                         onClick={() => abrirEdicion(rep)}
                       >
                         Editar
-                      </button>
-                      <button
-                        className="btn-danger"
-                        onClick={() => eliminar(rep.id)}
-                      >
-                        Eliminar
                       </button>
                     </div>
                   </td>
