@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../src/api";
+import "./css/PinModal.css";
 
 export default function PinModal({ isOpen, onClose, onConfirm, title = "Confirmar acción" }) {
   const [pin, setPin] = useState("");
@@ -42,12 +43,14 @@ export default function PinModal({ isOpen, onClose, onConfirm, title = "Confirma
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "400px" }}>
+    <div className="pin-modal-overlay" onClick={handleClose}>
+      <div className="pin-modal-card" onClick={(e) => e.stopPropagation()}>
         <h3>🔐 {title}</h3>
-        <p>Ingrese su PIN de seguridad para confirmar esta acción.</p>
-        
-        <div style={{ margin: "20px 0" }}>
+        <p className="pin-modal-descripcion">
+          Ingrese su PIN de seguridad para confirmar esta acción.
+        </p>
+
+        <div className="pin-modal-campo">
           <input
             type="password"
             value={pin}
@@ -57,24 +60,16 @@ export default function PinModal({ isOpen, onClose, onConfirm, title = "Confirma
             }}
             placeholder="Ingrese su PIN"
             maxLength={6}
-            style={{
-              width: "100%",
-              padding: "12px",
-              fontSize: "18px",
-              textAlign: "center",
-              letterSpacing: "8px",
-            }}
+            inputMode="numeric"
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSubmit();
             }}
             autoFocus
           />
-          {error && (
-            <p style={{ color: "red", marginTop: "8px", fontSize: "14px" }}>{error}</p>
-          )}
+          {error && <p className="pin-modal-error">{error}</p>}
         </div>
 
-        <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+        <div className="pin-modal-acciones">
           <button className="btn-secondary" onClick={handleClose} disabled={loading}>
             Cancelar
           </button>

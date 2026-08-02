@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./css/PinModal.css";
 import { api } from "../src/api";
 
 export default function PinSetupModal({ isOpen, onClose, onSuccess }) {
@@ -48,18 +49,16 @@ export default function PinSetupModal({ isOpen, onClose, onSuccess }) {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "450px" }}>
+    <div className="pin-modal-overlay" onClick={handleClose}>
+      <div className="pin-modal-card" onClick={(e) => e.stopPropagation()}>
         <h3>🔐 Configurar PIN de Seguridad</h3>
-        <p style={{ color: "#666", marginBottom: "20px" }}>
-          Para realizar esta acción, debe configurar un PIN de seguridad de 4 a 6 dígitos. 
-          Este PIN se usará para confirmar acciones delicadas en el futuro.
+        <p className="pin-modal-descripcion">
+          Para realizar esta acción, debe configurar un PIN de seguridad de 4 a 6
+          dígitos. Este PIN se usará para confirmar acciones delicadas en el futuro.
         </p>
-        
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "600" }}>
-            Nuevo PIN *
-          </label>
+
+        <div className="pin-modal-campo">
+          <label>Nuevo PIN *</label>
           <input
             type="password"
             value={pin}
@@ -69,21 +68,13 @@ export default function PinSetupModal({ isOpen, onClose, onSuccess }) {
             }}
             placeholder="4-6 dígitos numéricos"
             maxLength={6}
-            style={{
-              width: "100%",
-              padding: "12px",
-              fontSize: "18px",
-              textAlign: "center",
-              letterSpacing: "8px",
-            }}
+            inputMode="numeric"
             autoFocus
           />
         </div>
 
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ display: "block", marginBottom: "5px", fontWeight: "600" }}>
-            Confirmar PIN *
-          </label>
+        <div className="pin-modal-campo">
+          <label>Confirmar PIN *</label>
           <input
             type="password"
             value={confirmPin}
@@ -93,24 +84,16 @@ export default function PinSetupModal({ isOpen, onClose, onSuccess }) {
             }}
             placeholder="Confirme su PIN"
             maxLength={6}
-            style={{
-              width: "100%",
-              padding: "12px",
-              fontSize: "18px",
-              textAlign: "center",
-              letterSpacing: "8px",
-            }}
+            inputMode="numeric"
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSubmit();
             }}
           />
         </div>
 
-        {error && (
-          <p style={{ color: "red", marginBottom: "15px", fontSize: "14px" }}>{error}</p>
-        )}
+        {error && <p className="pin-modal-error">{error}</p>}
 
-        <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+        <div className="pin-modal-acciones">
           <button className="btn-secondary" onClick={handleClose} disabled={loading}>
             Cancelar
           </button>
