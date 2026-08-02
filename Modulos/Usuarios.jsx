@@ -17,6 +17,41 @@ const formVacio = {
   active: true,
 };
 
+// Reflejan las reglas de UsuarioController@store; si cambian allí, cambian aquí.
+const AYUDAS = {
+  name: "Nombre y apellido completos.",
+  username: "Único en el sistema. Es el nombre con el que inicia sesión.",
+  email: "Debe ser un correo válido y único, ej. usuario@dominio.com",
+  password: "Mínimo 8 caracteres.",
+  pin: "Entre 4 y 6 dígitos numéricos. Se pedirá para confirmar acciones críticas.",
+  phone: "Opcional. Formato venezolano: 0414-1234567 o +58 414 1234567.",
+  position: "Opcional. Ej. Consejero de Protección.",
+};
+
+const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const RE_TELEFONO =
+  /^(\+58|0)?(414|424|412|426|416|212|244|243|283|234|235|273|275|277|278|291|293|295)\d{7}$/;
+
+function Campo({ label, ayuda, error, children }) {
+  return (
+    <div className="campo">
+      <label>{label}</label>
+      {children}
+      {error ? (
+        <small style={{ color: "#c0392b", display: "block", marginTop: "4px" }}>
+          {error}
+        </small>
+      ) : (
+        ayuda && (
+          <small style={{ color: "#6b7789", display: "block", marginTop: "4px" }}>
+            {ayuda}
+          </small>
+        )
+      )}
+    </div>
+  );
+}
+
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [busqueda, setBusqueda] = useState("");
@@ -85,31 +120,54 @@ export default function Usuarios() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    setErrores((prev) => (prev[name] ? { ...prev, [name]: null } : prev));
   };
 
   const validar = () => {
     const err = {};
 
-    if (!form.name.trim()) err.name = true;
-    if (!form.username.trim()) err.username = true;
-    if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      err.email = true;
+    if (!form.name.trim()) err.name = "Indique el nombre completo.";
+    if (!form.username.trim()) err.username = "Indique el nombre de usuario.";
+
+    if (!form.email.trim()) {
+      err.email = "Indique el correo electrónico.";
+    } else if (!RE_EMAIL.test(form.email.trim())) {
+      err.email = "El correo no es válido. Ej. usuario@dominio.com";
     }
+
     if (!form.id) {
-      if (!form.password.trim()) err.password = true;
-      if (!form.pin.trim() || form.pin.length < 4 || form.pin.length > 6 || !/^\d+$/.test(form.pin)) {
-        err.pin = true;
+      if (!form.password.trim()) {
+        err.password = "Indique una contraseña.";
+      } else if (form.password.length < 8) {
+        err.password = `La contraseña debe tener al menos 8 caracteres (tiene ${form.password.length}).`;
+      }
+
+      const pin = form.pin.trim();
+      if (!pin) {
+        err.pin = "Indique el PIN de seguridad.";
+      } else if (!/^\d+$/.test(pin)) {
+        err.pin = "El PIN solo admite dígitos numéricos.";
+      } else if (pin.length < 4 || pin.length > 6) {
+        err.pin = `El PIN debe tener entre 4 y 6 dígitos (tiene ${pin.length}).`;
       }
     }
-    if (!form.role.trim()) err.role = true;
-    
-    // Validación de teléfono venezolano
-    if (form.phone && !/^(\+58|0)?(414|424|412|426|416|212|244|243|283|234|235|273|275|277|278|291|293|295)\d{7}$/.test(form.phone.replace(/[\s-]/g, ''))) {
-      err.phone = true;
+
+    if (!form.role.trim()) err.role = "Seleccione un rol.";
+
+    if (form.phone && !RE_TELEFONO.test(form.phone.replace(/[\s-]/g, ""))) {
+      err.phone = "Teléfono no válido. Use 0414-1234567 o +58 414 1234567.";
     }
 
     setErrores(err);
-    return Object.keys(err).length === 0;
+
+    if (Object.keys(err).length > 0) {
+      setMensaje("Revise los campos marcados en rojo.");
+      setTimeout(() => setMensaje(""), 4000);
+      return false;
+    }
+
+    return true;
   };
 
   const guardarUsuario = async () => {
@@ -131,7 +189,18 @@ export default function Usuarios() {
       cerrarModal();
       setTimeout(() => setMensaje(""), 3000);
     } catch (error) {
-      if (error.message !== "Acción cancelada") {
+      if (error.message === "Acción cancelada") return;
+
+      // El backend valida lo mismo que el formulario; si algo se escapa (unicidad
+      // de usuario o correo) se marca el campo en vez de un aviso genérico.
+      if (error.errors) {
+        const porCampo = {};
+        Object.entries(error.errors).forEach(([campo, mensajes]) => {
+          porCampo[campo] = mensajes[0];
+        });
+        setErrores(porCampo);
+        setMensaje("Revise los campos marcados en rojo.");
+      } else {
         setMensaje(error.message || "Error al guardar usuario");
       }
     }
@@ -295,7 +364,10 @@ export default function Usuarios() {
               <div>
                 <span className="usuarios-badge">Acceso al sistema</span>
                 <h3>{form.id ? "Editar usuario" : "Nuevo usuario"}</h3>
-                <p>Defina datos, rol y condición de acceso del usuario.</p>
+                <p>
+                  Defina datos, rol y condición de acceso del usuario. Los
+                  campos marcados con <b>*</b> son obligatorios.
+                </p>
               </div>
 
               <button className="btn-close" onClick={cerrarModal}>
@@ -304,28 +376,25 @@ export default function Usuarios() {
             </div>
 
             <div className="form-nuevo-expediente">
-              <div className="campo">
-                <label>Nombre completo *</label>
+              <Campo label="Nombre completo *" ayuda={AYUDAS.name} error={errores.name}>
                 <input
                   name="name"
                   value={form.name}
                   onChange={actualizarForm}
                   className={errores.name ? "error" : ""}
                 />
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Usuario *</label>
+              <Campo label="Usuario *" ayuda={AYUDAS.username} error={errores.username}>
                 <input
                   name="username"
                   value={form.username}
                   onChange={actualizarForm}
                   className={errores.username ? "error" : ""}
                 />
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Correo *</label>
+              <Campo label="Correo *" ayuda={AYUDAS.email} error={errores.email}>
                 <input
                   name="email"
                   type="email"
@@ -333,12 +402,15 @@ export default function Usuarios() {
                   onChange={actualizarForm}
                   className={errores.email ? "error" : ""}
                 />
-              </div>
+              </Campo>
 
               {!form.id && (
                 <>
-                  <div className="campo">
-                    <label>Contraseña *</label>
+                  <Campo
+                    label="Contraseña *"
+                    ayuda={AYUDAS.password}
+                    error={errores.password}
+                  >
                     <input
                       name="password"
                       type="password"
@@ -346,25 +418,24 @@ export default function Usuarios() {
                       onChange={actualizarForm}
                       className={errores.password ? "error" : ""}
                     />
-                  </div>
+                  </Campo>
 
-                  <div className="campo">
-                    <label>PIN de Seguridad *</label>
+                  <Campo label="PIN de Seguridad *" ayuda={AYUDAS.pin} error={errores.pin}>
                     <input
                       name="pin"
                       type="password"
                       maxLength={6}
+                      inputMode="numeric"
                       value={form.pin}
                       onChange={actualizarForm}
                       placeholder="4-6 dígitos numéricos"
                       className={errores.pin ? "error" : ""}
                     />
-                  </div>
+                  </Campo>
                 </>
               )}
 
-              <div className="campo">
-                <label>Rol *</label>
+              <Campo label="Rol *" error={errores.role}>
                 <select
                   name="role"
                   value={form.role}
@@ -375,25 +446,25 @@ export default function Usuarios() {
                   <option value="supervisor">Supervisor</option>
                   <option value="consejero">Consejero</option>
                 </select>
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Teléfono</label>
+              <Campo label="Teléfono" ayuda={AYUDAS.phone} error={errores.phone}>
                 <input
                   name="phone"
                   value={form.phone}
                   onChange={actualizarForm}
+                  placeholder="0414-1234567"
+                  className={errores.phone ? "error" : ""}
                 />
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Cargo</label>
+              <Campo label="Cargo" ayuda={AYUDAS.position} error={errores.position}>
                 <input
                   name="position"
                   value={form.position}
                   onChange={actualizarForm}
                 />
-              </div>
+              </Campo>
 
               <div className="campo">
                 <label>Estado</label>

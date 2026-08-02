@@ -52,15 +52,20 @@ const handleResponse = async (response) => {
     window.location.href = '/';
     throw new Error('No autorizado');
   }
-  
+
   if (response.status === 403 && data.pin_required) {
     throw new Error('PIN_NOT_CONFIGURED');
   }
   
   if (!response.ok) {
-    throw new Error(data.message || 'Error en la solicitud');
+    const error = new Error(data.message || 'Error en la solicitud');
+    error.status = response.status;
+    // 422 trae { errors: { campo: [mensaje] } }; se conserva para que el
+    // formulario pueda señalar el campo exacto en vez de un aviso genérico.
+    if (data.errors) error.errors = data.errors;
+    throw error;
   }
-  
+
   return data;
 };
 
