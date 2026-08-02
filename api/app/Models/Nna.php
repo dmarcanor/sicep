@@ -20,7 +20,10 @@ class Nna extends Model
     ];
 
     protected $casts = [
-        'fecha_nacimiento' => 'date',
+        // Sin formato, el cast 'date' serializa como ISO-8601 con hora y zona
+        // (2012-03-14T00:00:00.000000Z). Es una fecha de nacimiento: no tiene
+        // hora, y así <input type="date"> puede consumirla tal cual.
+        'fecha_nacimiento' => 'date:Y-m-d',
     ];
 
     public function expedientes(): HasMany

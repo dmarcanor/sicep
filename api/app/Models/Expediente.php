@@ -25,7 +25,7 @@ class Expediente extends Model
     ];
 
     protected $casts = [
-        'fecha' => 'date',
+        'fecha' => 'date:Y-m-d',
     ];
 
     protected $appends = [

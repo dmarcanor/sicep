@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
+import { formatearFecha, fechaParaInput } from "../src/formato";
 import "./css/Expedientes.css";
 
 export default function Nna() {
@@ -114,7 +115,8 @@ export default function Nna() {
       documento_identidad: item.documento_identidad || "",
       nombres: item.nombres || "",
       apellidos: item.apellidos || "",
-      fecha_nacimiento: item.fecha_nacimiento || "",
+      // <input type="date"> exige YYYY-MM-DD: cualquier otro formato lo deja vacío.
+      fecha_nacimiento: fechaParaInput(item.fecha_nacimiento),
       sexo: item.sexo || "",
       lugar_nacimiento: item.lugar_nacimiento || "",
       observaciones: item.observaciones || "",
@@ -155,7 +157,12 @@ export default function Nna() {
     { name: "Documento", selector: (r) => r.documento_identidad, sortable: true },
     { name: "Nombres", selector: (r) => r.nombres, sortable: true },
     { name: "Apellidos", selector: (r) => r.apellidos, sortable: true },
-    { name: "Fecha Nac.", selector: (r) => r.fecha_nacimiento, sortable: true },
+    {
+      name: "Fecha Nac.",
+      selector: (r) => r.fecha_nacimiento || "",
+      format: (r) => formatearFecha(r.fecha_nacimiento),
+      sortable: true,
+    },
     { name: "Sexo", selector: (r) => r.sexo },
     {
       name: "Expedientes",
@@ -347,7 +354,7 @@ export default function Nna() {
               </div>
               <div>
                 <strong>Fecha de Nacimiento:</strong>
-                <p>{nnaSeleccionado.fecha_nacimiento}</p>
+                <p>{formatearFecha(nnaSeleccionado.fecha_nacimiento)}</p>
               </div>
               <div>
                 <strong>Sexo:</strong>
@@ -379,7 +386,7 @@ export default function Nna() {
                     {nnaSeleccionado.expedientes.map((exp) => (
                       <tr key={exp.id}>
                         <td>{exp.codigo}</td>
-                        <td>{exp.fecha}</td>
+                        <td>{formatearFecha(exp.fecha)}</td>
                         <td>{exp.estatus}</td>
                         <td>{exp.prioridad}</td>
                       </tr>
