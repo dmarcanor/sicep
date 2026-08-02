@@ -6,6 +6,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./css/PanelPrincipal.css";
 import { api } from "../src/api";
+import { formatearFecha } from "../src/formato";
 
 import AsignacionCasos from "./AsignacionCasos";
 
@@ -77,15 +78,34 @@ export default function PanelPrincipal() {
 
   const datosFiltrados = useMemo(() => {
     return datosConDias.filter((item) =>
-      Object.values(item)
+      [
+        item.codigo,
+        item.nna_nombre,
+        item.representante_nombre,
+        item.sector,
+        item.estatus,
+        item.prioridad,
+      ]
+        .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(busqueda.toLowerCase())
     );
   }, [busqueda, datosConDias]);
 
+  const filasExportables = () =>
+    datosFiltrados.map((d) => ({
+      Codigo: d.codigo,
+      NNA: d.nna_nombre || "",
+      Representante: d.representante_nombre || "",
+      Estado: d.estatus,
+      Fecha: formatearFecha(d.fecha),
+      Sector: d.sector,
+      Dias: d.dias,
+    }));
+
   const exportarExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(datosFiltrados);
+    const ws = XLSX.utils.json_to_sheet(filasExportables());
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Registros");
     XLSX.writeFile(wb, `${tipoActivo}-URD.xlsx`);
@@ -97,14 +117,14 @@ export default function PanelPrincipal() {
 
     autoTable(doc, {
       head: [["Código", "Nombre", "Representante", "Estado", "Fecha", "Sector", "Días"]],
-      body: datosFiltrados.map((d) => [
-        d.codigo,
-        d.nino,
-        d.representante,
-        d.estatus,
-        d.fecha,
-        d.sector,
-        d.dias,
+      body: filasExportables().map((d) => [
+        d.Codigo,
+        d.NNA,
+        d.Representante,
+        d.Estado,
+        d.Fecha,
+        d.Sector,
+        d.Dias,
       ]),
     });
 
@@ -113,10 +133,10 @@ export default function PanelPrincipal() {
 
   const columnas = [
     { name: "Código", selector: (r) => r.codigo, sortable: true },
-    { name: "Nombre", selector: (r) => r.nino, sortable: true },
-    { name: "Representante", selector: (r) => r.representante },
+    { name: "Nombre", selector: (r) => r.nna_nombre || "", sortable: true },
+    { name: "Representante", selector: (r) => r.representante_nombre || "" },
     { name: "Estado", selector: (r) => r.estatus, sortable: true },
-    { name: "Fecha", selector: (r) => r.fecha, sortable: true },
+    { name: "Fecha", selector: (r) => formatearFecha(r.fecha), sortable: true },
 
     
     {
@@ -214,10 +234,10 @@ export default function PanelPrincipal() {
             <h3>📁 Ficha de Expediente</h3>
 
             <p><b>Código:</b> {fichaAbierta.codigo}</p>
-            <p><b>Nombre:</b> {fichaAbierta.nino}</p>
-            <p><b>Representante:</b> {fichaAbierta.representante}</p>
+            <p><b>Nombre:</b> {fichaAbierta.nna_nombre}</p>
+            <p><b>Representante:</b> {fichaAbierta.representante_nombre}</p>
             <p><b>Estado:</b> {fichaAbierta.estatus}</p>
-            <p><b>Fecha:</b> {fichaAbierta.fecha}</p>
+            <p><b>Fecha:</b> {formatearFecha(fichaAbierta.fecha)}</p>
             <p><b>Sector:</b> {fichaAbierta.sector}</p>
             <p><b>Días:</b> {fichaAbierta.dias}</p>
           </div>

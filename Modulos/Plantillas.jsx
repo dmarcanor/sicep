@@ -118,10 +118,10 @@ function fechaPorDefecto() {
 }
 
 function construirDocumento(tipo, form, expedienteActivo) {
-  const codigo = limpiar(form.codigoURD || expedienteActivo?.id || "URD-2026-XXXX");
-  const nna = limpiar(form.nna || expedienteActivo?.nino || "________________");
+  const codigo = limpiar(form.codigoURD || expedienteActivo?.codigo || "URD-2026-XXXX");
+  const nna = limpiar(form.nna || expedienteActivo?.nna_nombre || "________________");
   const representante = limpiar(
-    form.representante || expedienteActivo?.representante || "________________"
+    form.representante || expedienteActivo?.representante_nombre || "________________"
   );
   const cedulaRepresentante = limpiar(
     form.cedulaRepresentante || expedienteActivo?.cedulaRepresentante || "________________"
@@ -842,13 +842,13 @@ export default function Plantillas() {
 
     setFormulario((prev) => ({
       ...prev,
-      codigoURD: expedienteActivo.id || prev.codigoURD,
-      nna: expedienteActivo.nino || prev.nna,
-      nnaGeneral: expedienteActivo.nino || prev.nnaGeneral,
+      codigoURD: expedienteActivo.codigo || prev.codigoURD,
+      nna: expedienteActivo.nna_nombre || prev.nna,
+      nnaGeneral: expedienteActivo.nna_nombre || prev.nnaGeneral,
       solicitante: expedienteActivo.solicitante || prev.solicitante,
-      requerido: expedienteActivo.representante || prev.requerido,
+      requerido: expedienteActivo.representante_nombre || prev.requerido,
       cedulaRepresentante: expedienteActivo.cedulaRepresentante || prev.cedulaRepresentante,
-      representante: expedienteActivo.representante || prev.representante,
+      representante: expedienteActivo.representante_nombre || prev.representante,
       sector: expedienteActivo.sector || prev.sector,
     }));
   }, [expedienteActivo]);
@@ -877,13 +877,13 @@ export default function Plantillas() {
     setExpedienteActivo(exp);
     setFormulario((prev) => ({
       ...prev,
-      codigoURD: exp.id || "",
-      nna: exp.nino || "",
-      nnaGeneral: exp.nino || "",
+      codigoURD: exp.codigo || "",
+      nna: exp.nna_nombre || "",
+      nnaGeneral: exp.nna_nombre || "",
       solicitante: exp.solicitante || "",
-      requerido: exp.representante || "",
+      requerido: exp.representante_nombre || "",
       cedulaRepresentante: exp.cedulaRepresentante || "",
-      representante: exp.representante || "",
+      representante: exp.representante_nombre || "",
       sector: exp.sector || "",
     }));
 
@@ -1040,9 +1040,9 @@ export default function Plantillas() {
       nna: item.expediente?.nna || prev.nna,
       nnaGeneral: item.expediente?.nna || prev.nnaGeneral,
       solicitante: item.expediente?.solicitante || prev.solicitante,
-      requerido: item.expediente?.representante || prev.requerido,
+      requerido: item.expediente?.representante_nombre || prev.requerido,
       cedulaRepresentante: item.expediente?.cedulaRepresentante || prev.cedulaRepresentante,
-      representante: item.expediente?.representante || prev.representante,
+      representante: item.expediente?.representante_nombre || prev.representante,
       sector: item.expediente?.sector || prev.sector,
     }));
     setVista("editor");
@@ -1278,9 +1278,9 @@ export default function Plantillas() {
             <span className="detalle-label">Expediente fuente</span>
             {expedienteActivo ? (
               <div className="expediente-mini">
-                <strong>{expedienteActivo.id}</strong>
-                <span>{expedienteActivo.nino}</span>
-                <small>{expedienteActivo.representante}</small>
+                <strong>{expedienteActivo.codigo}</strong>
+                <span>{expedienteActivo.nna_nombre}</span>
+                <small>{expedienteActivo.representante_nombre}</small>
               </div>
             ) : (
               <div className="expediente-vacio">No hay expediente activo cargado.</div>

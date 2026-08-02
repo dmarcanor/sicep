@@ -78,54 +78,6 @@ const ICONOS_MODULOS = {
   asignacionCasos: "⚖️"
 };
 
-const expedientesBase = [
-  {
-    id: "SICEP-URD-000128",
-    fecha: "2026-06-06",
-    nino: "María Fernanda Pérez",
-    representante: "Yolanda Rivas",
-    sector: "Centro",
-    estatus: "Registrado",
-    prioridad: "Alta",
-  },
-  {
-    id: "SICEP-URD-000127",
-    fecha: "2026-06-05",
-    nino: "José Luis González",
-    representante: "Carlos González",
-    sector: "Barrio Bolívar",
-    estatus: "En revisión",
-    prioridad: "Media",
-  },
-  {
-    id: "SICEP-URD-000126",
-    fecha: "2026-06-05",
-    nino: "Valeria Jiménez",
-    representante: "Ana Jiménez",
-    sector: "Guariquén",
-    estatus: "Aprobado",
-    prioridad: "Baja",
-  },
-  {
-    id: "SICEP-URD-000125",
-    fecha: "2026-06-04",
-    nino: "Samuel Ortega",
-    representante: "Marta Ortega",
-    sector: "El Muerto",
-    estatus: "Observado",
-    prioridad: "Alta",
-  },
-  {
-    id: "SICEP-URD-000124",
-    fecha: "2026-06-04",
-    nino: "Daniela Rojas",
-    representante: "Luis Rojas",
-    sector: "Centro",
-    estatus: "Registrado",
-    prioridad: "Media",
-  },
-];
-
 function Pill({ children, tone = "default" }) {
   return <span className={`pill ${tone}`}>{children}</span>;
 }
@@ -453,7 +405,7 @@ export default function SistemaInstitucional() {
         return <Representantes />;
 
       case "expedientes":
-        return <Expedientes expedientesBase={expedientesBase} />;
+        return <Expedientes />;
 
       case "solicitudArchivos":
         return <SolicitudArchivos />;

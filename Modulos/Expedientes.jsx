@@ -6,8 +6,15 @@ import autoTable from "jspdf-autotable";
 import "./css/Expedientes.css";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
+import { formatearFecha } from "../src/formato";
+import SelectorConAlta, {
+  CAMPOS_NNA,
+  CAMPOS_REPRESENTANTE,
+  etiquetaNna,
+  etiquetaRepresentante,
+} from "../componentes/SelectorConAlta";
 
-export default function Expedientes({ expedientesBase = [] }) {
+export default function Expedientes() {
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState("Todos");
   const [ficha, setFicha] = useState(null);
@@ -27,50 +34,53 @@ export default function Expedientes({ expedientesBase = [] }) {
   const [mostrarModalNuevo, setMostrarModalNuevo] = useState(false);
   const [registroExitoso, setRegistroExitoso] = useState("");
   const [nuevoExpediente, setNuevoExpediente] = useState({
-    id: "",
     fecha: "",
     hora_registro: "",
-    nino: "",
-    representante: "",
-    cedula_representante: "",
+    nna_id: null,
+    representante_id: null,
     sector: "",
-    estatus: "Registrado",
     prioridad: "Media",
     tipificacion: "",
     causa: "",
   });
   const [erroresNuevo, setErroresNuevo] = useState({});
 
-  const [expedientesManual, setExpedientesManual] = useState([]);
   const [expedientesAPI, setExpedientesAPI] = useState([]);
   const [representantes, setRepresentantes] = useState([]);
+  const [nnas, setNnas] = useState([]);
   const { executeWithPin, PinModalWrapper } = usePinAction();
 
-  useEffect(() => {
-    api.getExpedientes().then(data => {
-      setExpedientesAPI(data);
-    }).catch(console.error);
+  const recargarExpedientes = () =>
+    api.getExpedientes().then(setExpedientesAPI).catch(console.error);
 
-    api.getRepresentantes().then(data => {
-      setRepresentantes(data);
-    }).catch(console.error);
+  useEffect(() => {
+    recargarExpedientes();
+    api.getRepresentantes().then(setRepresentantes).catch(console.error);
+    api.getNna().then(setNnas).catch(console.error);
   }, []);
 
-  const expedientesBaseCombinado = useMemo(() => {
-    return [...expedientesAPI, ...expedientesBase, ...expedientesManual];
-  }, [expedientesAPI, expedientesBase, expedientesManual]);
-
   const expedientes = useMemo(() => {
-    return expedientesBaseCombinado.filter((item) => {
+    return expedientesAPI.filter((item) => {
       const q = busqueda.toLowerCase().trim();
-      const coincideBusqueda =
-        !q || Object.values(item).join(" ").toLowerCase().includes(q);
+      const texto = [
+        item.codigo,
+        item.nna_nombre,
+        item.representante_nombre,
+        item.sector,
+        item.estatus,
+        item.prioridad,
+        item.tipificacion,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
+      const coincideBusqueda = !q || texto.includes(q);
       const coincideFiltro = filtro === "Todos" ? true : item.estatus === filtro;
 
       return coincideBusqueda && coincideFiltro;
     });
-  }, [busqueda, filtro, expedientesBaseCombinado]);
+  }, [busqueda, filtro, expedientesAPI]);
 
   const abrirDetalle = (row) => {
     setFicha(row);
@@ -88,8 +98,22 @@ export default function Expedientes({ expedientesBase = [] }) {
     setDetalleVista("resumen");
   };
 
+  // Las filas traen relaciones anidadas; se aplanan para que Excel/PDF no
+  // reciban objetos.
+  const filasExportables = () =>
+    expedientes.map((e) => ({
+      Expediente: e.codigo,
+      Fecha: formatearFecha(e.fecha),
+      NNA: e.nna_nombre || "",
+      Representante: e.representante_nombre || "",
+      Sector: e.sector,
+      Estatus: e.estatus,
+      Prioridad: e.prioridad,
+      Tipificacion: e.tipificacion || "",
+    }));
+
   const exportarExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(expedientes);
+    const ws = XLSX.utils.json_to_sheet(filasExportables());
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Expedientes");
     XLSX.writeFile(wb, "expedientes-urd.xlsx");
@@ -103,15 +127,15 @@ export default function Expedientes({ expedientesBase = [] }) {
 
     autoTable(doc, {
       startY: 22,
-      head: [["ID", "Fecha", "NNA", "Representante", "Sector", "Estado", "Prioridad"]],
-      body: expedientes.map((e) => [
-        e.id,
-        e.fecha,
-        e.nino,
-        e.representante,
-        e.sector,
-        e.estatus,
-        e.prioridad,
+      head: [["Expediente", "Fecha", "NNA", "Representante", "Sector", "Estado", "Prioridad"]],
+      body: filasExportables().map((e) => [
+        e.Expediente,
+        e.Fecha,
+        e.NNA,
+        e.Representante,
+        e.Sector,
+        e.Estatus,
+        e.Prioridad,
       ]),
       styles: {
         fontSize: 9,
@@ -128,24 +152,24 @@ export default function Expedientes({ expedientesBase = [] }) {
   const columnas = [
     {
       name: "Expediente",
-      selector: (r) => r.id,
+      selector: (r) => r.codigo,
       sortable: true,
       width: "170px",
     },
     {
       name: "Fecha",
-      selector: (r) => r.fecha,
+      selector: (r) => formatearFecha(r.fecha),
       sortable: true,
       width: "120px",
     },
     {
       name: "NNA",
-      selector: (r) => r.nino,
+      selector: (r) => r.nna_nombre || "",
       sortable: true,
     },
     {
       name: "Representante",
-      selector: (r) => r.representante,
+      selector: (r) => r.representante_nombre || "",
     },
     {
       name: "Sector",
@@ -275,9 +299,9 @@ export default function Expedientes({ expedientesBase = [] }) {
     doc.text(`PLANTILLA DE ${tipo.toUpperCase()}`, 14, 14);
 
     doc.setFontSize(10);
-    doc.text(`Expediente: ${ficha.id}`, 14, 24);
-    doc.text(`NNA: ${ficha.nino}`, 14, 30);
-    doc.text(`Representante: ${ficha.representante}`, 14, 36);
+    doc.text(`Expediente: ${ficha.codigo}`, 14, 24);
+    doc.text(`NNA: ${ficha.nna_nombre}`, 14, 30);
+    doc.text(`Representante: ${ficha.representante_nombre}`, 14, 36);
     doc.text(`Sector: ${ficha.sector}`, 14, 42);
     doc.text(`Estado actual: ${ficha.estatus}`, 14, 48);
     doc.text(`Espejo digital: ${estatusActual}`, 14, 54);
@@ -298,19 +322,20 @@ export default function Expedientes({ expedientesBase = [] }) {
       },
     });
 
-    doc.save(`${tipo.toLowerCase()}-${ficha.id}.pdf`);
+    doc.save(`${tipo.toLowerCase()}-${ficha.codigo}.pdf`);
     alert(`Documento "${tipo}" generado correctamente.`);
   };
 
   const abrirModalNuevo = () => {
     setNuevoExpediente({
-      id: "",
       fecha: "",
-      nino: "",
-      representante: "",
+      hora_registro: "",
+      nna_id: null,
+      representante_id: null,
       sector: "",
-      estatus: "Registrado",
       prioridad: "Media",
+      tipificacion: "",
+      causa: "",
     });
     setErroresNuevo({});
     setMostrarModalNuevo(true);
@@ -323,15 +348,31 @@ export default function Expedientes({ expedientesBase = [] }) {
     }));
   };
 
+  const crearNna = async (datos) => {
+    const creado = await executeWithPin(
+      (pin) => api.createNna(datos, pin),
+      "Registrar NNA"
+    );
+    setNnas((prev) => [...prev, creado]);
+    return creado;
+  };
+
+  const crearRepresentante = async (datos) => {
+    const creado = await executeWithPin(
+      (pin) => api.createRepresentante(datos, pin),
+      "Registrar representante"
+    );
+    setRepresentantes((prev) => [...prev, creado]);
+    return creado;
+  };
+
   const validarNuevoExpediente = () => {
     const errores = {};
 
-    if (!nuevoExpediente.id.trim()) errores.id = true;
     if (!nuevoExpediente.fecha) errores.fecha = true;
-    if (!nuevoExpediente.nino.trim()) errores.nino = true;
-    if (!nuevoExpediente.representante.trim()) errores.representante = true;
+    if (!nuevoExpediente.nna_id) errores.nna_id = true;
+    if (!nuevoExpediente.representante_id) errores.representante_id = true;
     if (!nuevoExpediente.sector.trim()) errores.sector = true;
-    if (!nuevoExpediente.estatus.trim()) errores.estatus = true;
     if (!nuevoExpediente.prioridad.trim()) errores.prioridad = true;
 
     setErroresNuevo(errores);
@@ -344,22 +385,23 @@ export default function Expedientes({ expedientesBase = [] }) {
 
     try {
       await executeWithPin(async (pin) => {
-        const expedienteCreado = {
-          ...nuevoExpediente,
-          id: nuevoExpediente.id.trim(),
-          fecha: nuevoExpediente.fecha,
-          nino: nuevoExpediente.nino.trim(),
-          representante: nuevoExpediente.representante.trim(),
-          cedula_representante: nuevoExpediente.cedula_representante?.trim() || "",
-          sector: nuevoExpediente.sector.trim(),
-          estatus: nuevoExpediente.estatus.trim(),
-          prioridad: nuevoExpediente.prioridad.trim(),
-        };
+        const creado = await api.createExpediente(
+          {
+            fecha: nuevoExpediente.fecha,
+            hora_registro: nuevoExpediente.hora_registro || null,
+            nna_id: nuevoExpediente.nna_id,
+            representante_id: nuevoExpediente.representante_id,
+            sector: nuevoExpediente.sector.trim(),
+            prioridad: nuevoExpediente.prioridad,
+            tipificacion: nuevoExpediente.tipificacion || null,
+            causa: nuevoExpediente.causa || null,
+          },
+          pin
+        );
 
-        await api.createExpediente(expedienteCreado, pin);
-        setExpedientesManual((prev) => [expedienteCreado, ...prev]);
+        await recargarExpedientes();
         setMostrarModalNuevo(false);
-        setRegistroExitoso(`Expediente ${expedienteCreado.id} registrado con éxito.`);
+        setRegistroExitoso(`Expediente ${creado.codigo} registrado con éxito.`);
         setTimeout(() => setRegistroExitoso(""), 3000);
       }, "Crear Expediente");
     } catch (error) {
@@ -377,9 +419,9 @@ export default function Expedientes({ expedientesBase = [] }) {
         <div className="detalle-grid">
           <div className="detalle-card">
             <h4>Resumen general</h4>
-            <p><b>Expediente:</b> {ficha.id}</p>
-            <p><b>NNA:</b> {ficha.nino}</p>
-            <p><b>Representante:</b> {ficha.representante}</p>
+            <p><b>Expediente:</b> {ficha.codigo}</p>
+            <p><b>NNA:</b> {ficha.nna_nombre}</p>
+            <p><b>Representante:</b> {ficha.representante_nombre}</p>
             <p><b>Sector:</b> {ficha.sector}</p>
           </div>
 
@@ -387,7 +429,7 @@ export default function Expedientes({ expedientesBase = [] }) {
             <h4>Estado actual</h4>
             <p><b>Estatus:</b> {ficha.estatus}</p>
             <p><b>Prioridad:</b> {ficha.prioridad}</p>
-            <p><b>Fecha:</b> {ficha.fecha}</p>
+            <p><b>Fecha:</b> {formatearFecha(ficha.fecha)}</p>
             <p><b>Vista física:</b> {estatusFisico[ficha.id] || "Pendiente"}</p>
           </div>
         </div>
@@ -513,8 +555,8 @@ export default function Expedientes({ expedientesBase = [] }) {
         <div className="plantilla-box">
           <span className="detalle-label">Contenido automático</span>
           <ul>
-            <li>{ficha.nino}</li>
-            <li>{ficha.representante}</li>
+            <li>{ficha.nna_nombre}</li>
+            <li>{ficha.representante_nombre}</li>
             <li>{ficha.sector}</li>
             <li>{ficha.estatus}</li>
           </ul>
@@ -622,17 +664,6 @@ export default function Expedientes({ expedientesBase = [] }) {
 
             <div className="form-nuevo-expediente">
               <div className="campo">
-                <label>Código de expediente *</label>
-                <input
-                  name="id"
-                  value={nuevoExpediente.id}
-                  onChange={actualizarNuevo}
-                  className={erroresNuevo.id ? "error" : ""}
-                  placeholder="URD-2026-000130"
-                />
-              </div>
-
-              <div className="campo">
                 <label>Fecha *</label>
                 <input
                   type="date"
@@ -641,22 +672,6 @@ export default function Expedientes({ expedientesBase = [] }) {
                   onChange={actualizarNuevo}
                   className={erroresNuevo.fecha ? "error" : ""}
                 />
-              </div>
-
-              <div className="campo">
-                <label>Estatus *</label>
-                <select
-                  name="estatus"
-                  value={nuevoExpediente.estatus}
-                  onChange={actualizarNuevo}
-                  className={erroresNuevo.estatus ? "error" : ""}
-                >
-                  <option value="">Seleccione</option>
-                  <option>Registrado</option>
-                  <option>En revisión</option>
-                  <option>Aprobado</option>
-                  <option>Observado</option>
-                </select>
               </div>
 
               <div className="campo">
@@ -715,37 +730,35 @@ export default function Expedientes({ expedientesBase = [] }) {
                 />
               </div>
 
-              <div className="campo ">
-                <label>NNA *</label>
-                <input
-                  name="nino"
-                  value={nuevoExpediente.nino}
-                  onChange={actualizarNuevo}
-                  className={erroresNuevo.nino ? "error" : ""}
-                  placeholder="Nombre completo del NNA"
-                />
-              </div>
+              <SelectorConAlta
+                label="NNA *"
+                value={nuevoExpediente.nna_id}
+                onChange={(id) =>
+                  setNuevoExpediente((prev) => ({ ...prev, nna_id: id }))
+                }
+                opciones={nnas}
+                getEtiqueta={etiquetaNna}
+                camposAlta={CAMPOS_NNA}
+                onCrear={crearNna}
+                error={erroresNuevo.nna_id}
+                placeholder="Seleccione un NNA"
+                textoAlta="+ Nuevo NNA"
+              />
 
-              <div className="campo ">
-                <label>Representante *</label>
-                <input
-                  name="representante"
-                  value={nuevoExpediente.representante}
-                  onChange={actualizarNuevo}
-                  className={erroresNuevo.representante ? "error" : ""}
-                  placeholder="Nombre completo del representante"
-                />
-              </div>
-
-              <div className="campo ">
-                <label>Cédula del Representante</label>
-                <input
-                  name="cedula_representante"
-                  value={nuevoExpediente.cedula_representante || ""}
-                  onChange={actualizarNuevo}
-                  placeholder="V-12345678"
-                />
-              </div>
+              <SelectorConAlta
+                label="Representante *"
+                value={nuevoExpediente.representante_id}
+                onChange={(id) =>
+                  setNuevoExpediente((prev) => ({ ...prev, representante_id: id }))
+                }
+                opciones={representantes}
+                getEtiqueta={etiquetaRepresentante}
+                camposAlta={CAMPOS_REPRESENTANTE}
+                onCrear={crearRepresentante}
+                error={erroresNuevo.representante_id}
+                placeholder="Seleccione un representante"
+                textoAlta="+ Nuevo representante"
+              />
 
               <div className="campo ancho">
                 <label>Sector *</label>
@@ -784,8 +797,8 @@ export default function Expedientes({ expedientesBase = [] }) {
             <div className="expedientes-modal-header">
               <div>
                 <span className="expedientes-badge">Detalle del expediente</span>
-                <h3>{ficha.id}</h3>
-                <p>{ficha.nino} · {ficha.representante}</p>
+                <h3>{ficha.codigo}</h3>
+                <p>{ficha.nna_nombre} · {ficha.representante_nombre}</p>
               </div>
 
               <button className="btn-close" onClick={cerrarDetalle}>✕</button>

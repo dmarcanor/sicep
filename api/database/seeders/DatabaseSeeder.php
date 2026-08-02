@@ -10,11 +10,10 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserSeeder::class,
-            ExpedienteSeeder::class,
-            MigrateNnaDataSeeder::class,
-            ConfiguracionSeeder::class,
+            NnaSeeder::class,
             RepresentanteSeeder::class,
-            MigrateRepresentantesDataSeeder::class,
+            ExpedienteSeeder::class,
+            ConfiguracionSeeder::class,
         ]);
     }
 }

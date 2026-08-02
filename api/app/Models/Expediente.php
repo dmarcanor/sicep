@@ -14,8 +14,6 @@ class Expediente extends Model
         'codigo',
         'fecha',
         'hora_registro',
-        'nino',
-        'representante',
         'sector',
         'estatus',
         'prioridad',
@@ -29,6 +27,25 @@ class Expediente extends Model
     protected $casts = [
         'fecha' => 'date',
     ];
+
+    protected $appends = [
+        'nna_nombre',
+        'representante_nombre',
+    ];
+
+    public function getNnaNombreAttribute(): ?string
+    {
+        return $this->nna
+            ? trim("{$this->nna->nombres} {$this->nna->apellidos}")
+            : null;
+    }
+
+    public function getRepresentanteNombreAttribute(): ?string
+    {
+        return $this->representante
+            ? trim("{$this->representante->nombres} {$this->representante->apellidos}")
+            : null;
+    }
 
     public function nna(): BelongsTo
     {

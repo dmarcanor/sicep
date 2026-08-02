@@ -27,7 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/panel', [PanelController::class, 'index']);
 
-    Route::apiResource('/nna', NnaController::class);
+    Route::apiResource('/nna', NnaController::class)->only(['index', 'show']);
     Route::get('/nna/verificar/{documento}', [NnaController::class, 'verificarDocumento']);
     
     Route::apiResource('/representantes', RepresentanteController::class);
@@ -48,6 +48,9 @@ Route::middleware('auth:sanctum')->group(function () {
         
         Route::post('/representantes', [RepresentanteController::class, 'store']);
         Route::put('/representantes/{representante}', [RepresentanteController::class, 'update']);
+
+        Route::post('/nna', [NnaController::class, 'store']);
+        Route::put('/nna/{nna}', [NnaController::class, 'update']);
     });
     
     Route::middleware(['verify.pin', 'role:administrador,supervisor'])->group(function () {
@@ -58,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/plantillas/{plantilla}', [PlantillaController::class, 'destroy']);
         
         Route::delete('/representantes/{representante}', [RepresentanteController::class, 'destroy']);
+        Route::delete('/nna/{nna}', [NnaController::class, 'destroy']);
     });
     
     Route::middleware(['verify.pin', 'role:administrador'])->group(function () {

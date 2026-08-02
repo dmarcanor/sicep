@@ -19,27 +19,6 @@ const usuariosValidos = [
 ];
 
 
-const expedientesBase = [
-  {
-    id: "SICEP-URD-000128",
-    fecha: "2026-06-06",
-    nino: "María Fernanda Pérez",
-    representante: "Yolanda Rivas",
-    sector: "Centro",
-    estatus: "Registrado",
-    prioridad: "Alta",
-  },
-  {
-    id: "SICEP-URD-000127",
-    fecha: "2026-06-05",
-    nino: "José Luis González",
-    representante: "Carlos González",
-    sector: "Barrio Bolívar",
-    estatus: "En revisión",
-    prioridad: "Media",
-  },
-];
-
 
 const MODULOS = {
   principal: PanelPrincipal,
@@ -141,7 +120,7 @@ export default function SistemaInstitucional() {
     const Componente = MODULOS[moduloActivo] || PanelPrincipal;
 
     if (moduloActivo === "expedientes") {
-      return <Componente expedientesBase={expedientesBase} />;
+      return <Componente />;
     }
 
     if (moduloActivo === "urd") {

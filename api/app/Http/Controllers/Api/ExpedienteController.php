@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Expediente;
-use App\Models\Representante;
 use App\Models\Historial;
 use Illuminate\Http\Request;
 
@@ -33,13 +32,18 @@ class ExpedienteController extends Controller
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('nino', 'like', "%{$search}%")
-                  ->orWhere('representante', 'like', "%{$search}%")
-                  ->orWhere('codigo', 'like', "%{$search}%")
+                $q->where('codigo', 'like', "%{$search}%")
+                  ->orWhereHas('nna', function ($n) use ($search) {
+                      $n->where('nombres', 'like', "%{$search}%")
+                        ->orWhere('apellidos', 'like', "%{$search}%")
+                        ->orWhere('documento_identidad', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(nombres, ' ', apellidos) like ?", ["%{$search}%"]);
+                  })
                   ->orWhereHas('representante', function ($r) use ($search) {
                       $r->where('nombres', 'like', "%{$search}%")
                         ->orWhere('apellidos', 'like', "%{$search}%")
-                        ->orWhere('cedula', 'like', "%{$search}%");
+                        ->orWhere('cedula', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(nombres, ' ', apellidos) like ?", ["%{$search}%"]);
                   });
             });
         }
@@ -50,10 +54,8 @@ class ExpedienteController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nna_id' => 'nullable|exists:nna,id',
-            'nino' => 'required_without:nna_id|string|max:255',
-            'representante' => 'required|string|max:255',
-            'cedula_representante' => 'nullable|string|max:20',
+            'nna_id' => 'required|exists:nna,id',
+            'representante_id' => 'required|exists:representantes,id',
             'sector' => 'required|string|max:255',
             'fecha' => 'required|date',
             'hora_registro' => 'nullable|date_format:H:i',
@@ -63,28 +65,14 @@ class ExpedienteController extends Controller
             'observaciones' => 'nullable|string',
         ]);
 
-        // Buscar o crear representante
-        $representante = null;
-        if ($request->cedula_representante) {
-            $representante = Representante::firstOrCreate(
-                ['cedula' => $request->cedula_representante],
-                [
-                    'nombres' => explode(' ', $request->representante)[0] ?? $request->representante,
-                    'apellidos' => explode(' ', $request->representante, 2)[1] ?? '',
-                ]
-            );
-        }
-
         $codigo = 'SICEP-URD-' . str_pad(Expediente::max('id') + 1 ?? 1, 6, '0', STR_PAD_LEFT);
 
         $expediente = Expediente::create([
             'nna_id' => $request->nna_id,
-            'representante_id' => $representante ? $representante->id : null,
+            'representante_id' => $request->representante_id,
             'codigo' => $codigo,
             'fecha' => $request->fecha,
             'hora_registro' => $request->hora_registro ?? now()->format('H:i:s'),
-            'nino' => $request->nino,
-            'representante' => $request->representante,
             'sector' => $request->sector,
             'prioridad' => $request->prioridad,
             'tipificacion' => $request->tipificacion,
@@ -115,9 +103,8 @@ class ExpedienteController extends Controller
     public function update(Request $request, Expediente $expediente)
     {
         $request->validate([
-            'nino' => 'sometimes|string|max:255',
-            'representante' => 'sometimes|string|max:255',
-            'cedula_representante' => 'nullable|string|max:20',
+            'nna_id' => 'sometimes|exists:nna,id',
+            'representante_id' => 'sometimes|exists:representantes,id',
             'sector' => 'sometimes|string|max:255',
             'estatus' => 'sometimes|in:Registrado,En revisión,Aprobado,Observado,Cerrado',
             'prioridad' => 'sometimes|in:Alta,Media,Baja',
@@ -127,19 +114,7 @@ class ExpedienteController extends Controller
             'asignado_a' => 'nullable|exists:users,id',
         ]);
 
-        // Buscar o crear representante si se proporciona cédula
-        if ($request->cedula_representante) {
-            $representante = Representante::firstOrCreate(
-                ['cedula' => $request->cedula_representante],
-                [
-                    'nombres' => explode(' ', $request->representante ?? '')[0] ?? '',
-                    'apellidos' => explode(' ', $request->representante ?? '', 2)[1] ?? '',
-                ]
-            );
-            $expediente->representante_id = $representante->id;
-        }
-
-        $expediente->update($request->except('cedula_representante'));
+        $expediente->update($request->all());
 
         Historial::create([
             'usuario_id' => $request->user()->id,
