@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SolicitudArchivo extends Model
 {
+    // La convención de Eloquent daría solicitud_archivos; la tabla es solicitudes_archivo.
+    protected $table = 'solicitudes_archivo';
+
     protected $fillable = [
         'codigo',
         'expediente_id',

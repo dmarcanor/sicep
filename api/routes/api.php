@@ -35,7 +35,28 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::get('/expedientes', [ExpedienteController::class, 'index']);
     Route::get('/expedientes/{expediente}', [ExpedienteController::class, 'show']);
-    
+
+    Route::get('/solicitudes', [SolicitudArchivoController::class, 'index']);
+    Route::get('/solicitudes/{solicitud}', [SolicitudArchivoController::class, 'show']);
+
+    // Las lecturas no llevan verify.pin: el PIN protege acciones, no consultas.
+    Route::middleware('role:administrador,supervisor')->group(function () {
+        Route::get('/casos', [CasoController::class, 'index']);
+        Route::get('/casos/{caso}', [CasoController::class, 'show']);
+
+        Route::get('/plantillas', [PlantillaController::class, 'index']);
+        Route::get('/plantillas/{plantilla}', [PlantillaController::class, 'show']);
+    });
+
+    Route::middleware('role:administrador')->group(function () {
+        Route::get('/usuarios', [UsuarioController::class, 'index']);
+        Route::get('/usuarios/{user}', [UsuarioController::class, 'show']);
+
+        Route::get('/configuracion', [ConfiguracionController::class, 'index']);
+        Route::get('/configuracion/categoria/{categoria}', [ConfiguracionController::class, 'obtenerPorCategoria']);
+        Route::get('/configuracion/{clave}', [ConfiguracionController::class, 'show']);
+    });
+
     Route::middleware('verify.pin')->group(function () {
         Route::post('/expedientes', [ExpedienteController::class, 'store']);
         Route::put('/expedientes/{expediente}', [ExpedienteController::class, 'update']);
@@ -69,9 +90,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/usuarios/{user}', [UsuarioController::class, 'update']);
         Route::delete('/usuarios/{user}', [UsuarioController::class, 'destroy']);
         
-        Route::get('/configuracion', [ConfiguracionController::class, 'index']);
-        Route::get('/configuracion/categoria/{categoria}', [ConfiguracionController::class, 'obtenerPorCategoria']);
-        Route::get('/configuracion/{clave}', [ConfiguracionController::class, 'show']);
         Route::put('/configuracion/{clave}', [ConfiguracionController::class, 'update']);
         Route::post('/configuracion/multiple', [ConfiguracionController::class, 'updateMultiple']);
     });
