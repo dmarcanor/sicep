@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
-import PinModal from "../componentes/PinModal";
-import PinSetupModal from "../componentes/PinSetupModal";
-import { getAuthToken, getPinConfigurado, setPinConfigurado } from "../src/api";
+import PinModal from "../../componentes/PinModal";
+import PinSetupModal from "../../componentes/PinSetupModal";
+import { getPinConfigurado, setPinConfigurado } from "../api";
 
 export function usePinAction() {
   const [showPinModal, setShowPinModal] = useState(false);
