@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import "./css/Representantes.css";
@@ -84,6 +87,51 @@ export default function Representantes() {
 
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
+  };
+
+  // Se exporta lo que hay en pantalla, con el filtro de búsqueda ya aplicado.
+  const filasExportables = () =>
+    representantesFiltrados.map((r) => ({
+      Cedula: r.cedula,
+      Nombres: r.nombres,
+      Apellidos: r.apellidos,
+      Telefono: r.telefono || "",
+      Email: r.email || "",
+      Direccion: r.direccion || "",
+      Profesion: r.profesion || "",
+      "Lugar de trabajo": r.lugar_trabajo || "",
+      Expedientes: r.expedientes_count || 0,
+    }));
+
+  const exportarExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(filasExportables());
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Representantes");
+    XLSX.writeFile(wb, "representantes.xlsx");
+  };
+
+  const exportarPDF = () => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(14);
+    doc.text("REGISTRO DE REPRESENTANTES LEGALES", 14, 14);
+
+    autoTable(doc, {
+      startY: 22,
+      head: [["Cédula", "Nombres", "Apellidos", "Teléfono", "Email", "Expedientes"]],
+      body: filasExportables().map((r) => [
+        r.Cedula,
+        r.Nombres,
+        r.Apellidos,
+        r.Telefono,
+        r.Email,
+        r.Expedientes,
+      ]),
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [24, 48, 78] },
+    });
+
+    doc.save("representantes.pdf");
   };
 
   const abrirNuevo = () => {
@@ -184,6 +232,11 @@ export default function Representantes() {
           onChange={(e) => setBusqueda(e.target.value)}
           className="inputBusqueda"
         />
+
+        <div className="toolbar-right">
+          <button className="btn-export" onClick={exportarExcel}>📊 Excel</button>
+          <button className="btn-export" onClick={exportarPDF}>🧾 PDF</button>
+        </div>
       </div>
 
       <div className="tabla-container">

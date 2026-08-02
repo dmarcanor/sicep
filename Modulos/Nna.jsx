@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha, fechaParaInput } from "../src/formato";
@@ -160,6 +163,49 @@ export default function Nna() {
     }
   };
 
+  // Se exporta lo que hay en pantalla, con el filtro de búsqueda ya aplicado.
+  const filasExportables = () =>
+    nnaFiltrado.map((n) => ({
+      Documento: n.documento_identidad,
+      Nombres: n.nombres,
+      Apellidos: n.apellidos,
+      "Fecha de nacimiento": formatearFecha(n.fecha_nacimiento),
+      Sexo: n.sexo,
+      "Lugar de nacimiento": n.lugar_nacimiento || "",
+      Expedientes: n.expedientes_count ?? 0,
+    }));
+
+  const exportarExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(filasExportables());
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "NNA");
+    XLSX.writeFile(wb, "nna.xlsx");
+  };
+
+  const exportarPDF = () => {
+    const doc = new jsPDF();
+
+    doc.setFontSize(14);
+    doc.text("REGISTRO DE NIÑOS, NIÑAS Y ADOLESCENTES", 14, 14);
+
+    autoTable(doc, {
+      startY: 22,
+      head: [["Documento", "Nombres", "Apellidos", "F. nacimiento", "Sexo", "Expedientes"]],
+      body: filasExportables().map((n) => [
+        n.Documento,
+        n.Nombres,
+        n.Apellidos,
+        n["Fecha de nacimiento"],
+        n.Sexo,
+        n.Expedientes,
+      ]),
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [24, 48, 78] },
+    });
+
+    doc.save("nna.pdf");
+  };
+
   const columnas = [
     { name: "Documento", selector: (r) => r.documento_identidad, sortable: true },
     { name: "Nombres", selector: (r) => r.nombres, sortable: true },
@@ -173,7 +219,7 @@ export default function Nna() {
     { name: "Sexo", selector: (r) => r.sexo },
     {
       name: "Expedientes",
-      selector: (r) => r.expedientes?.length || 0,
+      selector: (r) => r.expedientes_count ?? 0,
     },
     {
       name: "Acciones",
@@ -210,6 +256,11 @@ export default function Nna() {
           onChange={(e) => setBusqueda(e.target.value)}
           className="inputBusqueda"
         />
+
+        <div className="toolbar-right">
+          <button className="btn-export" onClick={exportarExcel}>📊 Excel</button>
+          <button className="btn-export" onClick={exportarPDF}>🧾 PDF</button>
+        </div>
       </div>
 
       <DataTable

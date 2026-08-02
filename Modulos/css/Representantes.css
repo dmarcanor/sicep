@@ -20,8 +20,24 @@
   font-size: 14px;
 }
 
+/* La usan NNA y Representantes: buscador a la izquierda, exportaciones a la derecha. */
 .toolbar {
   margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toolbar .inputBusqueda {
+  flex: 1;
+  min-width: 240px;
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .inputBusqueda {

@@ -22,7 +22,11 @@ class NnaController extends Controller
             });
         }
 
-        return response()->json($query->orderBy('created_at', 'desc')->get());
+        // La columna "Expedientes" del listado se alimenta de este conteo; sin él
+        // la relación no viaja y siempre se muestra 0.
+        return response()->json(
+            $query->withCount('expedientes')->orderBy('created_at', 'desc')->get()
+        );
     }
 
     public function store(Request $request)
