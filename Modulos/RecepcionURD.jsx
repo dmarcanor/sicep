@@ -148,22 +148,38 @@ export default function RecepcionURD() {
       <PinModalWrapper />
 
       {mostrarModal && reincidencia && (
-        <div className="modal-overlay">
-          <div className="modal-content alerta-reincidencia">
-            <h3>⚠️ Alerta de Reincidencia</h3>
+        <div
+          className="expedientes-modal-overlay"
+          onClick={() => setMostrarModal(false)}
+        >
+          <div
+            className="expedientes-modal alerta-reincidencia"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="expedientes-modal-header">
+              <div>
+                <span className="expedientes-badge">Alerta de reincidencia</span>
+                <h3>⚠️ Este NNA ya tiene expedientes</h3>
+                <p>
+                  Posee {reincidencia.cantidad_expedientes} expediente(s)
+                  previo(s) registrado(s). Se sugiere revisar el historial del
+                  caso y evaluar la severidad de la medida.
+                </p>
+              </div>
 
-            <p>
-              Este NNA posee {reincidencia.cantidad_expedientes} expediente(s)
-              previo(s) registrado(s). Evaluar la severidad de la medida.
-            </p>
+              <button className="btn-close" onClick={() => setMostrarModal(false)}>
+                ✕
+              </button>
+            </div>
 
-            <label className="checkbox-alerta">
-              <p>Se sugiere Revisión del historial del caso</p>
-            </label>
-
-            <button className="btn-mini" onClick={() => setMostrarModal(false)}>
-              Cerrar
-            </button>
+            <div className="detalle-footer">
+              <button
+                className="btn-primary"
+                onClick={() => setMostrarModal(false)}
+              >
+                Entendido
+              </button>
+            </div>
           </div>
         </div>
       )}
