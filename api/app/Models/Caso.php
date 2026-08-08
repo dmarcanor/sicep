@@ -12,6 +12,7 @@ class Caso extends Model
         'expediente_id',
         'asignado_a',
         'asignado_por',
+        'tipo_asignacion',
         'motivo',
         'estatus',
         'observaciones',

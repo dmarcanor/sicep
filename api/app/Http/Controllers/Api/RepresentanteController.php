@@ -29,7 +29,7 @@ class RepresentanteController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'cedula' => 'required|string|unique:representantes',
             'nombres' => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
@@ -40,7 +40,7 @@ class RepresentanteController extends Controller
             'lugar_trabajo' => 'nullable|string|max:255',
         ]);
 
-        $representante = Representante::create($request->all());
+        $representante = Representante::create($datos);
 
         Historial::create([
             'usuario_id' => $request->user()->id,
@@ -62,18 +62,18 @@ class RepresentanteController extends Controller
 
     public function update(Request $request, Representante $representante)
     {
-        $request->validate([
+        $datos = $request->validate([
             'cedula' => 'sometimes|string|unique:representantes,cedula,' . $representante->id,
             'nombres' => 'sometimes|string|max:255',
             'apellidos' => 'sometimes|string|max:255',
-            'telefono' => 'nullable|string|max:20',
-            'direccion' => 'nullable|string',
-            'email' => 'nullable|email|max:255',
-            'profesion' => 'nullable|string|max:255',
-            'lugar_trabajo' => 'nullable|string|max:255',
+            'telefono' => 'sometimes|nullable|string|max:20',
+            'direccion' => 'sometimes|nullable|string',
+            'email' => 'sometimes|nullable|email|max:255',
+            'profesion' => 'sometimes|nullable|string|max:255',
+            'lugar_trabajo' => 'sometimes|nullable|string|max:255',
         ]);
 
-        $representante->update($request->all());
+        $representante->update($datos);
 
         Historial::create([
             'usuario_id' => $request->user()->id,
@@ -86,24 +86,6 @@ class RepresentanteController extends Controller
         ]);
 
         return response()->json($representante);
-    }
-
-    public function destroy(Request $request, Representante $representante)
-    {
-        $nombre = "{$representante->nombres} {$representante->apellidos}";
-        $representante->delete();
-
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Eliminación de representante',
-            'modulo' => 'representantes',
-            'registro_tipo' => 'Representante',
-            'registro_id' => $nombre,
-            'detalles' => "Representante {$nombre} eliminado",
-            'ip_address' => $request->ip(),
-        ]);
-
-        return response()->json(['message' => 'Representante eliminado']);
     }
 
     public function buscarPorCedula($cedula)

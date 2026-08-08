@@ -17,6 +17,9 @@ import SelectorConAlta, {
   etiquetaRepresentante,
 } from "../componentes/SelectorConAlta";
 
+// Debe coincidir con el enum de la columna expedientes.estatus.
+const ESTATUS_EXPEDIENTE = ["Registrado", "En revisión", "Aprobado", "Observado", "Cerrado"];
+
 export default function Expedientes() {
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState("Todos");
@@ -53,8 +56,36 @@ export default function Expedientes() {
   const [nnas, setNnas] = useState([]);
   const { executeWithPin, PinModalWrapper } = usePinAction();
 
+  const [cambiandoEstatus, setCambiandoEstatus] = useState(false);
+  const [errorEstatus, setErrorEstatus] = useState("");
+
   const recargarExpedientes = () =>
     api.getExpedientes().then(setExpedientesAPI).catch(console.error);
+
+  // El estatus es el ciclo de vida legal del expediente
+  // (Registrado → En revisión → Aprobado / Observado → Cerrado).
+  const cambiarEstatus = async (estatus) => {
+    if (!ficha || estatus === ficha.estatus) return;
+
+    setErrorEstatus("");
+    setCambiandoEstatus(true);
+
+    try {
+      const actualizado = await executeWithPin(
+        (pin) => api.updateExpediente(ficha.id, { estatus }, pin),
+        "Cambiar estatus del expediente",
+      );
+
+      setFicha(actualizado);
+      await recargarExpedientes();
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        setErrorEstatus(error.message || "No se pudo cambiar el estatus.");
+      }
+    } finally {
+      setCambiandoEstatus(false);
+    }
+  };
 
   useEffect(() => {
     recargarExpedientes();
@@ -436,10 +467,24 @@ export default function Expedientes() {
 
           <div className="detalle-card">
             <h4>Estado actual</h4>
-            <p><b>Estatus:</b> {ficha.estatus}</p>
             <p><b>Prioridad:</b> {ficha.prioridad}</p>
             <p><b>Fecha:</b> {formatearFecha(ficha.fecha)}</p>
             <p><b>Vista física:</b> {estatusFisico[ficha.id] || "Pendiente"}</p>
+
+            <label className="detalle-estatus">
+              <span><b>Estatus:</b></span>
+              <select
+                value={ficha.estatus}
+                disabled={cambiandoEstatus}
+                onChange={(e) => cambiarEstatus(e.target.value)}
+              >
+                {ESTATUS_EXPEDIENTE.map((estatus) => (
+                  <option key={estatus} value={estatus}>{estatus}</option>
+                ))}
+              </select>
+            </label>
+
+            {errorEstatus && <p className="detalle-error">{errorEstatus}</p>}
           </div>
         </div>
       );
@@ -615,10 +660,9 @@ export default function Expedientes() {
             onChange={(e) => setFiltro(e.target.value)}
           >
             <option>Todos</option>
-            <option>Registrado</option>
-            <option>En revisión</option>
-            <option>Aprobado</option>
-            <option>Observado</option>
+            {ESTATUS_EXPEDIENTE.map((estatus) => (
+              <option key={estatus}>{estatus}</option>
+            ))}
           </select>
         </div>
 

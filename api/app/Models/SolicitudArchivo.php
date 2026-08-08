@@ -18,10 +18,26 @@ class SolicitudArchivo extends Model
         'estatus',
         'observaciones',
         'fecha_entrega',
+        'solicitante_nombre',
+        'cargo',
+        'caso',
+        'motivo',
+        'fecha_solicitud',
+        'fecha_prestamo',
+        'fecha_devolucion',
+        'ubicacion_archivo',
+        'ubicacion_estante',
+        'ubicacion_nivel',
+        'ubicacion_caja',
     ];
 
     protected $casts = [
         'fecha_entrega' => 'datetime',
+        // Fechas del expediente físico: sin hora, para que <input type="date">
+        // pueda consumirlas tal cual.
+        'fecha_solicitud' => 'date:Y-m-d',
+        'fecha_prestamo' => 'date:Y-m-d',
+        'fecha_devolucion' => 'date:Y-m-d',
     ];
 
     public function expediente(): BelongsTo

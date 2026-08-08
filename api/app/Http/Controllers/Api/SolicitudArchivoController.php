@@ -5,13 +5,19 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SolicitudArchivo;
 use App\Models\Historial;
+use App\Support\Correlativo;
 use Illuminate\Http\Request;
 
 class SolicitudArchivoController extends Controller
 {
+    // Debe coincidir con el enum de solicitudes_archivo.estatus: al ciclo de la
+    // petición se suman los estados del expediente físico.
+    private const ESTATUS = 'Pendiente,En proceso,Completado,Rechazado,Disponible,'
+        . 'Reservado,Prestado,Devuelto,En consulta,Extraviado,En digitalización';
+
     public function index(Request $request)
     {
-        $query = SolicitudArchivo::with(['expediente', 'solicitante']);
+        $query = SolicitudArchivo::with(['expediente.nna', 'expediente.representante', 'solicitante']);
 
         if ($request->has('estatus')) {
             $query->where('estatus', $request->estatus);
@@ -26,20 +32,30 @@ class SolicitudArchivoController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'expediente_id' => 'required|exists:expedientes,id',
-            'documentos_solicitados' => 'required|string',
+            'documentos_solicitados' => 'nullable|string',
+            'observaciones' => 'nullable|string',
+            'estatus' => 'nullable|in:' . self::ESTATUS,
+            'solicitante_nombre' => 'required|string|max:255',
+            'cargo' => 'nullable|string|max:255',
+            'caso' => 'nullable|string|max:255',
+            'motivo' => 'nullable|string',
+            'fecha_solicitud' => 'required|date|before_or_equal:today',
+            'fecha_prestamo' => 'nullable|date',
+            'fecha_devolucion' => 'nullable|date',
+            'ubicacion_archivo' => 'nullable|string|max:255',
+            'ubicacion_estante' => 'nullable|string|max:255',
+            'ubicacion_nivel' => 'nullable|string|max:255',
+            'ubicacion_caja' => 'nullable|string|max:255',
+        ], [
+            'fecha_solicitud.before_or_equal' => 'La fecha de solicitud no puede ser futura.',
         ]);
 
-        $codigo = 'SOL-' . str_pad(SolicitudArchivo::max('id') + 1 ?? 1, 6, '0', STR_PAD_LEFT);
+        $datos['solicitante_id'] = $request->user()->id;
+        $datos['estatus'] = $datos['estatus'] ?? 'Pendiente';
 
-        $solicitud = SolicitudArchivo::create([
-            'codigo' => $codigo,
-            'expediente_id' => $request->expediente_id,
-            'solicitante_id' => $request->user()->id,
-            'documentos_solicitados' => $request->documentos_solicitados,
-            'estatus' => 'Pendiente',
-        ]);
+        $solicitud = Correlativo::crear(SolicitudArchivo::class, 'SOL-', $datos);
 
         Historial::create([
             'usuario_id' => $request->user()->id,
@@ -47,38 +63,47 @@ class SolicitudArchivoController extends Controller
             'modulo' => 'solicitudArchivos',
             'registro_tipo' => 'SolicitudArchivo',
             'registro_id' => $solicitud->id,
-            'detalles' => "Solicitud {$codigo} creada",
+            'detalles' => "Solicitud {$solicitud->codigo} creada",
             'ip_address' => $request->ip(),
         ]);
 
-        return response()->json($solicitud->load(['expediente', 'solicitante']), 201);
+        return response()->json($solicitud->load(['expediente.nna', 'expediente.representante', 'solicitante']), 201);
     }
 
-    public function show(SolicitudArchivo $solicitudArchivo)
+    // El parámetro debe llamarse igual que en la ruta ({solicitud}) o Eloquent
+    // no enlaza el modelo y se inyecta uno vacío: show devolvía nada y update
+    // respondía 200 sin guardar.
+    public function show(SolicitudArchivo $solicitud)
     {
-        return response()->json($solicitudArchivo->load(['expediente', 'solicitante']));
+        return response()->json($solicitud->load(['expediente.nna', 'expediente.representante', 'solicitante']));
     }
 
-    public function update(Request $request, SolicitudArchivo $solicitudArchivo)
+    public function update(Request $request, SolicitudArchivo $solicitud)
     {
-        $request->validate([
-            'estatus' => 'sometimes|in:Pendiente,En proceso,Completado,Rechazado',
-            'observaciones' => 'nullable|string',
-            'fecha_entrega' => 'nullable|date',
+        $datos = $request->validate([
+            'estatus' => 'sometimes|in:' . self::ESTATUS,
+            'observaciones' => 'sometimes|nullable|string',
+            'fecha_entrega' => 'sometimes|nullable|date',
+            'fecha_prestamo' => 'sometimes|nullable|date',
+            'fecha_devolucion' => 'sometimes|nullable|date',
+            'ubicacion_archivo' => 'sometimes|nullable|string|max:255',
+            'ubicacion_estante' => 'sometimes|nullable|string|max:255',
+            'ubicacion_nivel' => 'sometimes|nullable|string|max:255',
+            'ubicacion_caja' => 'sometimes|nullable|string|max:255',
         ]);
 
-        $solicitudArchivo->update($request->all());
+        $solicitud->update($datos);
 
         Historial::create([
             'usuario_id' => $request->user()->id,
             'accion' => 'Actualización de solicitud',
             'modulo' => 'solicitudArchivos',
             'registro_tipo' => 'SolicitudArchivo',
-            'registro_id' => $solicitudArchivo->id,
-            'detalles' => "Solicitud {$solicitudArchivo->codigo} actualizada",
+            'registro_id' => $solicitud->id,
+            'detalles' => "Solicitud {$solicitud->codigo} actualizada",
             'ip_address' => $request->ip(),
         ]);
 
-        return response()->json($solicitudArchivo->load(['expediente', 'solicitante']));
+        return response()->json($solicitud->load(['expediente.nna', 'expediente.representante', 'solicitante']));
     }
 }

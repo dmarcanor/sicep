@@ -203,23 +203,6 @@ export default function Usuarios() {
     }
   };
 
-  const eliminarUsuario = async (id) => {
-    const confirmar = confirm("¿Desea eliminar este usuario?");
-    if (!confirmar) return;
-
-    try {
-      await executeWithPin(async (pin) => {
-        await api.deleteUsuario(id, pin);
-      }, "Eliminar Usuario");
-      await cargarUsuarios();
-      setMensaje("Usuario eliminado correctamente");
-      setTimeout(() => setMensaje(""), 3000);
-    } catch (error) {
-      if (error.message !== "Acción cancelada") {
-        setMensaje(error.message || "Error al eliminar usuario");
-      }
-    }
-  };
 
   return (
     <div className="usuarios">
@@ -323,12 +306,6 @@ export default function Usuarios() {
                         {u.active ? "Deshabilitar" : "Habilitar"}
                       </button>
 
-{/*                       <button
-                        className="btn-link"
-                        onClick={() => eliminarUsuario(u.id)}
-                      >
-                        Eliminar
-                      </button> */}
                     </div>
                   </td>
                 </tr>

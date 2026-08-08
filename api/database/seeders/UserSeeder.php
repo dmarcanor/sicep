@@ -10,46 +10,30 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'name' => 'Administrador',
-            'username' => 'admin',
-            'email' => 'admin@sicep.com',
-            'password' => Hash::make('12345678'),
-            'role' => 'administrador',
-            'display_name' => 'Administrador',
-            'phone' => '0000000000',
-            'position' => 'Administrador',
-            'active' => true,
-            'pin' => Hash::make('1234'),
-            'pin_configurado' => true,
-        ]);
+        // firstOrCreate por username: el contenedor ejecuta los seeders en cada
+        // arranque, y volver a crearlos reventaría por el correo único.
+        $usuarios = [
+            ['username' => 'admin', 'role' => 'administrador', 'nombre' => 'Administrador', 'phone' => '0000000000'],
+            ['username' => 'supervisor', 'role' => 'supervisor', 'nombre' => 'Supervisor', 'phone' => '0000000001'],
+            ['username' => 'consejero', 'role' => 'consejero', 'nombre' => 'Consejero', 'phone' => '0000000002'],
+        ];
 
-        User::create([
-            'name' => 'Supervisor',
-            'username' => 'supervisor',
-            'email' => 'supervisor@sicep.com',
-            'password' => Hash::make('12345678'),
-            'role' => 'supervisor',
-            'display_name' => 'Supervisor',
-            'phone' => '0000000001',
-            'position' => 'Supervisor',
-            'active' => true,
-            'pin' => Hash::make('1234'),
-            'pin_configurado' => true,
-        ]);
-
-        User::create([
-            'name' => 'Consejero',
-            'username' => 'consejero',
-            'email' => 'consejero@sicep.com',
-            'password' => Hash::make('12345678'),
-            'role' => 'consejero',
-            'display_name' => 'Consejero',
-            'phone' => '0000000002',
-            'position' => 'Consejero',
-            'active' => true,
-            'pin' => Hash::make('1234'),
-            'pin_configurado' => true,
-        ]);
+        foreach ($usuarios as $usuario) {
+            User::firstOrCreate(
+                ['username' => $usuario['username']],
+                [
+                    'name' => $usuario['nombre'],
+                    'email' => "{$usuario['username']}@sicep.com",
+                    'password' => Hash::make('12345678'),
+                    'role' => $usuario['role'],
+                    'display_name' => $usuario['nombre'],
+                    'phone' => $usuario['phone'],
+                    'position' => $usuario['nombre'],
+                    'active' => true,
+                    'pin' => Hash::make('1234'),
+                    'pin_configurado' => true,
+                ]
+            );
+        }
     }
 }

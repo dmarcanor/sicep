@@ -3,13 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Configuracion;
 use App\Models\Historial;
 use App\Models\User;
+use App\Support\Permisos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    private const VENTANA_BLOQUEO = 60;
+
     public function login(Request $request)
     {
         $request->validate([
@@ -17,52 +23,56 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        $llave = 'login:' . Str::lower($request->username) . '|' . $request->ip();
+        $maximo = max(1, (int) Configuracion::obtener('max_intentos_login', 5));
+
+        if (RateLimiter::tooManyAttempts($llave, $maximo)) {
+            return response()->json([
+                'message' => 'Demasiados intentos fallidos. Espere '
+                    . RateLimiter::availableIn($llave) . ' segundos antes de reintentar.',
+            ], 429);
+        }
+
         $user = User::where('username', $request->username)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
+            RateLimiter::hit($llave, self::VENTANA_BLOQUEO);
+
+            // Sólo se puede dejar rastro si el usuario existe: historial.usuario_id
+            // es una clave foránea obligatoria.
+            if ($user) {
+                $this->registrar($user->id, 'Intento de inicio de sesión fallido', $request, 'Error');
+            }
+
             return response()->json([
                 'message' => 'Credenciales inválidas',
             ], 401);
         }
 
         if (!$user->active) {
+            $this->registrar($user->id, 'Inicio de sesión rechazado: cuenta deshabilitada', $request, 'Error');
+
             return response()->json([
                 'message' => 'Su cuenta está deshabilitada. Contacte al administrador del sistema.',
                 'cuenta_deshabilitada' => true,
             ], 403);
         }
 
+        RateLimiter::clear($llave);
+
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        Historial::create([
-            'usuario_id' => $user->id,
-            'accion' => 'Inicio de sesión',
-            'modulo' => 'auth',
-            'ip_address' => $request->ip(),
-        ]);
+        $this->registrar($user->id, 'Inicio de sesión', $request);
 
         return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'username' => $user->username,
-                'name' => $user->name,
-                'display_name' => $user->display_name,
-                'rol' => $user->role,
-                'email' => $user->email,
-                'pin_configurado' => $user->pin_configurado,
-            ],
+            'user' => $this->perfil($user),
             'token' => $token,
         ]);
     }
 
     public function logout(Request $request)
     {
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Cierre de sesión',
-            'modulo' => 'auth',
-            'ip_address' => $request->ip(),
-        ]);
+        $this->registrar($request->user()->id, 'Cierre de sesión', $request);
 
         $request->user()->currentAccessToken()->delete();
 
@@ -71,17 +81,20 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        $user = $request->user();
+        return response()->json($this->perfil($request->user()));
+    }
+
+    /**
+     * Los módulos vigentes del rol. El frontend la consulta en cada carga para
+     * que un cambio en la matriz de permisos se aplique sin volver a entrar.
+     */
+    public function permisos(Request $request)
+    {
+        $rol = $request->user()->role;
+
         return response()->json([
-            'id' => $user->id,
-            'username' => $user->username,
-            'name' => $user->name,
-            'display_name' => $user->display_name,
-            'rol' => $user->role,
-            'email' => $user->email,
-            'phone' => $user->phone,
-            'position' => $user->position,
-            'pin_configurado' => $user->pin_configurado,
+            'rol' => $rol,
+            'modulos' => Permisos::delRol($rol),
         ]);
     }
 
@@ -89,22 +102,17 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        $request->validate([
+        $datos = $request->validate([
             'name' => 'sometimes|string|max:255',
             'display_name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|max:255',
-            'phone' => 'sometimes|string|max:20',
-            'position' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'sometimes|nullable|string|max:20',
+            'position' => 'sometimes|nullable|string|max:255',
         ]);
 
-        $user->update($request->only(['name', 'display_name', 'email', 'phone', 'position']));
+        $user->update($datos);
 
-        Historial::create([
-            'usuario_id' => $user->id,
-            'accion' => 'Actualización de perfil',
-            'modulo' => 'perfil',
-            'ip_address' => $request->ip(),
-        ]);
+        $this->registrar($user->id, 'Actualización de perfil', $request, 'Exitoso', 'perfil');
 
         return response()->json(['message' => 'Perfil actualizado']);
     }
@@ -122,12 +130,7 @@ class AuthController extends Controller
             'pin_configurado' => true,
         ]);
 
-        Historial::create([
-            'usuario_id' => $user->id,
-            'accion' => 'Configuración de PIN',
-            'modulo' => 'auth',
-            'ip_address' => $request->ip(),
-        ]);
+        $this->registrar($user->id, 'Configuración de PIN', $request);
 
         return response()->json(['message' => 'PIN configurado correctamente']);
     }
@@ -141,6 +144,8 @@ class AuthController extends Controller
         $user = $request->user();
 
         if (!Hash::check($request->pin, $user->pin)) {
+            $this->registrar($user->id, 'Verificación de PIN fallida', $request, 'Error');
+
             return response()->json([
                 'message' => 'PIN incorrecto',
                 'valid' => false,
@@ -163,6 +168,8 @@ class AuthController extends Controller
         $user = $request->user();
 
         if (!Hash::check($request->pin_actual, $user->pin)) {
+            $this->registrar($user->id, 'Cambio de PIN fallido', $request, 'Error');
+
             return response()->json([
                 'message' => 'PIN actual incorrecto',
             ], 401);
@@ -170,15 +177,43 @@ class AuthController extends Controller
 
         $user->update([
             'pin' => Hash::make($request->pin_nuevo),
+            'pin_configurado' => true,
         ]);
 
-        Historial::create([
-            'usuario_id' => $user->id,
-            'accion' => 'Cambio de PIN',
-            'modulo' => 'auth',
-            'ip_address' => $request->ip(),
-        ]);
+        $this->registrar($user->id, 'Cambio de PIN', $request);
 
         return response()->json(['message' => 'PIN cambiado correctamente']);
+    }
+
+    private function perfil(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'username' => $user->username,
+            'name' => $user->name,
+            'display_name' => $user->display_name,
+            'rol' => $user->role,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'position' => $user->position,
+            'pin_configurado' => $user->pin_configurado,
+            'modulos' => Permisos::delRol($user->role),
+        ];
+    }
+
+    private function registrar(
+        int $usuarioId,
+        string $accion,
+        Request $request,
+        string $estado = 'Exitoso',
+        string $modulo = 'auth',
+    ): void {
+        Historial::create([
+            'usuario_id' => $usuarioId,
+            'accion' => $accion,
+            'modulo' => $modulo,
+            'estado' => $estado,
+            'ip_address' => $request->ip(),
+        ]);
     }
 }

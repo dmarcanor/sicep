@@ -63,24 +63,32 @@ class UsuarioController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $request->validate([
+        // Sólo los campos validados. Con $request->all() entraba también "pin",
+        // que es asignable y no se hashea aquí: un PIN en texto plano deja al
+        // usuario sin poder confirmar ninguna acción.
+        $datos = $request->validate([
             'name' => 'sometimes|string|max:255',
             'username' => 'sometimes|string|max:255|unique:users,username,' . $user->id,
             'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
             'password' => 'sometimes|string|min:8',
             'role' => 'sometimes|in:administrador,supervisor,consejero',
-            'display_name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'position' => 'nullable|string|max:255',
+            'display_name' => 'sometimes|nullable|string|max:255',
+            'phone' => 'sometimes|nullable|string|max:20',
+            'position' => 'sometimes|nullable|string|max:255',
             'active' => 'sometimes|boolean',
+            'pin' => 'sometimes|string|min:4|max:6|regex:/^[0-9]+$/',
         ]);
 
-        $data = $request->all();
-        if (isset($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
+        if (isset($datos['password'])) {
+            $datos['password'] = Hash::make($datos['password']);
         }
 
-        $user->update($data);
+        if (isset($datos['pin'])) {
+            $datos['pin'] = Hash::make($datos['pin']);
+            $datos['pin_configurado'] = true;
+        }
+
+        $user->update($datos);
 
         Historial::create([
             'usuario_id' => $request->user()->id,
@@ -95,21 +103,4 @@ class UsuarioController extends Controller
         return response()->json($user);
     }
 
-    public function destroy(Request $request, User $user)
-    {
-        $username = $user->username;
-        $user->delete();
-
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Eliminación de usuario',
-            'modulo' => 'usuarios',
-            'registro_tipo' => 'User',
-            'registro_id' => $username,
-            'detalles' => "Usuario '{$username}' eliminado",
-            'ip_address' => $request->ip(),
-        ]);
-
-        return response()->json(['message' => 'Usuario eliminado']);
-    }
 }

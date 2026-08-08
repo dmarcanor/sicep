@@ -2,13 +2,18 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Historial;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
 class VerifyPin
 {
+    private const MAXIMO_FALLOS = 5;
+    private const VENTANA_BLOQUEO = 60;
+
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
@@ -20,7 +25,9 @@ class VerifyPin
             ], 403);
         }
 
-        $pin = $request->header('X-PIN') ?? $request->input('pin');
+        // Sólo por cabecera: el cuerpo de POST /usuarios ya lleva un campo "pin"
+        // que es el del usuario que se está creando, no el de quien confirma.
+        $pin = $request->header('X-PIN');
 
         if (!$pin) {
             return response()->json([
@@ -29,11 +36,33 @@ class VerifyPin
             ], 401);
         }
 
+        $llave = 'pin:' . $user->id;
+
+        if (RateLimiter::tooManyAttempts($llave, self::MAXIMO_FALLOS)) {
+            return response()->json([
+                'message' => 'Demasiados intentos con PIN incorrecto. Espere '
+                    . RateLimiter::availableIn($llave) . ' segundos antes de reintentar.',
+            ], 429);
+        }
+
         if (!Hash::check($pin, $user->pin)) {
+            RateLimiter::hit($llave, self::VENTANA_BLOQUEO);
+
+            Historial::create([
+                'usuario_id' => $user->id,
+                'accion' => 'PIN de seguridad incorrecto',
+                'modulo' => $request->segment(2) ?? 'auth',
+                'estado' => 'Error',
+                'detalles' => 'Acción rechazada: ' . $request->method() . ' ' . $request->path(),
+                'ip_address' => $request->ip(),
+            ]);
+
             return response()->json([
                 'message' => 'PIN de seguridad incorrecto',
             ], 401);
         }
+
+        RateLimiter::clear($llave);
 
         return $next($request);
     }

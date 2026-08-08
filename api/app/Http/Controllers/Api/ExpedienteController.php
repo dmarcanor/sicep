@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Expediente;
 use App\Models\Historial;
+use App\Support\Correlativo;
 use Illuminate\Http\Request;
 
 class ExpedienteController extends Controller
 {
+    private const RELACIONES = ['nna', 'representante', 'registradoPor', 'asignadoA'];
+
     public function index(Request $request)
     {
-        $query = Expediente::with(['nna', 'representante', 'registradoPor', 'asignadoA']);
+        $query = Expediente::with(self::RELACIONES);
 
         if ($request->has('estatus')) {
             $query->where('estatus', $request->estatus);
@@ -53,7 +56,7 @@ class ExpedienteController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'nna_id' => 'required|exists:nna,id',
             'representante_id' => 'required|exists:representantes,id',
             'sector' => 'required|string|max:255',
@@ -67,22 +70,11 @@ class ExpedienteController extends Controller
             'fecha.before_or_equal' => 'La fecha del expediente no puede ser futura.',
         ]);
 
-        $codigo = 'SICEP-URD-' . str_pad(Expediente::max('id') + 1 ?? 1, 6, '0', STR_PAD_LEFT);
+        $datos['hora_registro'] = $datos['hora_registro'] ?? now()->format('H:i:s');
+        $datos['registrado_por'] = $request->user()->id;
+        $datos['estatus'] = 'Registrado';
 
-        $expediente = Expediente::create([
-            'nna_id' => $request->nna_id,
-            'representante_id' => $request->representante_id,
-            'codigo' => $codigo,
-            'fecha' => $request->fecha,
-            'hora_registro' => $request->hora_registro ?? now()->format('H:i:s'),
-            'sector' => $request->sector,
-            'prioridad' => $request->prioridad,
-            'tipificacion' => $request->tipificacion,
-            'causa' => $request->causa,
-            'observaciones' => $request->observaciones,
-            'registrado_por' => $request->user()->id,
-            'estatus' => 'Registrado',
-        ]);
+        $expediente = Correlativo::crear(Expediente::class, 'SICEP-URD-', $datos);
 
         Historial::create([
             'usuario_id' => $request->user()->id,
@@ -90,38 +82,49 @@ class ExpedienteController extends Controller
             'modulo' => 'expedientes',
             'registro_tipo' => 'Expediente',
             'registro_id' => $expediente->id,
-            'detalles' => "Expediente {$codigo} creado",
+            'detalles' => "Expediente {$expediente->codigo} creado",
             'ip_address' => $request->ip(),
         ]);
 
-        return response()->json($expediente->load(['nna', 'representante', 'registradoPor', 'asignadoA']), 201);
+        return response()->json($expediente->load(self::RELACIONES), 201);
     }
 
     public function show(Expediente $expediente)
     {
-        return response()->json($expediente->load(['nna', 'representante', 'registradoPor', 'asignadoA', 'casos', 'solicitudesArchivo']));
+        return response()->json(
+            $expediente->load([...self::RELACIONES, 'casos', 'solicitudesArchivo'])
+        );
     }
 
     public function update(Request $request, Expediente $expediente)
     {
-        $request->validate([
+        $datos = $request->validate([
             'nna_id' => 'sometimes|exists:nna,id',
             'representante_id' => 'sometimes|exists:representantes,id',
-            // update() hace update($request->all()) y 'fecha' es asignable: sin
-            // esta regla se podía cambiar a cualquier valor desde la edición.
+            // 'fecha' es asignable: sin esta regla se podía cambiar a cualquier
+            // valor desde la edición.
             'fecha' => 'sometimes|date|before_or_equal:today',
             'sector' => 'sometimes|string|max:255',
             'estatus' => 'sometimes|in:Registrado,En revisión,Aprobado,Observado,Cerrado',
             'prioridad' => 'sometimes|in:Alta,Media,Baja',
-            'tipificacion' => 'nullable|in:Maltrato Físico,Abuso Sexual,Negligencia,Acoso Escolar,Trabajo Infantil,Violencia Psicológica,Abandono,Explotación,Otro',
-            'causa' => 'nullable|string',
-            'observaciones' => 'nullable|string',
-            'asignado_a' => 'nullable|exists:users,id',
+            'tipificacion' => 'sometimes|nullable|in:Maltrato Físico,Abuso Sexual,Negligencia,Acoso Escolar,Trabajo Infantil,Violencia Psicológica,Abandono,Explotación,Otro',
+            'causa' => 'sometimes|nullable|string',
+            'observaciones' => 'sometimes|nullable|string',
+            'asignado_a' => 'sometimes|nullable|exists:users,id',
         ], [
             'fecha.before_or_equal' => 'La fecha del expediente no puede ser futura.',
         ]);
 
-        $expediente->update($request->all());
+        $estatusPrevio = $expediente->estatus;
+
+        // Sólo los campos validados: $request->all() dejaba entrar codigo y
+        // registrado_por, que son asignables en el modelo.
+        $expediente->update($datos);
+
+        $detalle = "Expediente {$expediente->codigo} actualizado";
+        if (array_key_exists('estatus', $datos) && $datos['estatus'] !== $estatusPrevio) {
+            $detalle .= ": estatus {$estatusPrevio} → {$expediente->estatus}";
+        }
 
         Historial::create([
             'usuario_id' => $request->user()->id,
@@ -129,28 +132,10 @@ class ExpedienteController extends Controller
             'modulo' => 'expedientes',
             'registro_tipo' => 'Expediente',
             'registro_id' => $expediente->id,
-            'detalles' => "Expediente {$expediente->codigo} actualizado",
+            'detalles' => $detalle,
             'ip_address' => $request->ip(),
         ]);
 
-        return response()->json($expediente->load(['nna', 'representante', 'registradoPor', 'asignadoA']));
-    }
-
-    public function destroy(Request $request, Expediente $expediente)
-    {
-        $codigo = $expediente->codigo;
-        $expediente->delete();
-
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Eliminación de expediente',
-            'modulo' => 'expedientes',
-            'registro_tipo' => 'Expediente',
-            'registro_id' => $codigo,
-            'detalles' => "Expediente {$codigo} eliminado",
-            'ip_address' => $request->ip(),
-        ]);
-
-        return response()->json(['message' => 'Expediente eliminado']);
+        return response()->json($expediente->load(self::RELACIONES));
     }
 }

@@ -139,6 +139,13 @@ export const api = {
     return handleResponse(response);
   },
 
+  async getMisPermisos() {
+    const response = await fetch(`${API_BASE}/me/permisos`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  },
+
   async getPanel() {
     const response = await fetch(`${API_BASE}/panel`, {
       headers: getHeaders(),
@@ -219,13 +226,6 @@ export const api = {
     return handleResponse(response);
   },
 
-  async deleteRepresentante(id, pin = null) {
-    const response = await fetch(`${API_BASE}/representantes/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(pin),
-    });
-    return handleResponse(response);
-  },
 
   async buscarRepresentantePorCedula(cedula) {
     const response = await fetch(`${API_BASE}/representantes/buscar/${cedula}`, {
@@ -267,13 +267,6 @@ export const api = {
     return handleResponse(response);
   },
 
-  async deleteExpediente(id, pin = null) {
-    const response = await fetch(`${API_BASE}/expedientes/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(pin),
-    });
-    return handleResponse(response);
-  },
 
   async getCasos(params = {}) {
     const queryString = new URLSearchParams(params).toString();
@@ -326,13 +319,6 @@ export const api = {
     return handleResponse(response);
   },
 
-  async deletePlantilla(id, pin = null) {
-    const response = await fetch(`${API_BASE}/plantillas/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(pin),
-    });
-    return handleResponse(response);
-  },
 
   async getSolicitudes(params = {}) {
     const queryString = new URLSearchParams(params).toString();
@@ -385,13 +371,6 @@ export const api = {
     return handleResponse(response);
   },
 
-  async deleteUsuario(id, pin = null) {
-    const response = await fetch(`${API_BASE}/usuarios/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(pin),
-    });
-    return handleResponse(response);
-  },
 
   async getHistorial(params = {}) {
     const queryString = new URLSearchParams(params).toString();

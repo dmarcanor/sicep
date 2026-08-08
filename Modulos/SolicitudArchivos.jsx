@@ -8,14 +8,19 @@ import { api } from "../src/api";
 import { estilosTabla } from "../src/tablaEstilos";
 import { usePinAction } from "../src/hooks/usePinAction";
 
-const estadoOpciones = [
-  "Todos",
+// Debe coincidir con el enum de solicitudes_archivo.estatus.
+const ESTATUS_ARCHIVO = [
+  "Pendiente",
   "Disponible",
   "Reservado",
+  "Prestado",
+  "Devuelto",
   "En consulta",
   "Extraviado",
   "En digitalización",
 ];
+
+const estadoOpciones = ["Todos", ...ESTATUS_ARCHIVO];
 
 const tiposMovimiento = [
   "Préstamo",
@@ -31,11 +36,8 @@ const crearUbicacionTexto = (u = {}) =>
     .join(" > ") || "Sin ubicación";
 
 const formInicialSolicitud = {
-  id: "",
-  expediente: "",
+  expedienteId: "",
   caso: "",
-  nna: "",
-  representante: "",
   solicitante: "",
   cargo: "",
   motivo: "",
@@ -50,6 +52,31 @@ const formInicialSolicitud = {
     caja: "",
   },
 };
+
+// La API guarda la ubicación en columnas planas y el expediente como relación;
+// la tabla y la ficha trabajan con la forma anidada de siempre.
+const normalizarSolicitud = (s) => ({
+  idApi: s.id,
+  id: s.codigo,
+  expedienteId: s.expediente_id,
+  expediente: s.expediente?.codigo || "—",
+  caso: s.caso || "",
+  nna: s.expediente?.nna_nombre || "",
+  representante: s.expediente?.representante_nombre || "",
+  solicitante: s.solicitante_nombre || s.solicitante?.display_name || s.solicitante?.name || "",
+  cargo: s.cargo || "",
+  motivo: s.motivo || "",
+  fechaSolicitud: s.fecha_solicitud || (s.created_at || "").slice(0, 10),
+  fechaPrestamo: s.fecha_prestamo || "",
+  fechaDevolucion: s.fecha_devolucion || "",
+  estatus: s.estatus,
+  ubicacion: {
+    archivo: s.ubicacion_archivo || "",
+    estante: s.ubicacion_estante || "",
+    nivel: s.ubicacion_nivel || "",
+    caja: s.ubicacion_caja || "",
+  },
+});
 
 const overlayStyle = {
   position: "fixed",
@@ -105,28 +132,29 @@ export default function SolicitudArchivos() {
   const [nuevaSolicitud, setNuevaSolicitud] = useState(formInicialSolicitud);
   const [erroresNuevo, setErroresNuevo] = useState({});
 
-  const [solicitudesManual, setSolicitudesManual] = useState([]);
-  const [solicitudesAPI, setSolicitudesAPI] = useState([]);
-
-  useEffect(() => {
-    cargarSolicitudes();
-  }, []);
+  const [solicitudesBase, setSolicitudesBase] = useState([]);
+  const [expedientes, setExpedientes] = useState([]);
+  const [guardando, setGuardando] = useState(false);
 
   const cargarSolicitudes = async () => {
     try {
       const data = await api.getSolicitudes();
-      setSolicitudesAPI(data);
+      return data.map(normalizarSolicitud);
     } catch (error) {
-      console.error('Error cargando solicitudes:', error);
+      console.error("Error cargando solicitudes:", error);
+      return [];
     }
   };
 
-  const solicitudesBaseCombinado = useMemo(() => {
-    return [...solicitudesAPI, ...solicitudesManual];
-  }, [solicitudesAPI, solicitudesManual]);
+  const recargar = async () => setSolicitudesBase(await cargarSolicitudes());
+
+  useEffect(() => {
+    recargar();
+    api.getExpedientes().then(setExpedientes).catch(console.error);
+  }, []);
 
   const solicitudes = useMemo(() => {
-    return solicitudesBaseCombinado.filter((item) => {
+    return solicitudesBase.filter((item) => {
       const q = busqueda.toLowerCase().trim();
       const ubicacionTexto = crearUbicacionTexto(item.ubicacion || {});
       const texto = [
@@ -149,7 +177,7 @@ export default function SolicitudArchivos() {
 
       return coincideBusqueda && coincideFiltro;
     });
-  }, [busqueda, filtro, solicitudesBaseCombinado]);
+  }, [busqueda, filtro, solicitudesBase]);
 
   const abrirDetalle = (row) => {
     setFicha(row);
@@ -267,8 +295,7 @@ export default function SolicitudArchivos() {
 
   const validarPaso1 = () => {
     const errores = {};
-    if (!nuevaSolicitud.id.trim()) errores.id = true;
-    if (!nuevaSolicitud.expediente.trim()) errores.expediente = true;
+    if (!nuevaSolicitud.expedienteId) errores.expedienteId = true;
     if (!nuevaSolicitud.caso.trim()) errores.caso = true;
     if (!nuevaSolicitud.solicitante.trim()) errores.solicitante = true;
     if (!nuevaSolicitud.fechaSolicitud) errores.fechaSolicitud = true;
@@ -280,8 +307,6 @@ export default function SolicitudArchivos() {
 
   const validarPaso2 = () => {
     const errores = {};
-    if (!nuevaSolicitud.nna.trim()) errores.nna = true;
-    if (!nuevaSolicitud.representante.trim()) errores.representante = true;
     if (!nuevaSolicitud.cargo.trim()) errores.cargo = true;
     if (!nuevaSolicitud.motivo.trim()) errores.motivo = true;
     if (!nuevaSolicitud.ubicacion.archivo.trim()) errores.ubicacionArchivo = true;
@@ -320,9 +345,15 @@ export default function SolicitudArchivos() {
     }));
 
     if (movimientoForm.tipo === "Préstamo") {
-      setFicha((prev) => ({ ...prev, estatus: "Prestado", fechaPrestamo: movimientoForm.fecha }));
+      guardarCambios(
+        { estatus: "Prestado", fecha_prestamo: movimientoForm.fecha },
+        "Registrar préstamo",
+      );
     } else if (movimientoForm.tipo === "Devolución") {
-      setFicha((prev) => ({ ...prev, estatus: "Disponible", fechaDevolucion: movimientoForm.fecha }));
+      guardarCambios(
+        { estatus: "Devuelto", fecha_devolucion: movimientoForm.fecha },
+        "Registrar devolución",
+      );
     }
 
     setMovimientoForm({
@@ -334,7 +365,7 @@ export default function SolicitudArchivos() {
     alert("Movimiento registrado con éxito.");
   };
 
-  const actualizarUbicacion = () => {
+  const actualizarUbicacion = async () => {
     if (!ficha) return;
 
     const errores = {};
@@ -363,10 +394,17 @@ export default function SolicitudArchivos() {
       ubicacionTexto: crearUbicacionTexto(nuevaUbicacion),
     };
 
-    setFicha((prev) => ({
-      ...prev,
-      ubicacion: nuevaUbicacion,
-    }));
+    const guardada = await guardarCambios(
+      {
+        ubicacion_archivo: nuevaUbicacion.archivo,
+        ubicacion_estante: nuevaUbicacion.estante,
+        ubicacion_nivel: nuevaUbicacion.nivel,
+        ubicacion_caja: nuevaUbicacion.caja,
+      },
+      "Actualizar ubicación física",
+    );
+
+    if (!guardada) return;
 
     setHistorialUbicacion((prev) => ({
       ...prev,
@@ -374,14 +412,16 @@ export default function SolicitudArchivos() {
     }));
 
     setUbicacionForm((prev) => ({ ...prev, observacion: "" }));
-    alert("Ubicación actualizada correctamente.");
   };
 
   const registrarEstatus = (nuevoEstatus) => {
-    if (!ficha) return;
-    setFicha((prev) => ({ ...prev, estatus: nuevoEstatus }));
-    alert(`Estatus actualizado a "${nuevoEstatus}".`);
+    guardarCambios({ estatus: nuevoEstatus }, `Marcar como ${nuevoEstatus}`);
   };
+
+  const expedienteElegido = useMemo(
+    () => expedientes.find((e) => String(e.id) === String(nuevaSolicitud.expedienteId)) || null,
+    [expedientes, nuevaSolicitud.expedienteId],
+  );
 
   const abrirModalNuevo = () => {
     setNuevaSolicitud(formInicialSolicitud);
@@ -419,11 +459,12 @@ export default function SolicitudArchivos() {
     setNuevoPaso(1);
   };
 
-  const registrarNuevaSolicitud = () => {
+  const registrarNuevaSolicitud = async () => {
     if (!validarPaso1() || !validarPaso2()) return;
 
-    const existePrestado = solicitudesBaseCombinado.some(
-      (item) => item.expediente === nuevaSolicitud.expediente && item.estatus === "Prestado"
+    const existePrestado = solicitudesBase.some(
+      (item) =>
+        item.expedienteId === Number(nuevaSolicitud.expedienteId) && item.estatus === "Prestado"
     );
 
     if (existePrestado) {
@@ -431,34 +472,67 @@ export default function SolicitudArchivos() {
       return;
     }
 
-    const solicitudCreada = {
-      ...nuevaSolicitud,
-      id: nuevaSolicitud.id.trim(),
-      expediente: nuevaSolicitud.expediente.trim(),
+    const carga = {
+      expediente_id: Number(nuevaSolicitud.expedienteId),
       caso: nuevaSolicitud.caso.trim(),
-      nna: nuevaSolicitud.nna.trim(),
-      representante: nuevaSolicitud.representante.trim(),
-      solicitante: nuevaSolicitud.solicitante.trim(),
+      solicitante_nombre: nuevaSolicitud.solicitante.trim(),
       cargo: nuevaSolicitud.cargo.trim(),
       motivo: nuevaSolicitud.motivo.trim(),
-      fechaSolicitud: nuevaSolicitud.fechaSolicitud,
-      fechaPrestamo: nuevaSolicitud.estatus === "Prestado" ? nuevaSolicitud.fechaSolicitud : "",
-      fechaDevolucion: "",
-      estatus: nuevaSolicitud.estatus.trim(),
-      ubicacion: {
-        archivo: nuevaSolicitud.ubicacion.archivo.trim(),
-        estante: nuevaSolicitud.ubicacion.estante.trim(),
-        nivel: nuevaSolicitud.ubicacion.nivel.trim(),
-        caja: nuevaSolicitud.ubicacion.caja.trim(),
-      },
+      estatus: nuevaSolicitud.estatus,
+      fecha_solicitud: nuevaSolicitud.fechaSolicitud,
+      fecha_prestamo:
+        nuevaSolicitud.estatus === "Prestado" ? nuevaSolicitud.fechaSolicitud : null,
+      ubicacion_archivo: nuevaSolicitud.ubicacion.archivo.trim(),
+      ubicacion_estante: nuevaSolicitud.ubicacion.estante.trim(),
+      ubicacion_nivel: nuevaSolicitud.ubicacion.nivel.trim(),
+      ubicacion_caja: nuevaSolicitud.ubicacion.caja.trim(),
     };
 
-    setSolicitudesManual((prev) => [solicitudCreada, ...prev]);
-    setMostrarModalNuevo(false);
-    setRegistroExitoso(`Solicitud ${solicitudCreada.id} registrada con éxito.`);
+    setGuardando(true);
 
-    setTimeout(() => setRegistroExitoso(""), 3000);
-    alert("Registro exitoso: solicitud creada correctamente.");
+    try {
+      const creada = await executeWithPin(
+        (pin) => api.createSolicitud(carga, pin),
+        "Registrar solicitud de archivo",
+      );
+
+      await recargar();
+      setMostrarModalNuevo(false);
+      setRegistroExitoso(`Solicitud ${creada.codigo} registrada con éxito.`);
+      setTimeout(() => setRegistroExitoso(""), 4000);
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        alert(error.message || "No se pudo registrar la solicitud.");
+      }
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  // Toda modificación de la ficha viaja por la misma vía para que el estado en
+  // pantalla no se separe de lo guardado.
+  const guardarCambios = async (cambios, titulo) => {
+    if (!ficha) return false;
+
+    setGuardando(true);
+
+    try {
+      const actualizada = await executeWithPin(
+        (pin) => api.updateSolicitud(ficha.idApi, cambios, pin),
+        titulo,
+      );
+
+      setFicha(normalizarSolicitud(actualizada));
+      await recargar();
+      return true;
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        alert(error.message || "No se pudo guardar el cambio.");
+      }
+      return false;
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const renderDetalle = () => {
@@ -746,26 +820,24 @@ export default function SolicitudArchivos() {
 
             {nuevoPaso === 1 ? (
               <div className="form-nuevo-expediente">
-                <div className="campo">
-                  <label>Código de solicitud *</label>
-                  <input
-                    name="id"
-                    value={nuevaSolicitud.id}
+                <div className="campo ancho">
+                  <label>Expediente *</label>
+                  <select
+                    name="expedienteId"
+                    value={nuevaSolicitud.expedienteId}
                     onChange={actualizarNuevaSolicitud}
-                    className={erroresNuevo.id ? "error" : ""}
-                    placeholder="SA-2026-0004"
-                  />
-                </div>
-
-                <div className="campo">
-                  <label>Código de expediente *</label>
-                  <input
-                    name="expediente"
-                    value={nuevaSolicitud.expediente}
-                    onChange={actualizarNuevaSolicitud}
-                    className={erroresNuevo.expediente ? "error" : ""}
-                    placeholder="EXP-2026-0300"
-                  />
+                    className={erroresNuevo.expedienteId ? "error" : ""}
+                  >
+                    <option value="">Seleccione un expediente</option>
+                    {expedientes.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.codigo} — {e.nna_nombre || "Sin NNA"} · {e.sector}
+                      </option>
+                    ))}
+                  </select>
+                  <small style={{ color: "var(--muted)" }}>
+                    El código de la solicitud lo asigna el sistema al guardar.
+                  </small>
                 </div>
 
                 <div className="campo ">
@@ -786,12 +858,9 @@ export default function SolicitudArchivos() {
                     onChange={actualizarNuevaSolicitud}
                     className={erroresNuevo.estatus ? "error" : ""}
                   >
-                    <option>Disponible</option>
-                    <option>Prestado</option>
-                    <option>Reservado</option>
-                    <option>En consulta</option>
-                    <option>Extraviado</option>
-                    <option>En digitalización</option>
+                    {ESTATUS_ARCHIVO.map((e) => (
+                      <option key={e}>{e}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -822,24 +891,20 @@ export default function SolicitudArchivos() {
             ) : (
               <div className="form-nuevo-expediente">
                 <div className="campo ">
-                  <label>NNA *</label>
+                  <label>NNA</label>
                   <input
-                    name="nna"
-                    value={nuevaSolicitud.nna}
-                    onChange={actualizarNuevaSolicitud}
-                    className={erroresNuevo.nna ? "error" : ""}
-                    placeholder="Nombre completo del NNA"
+                    value={expedienteElegido?.nna_nombre || ""}
+                    readOnly
+                    placeholder="Se toma del expediente seleccionado"
                   />
                 </div>
 
                 <div className="campo ">
-                  <label>Representante *</label>
+                  <label>Representante</label>
                   <input
-                    name="representante"
-                    value={nuevaSolicitud.representante}
-                    onChange={actualizarNuevaSolicitud}
-                    className={erroresNuevo.representante ? "error" : ""}
-                    placeholder="Nombre completo del representante"
+                    value={expedienteElegido?.representante_nombre || ""}
+                    readOnly
+                    placeholder="Se toma del expediente seleccionado"
                   />
                 </div>
 
@@ -887,7 +952,7 @@ export default function SolicitudArchivos() {
                   />
                 </div>
 
-               {/*  <div className="campo">
+                <div className="campo">
                   <label>Caja *</label>
                   <input
                     name="ubicacion.caja"
@@ -908,7 +973,7 @@ export default function SolicitudArchivos() {
                     className={erroresNuevo.motivo ? "error" : ""}
                     placeholder="Explique la razón de la solicitud..."
                   />
-                </div> */}
+                </div>
               </div>
             )}
 
@@ -929,8 +994,12 @@ export default function SolicitudArchivos() {
                   <button className="btn-secondary" onClick={retrocederPaso}>
                     Atrás
                   </button>
-                  <button className="btn-primary" onClick={registrarNuevaSolicitud}>
-                    Registrar solicitud
+                  <button
+                    className="btn-primary"
+                    onClick={registrarNuevaSolicitud}
+                    disabled={guardando}
+                  >
+                    {guardando ? "Registrando..." : "Registrar solicitud"}
                   </button>
                 </>
               )}

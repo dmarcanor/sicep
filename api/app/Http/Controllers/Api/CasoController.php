@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Caso;
 use App\Models\Historial;
+use App\Support\Correlativo;
 use Illuminate\Http\Request;
 
 class CasoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Caso::with(['expediente', 'asignadoA', 'asignadoPor']);
+        $query = Caso::with(['expediente.nna', 'expediente.representante', 'asignadoA', 'asignadoPor']);
 
         if ($request->has('estatus')) {
             $query->where('estatus', $request->estatus);
@@ -26,22 +27,18 @@ class CasoController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'expediente_id' => 'required|exists:expedientes,id',
             'asignado_a' => 'required|exists:users,id',
             'motivo' => 'nullable|string',
+            'tipo_asignacion' => 'nullable|in:Rotativa,Manual',
         ]);
 
-        $codigo = 'CASO-' . str_pad(Caso::max('id') + 1 ?? 1, 6, '0', STR_PAD_LEFT);
+        $datos['asignado_por'] = $request->user()->id;
+        $datos['estatus'] = 'Pendiente';
 
-        $caso = Caso::create([
-            'codigo' => $codigo,
-            'expediente_id' => $request->expediente_id,
-            'asignado_a' => $request->asignado_a,
-            'asignado_por' => $request->user()->id,
-            'motivo' => $request->motivo,
-            'estatus' => 'Pendiente',
-        ]);
+        $caso = Correlativo::crear(Caso::class, 'CASO-', $datos);
+        $codigo = $caso->codigo;
 
         Historial::create([
             'usuario_id' => $request->user()->id,
@@ -53,22 +50,24 @@ class CasoController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
-        return response()->json($caso->load(['expediente', 'asignadoA', 'asignadoPor']), 201);
+        return response()->json($caso->load(['expediente.nna', 'expediente.representante', 'asignadoA', 'asignadoPor']), 201);
     }
 
     public function show(Caso $caso)
     {
-        return response()->json($caso->load(['expediente', 'asignadoA', 'asignadoPor']));
+        return response()->json($caso->load(['expediente.nna', 'expediente.representante', 'asignadoA', 'asignadoPor']));
     }
 
     public function update(Request $request, Caso $caso)
     {
-        $request->validate([
+        $datos = $request->validate([
             'estatus' => 'sometimes|in:Pendiente,En proceso,Resuelto,Cerrado',
-            'observaciones' => 'nullable|string',
+            'observaciones' => 'sometimes|nullable|string',
+            'asignado_a' => 'sometimes|exists:users,id',
+            'tipo_asignacion' => 'sometimes|in:Rotativa,Manual',
         ]);
 
-        $caso->update($request->all());
+        $caso->update($datos);
 
         Historial::create([
             'usuario_id' => $request->user()->id,
@@ -80,6 +79,6 @@ class CasoController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
-        return response()->json($caso->load(['expediente', 'asignadoA', 'asignadoPor']));
+        return response()->json($caso->load(['expediente.nna', 'expediente.representante', 'asignadoA', 'asignadoPor']));
     }
 }

@@ -50,14 +50,14 @@ class PlantillaController extends Controller
 
     public function update(Request $request, Plantilla $plantilla)
     {
-        $request->validate([
+        $datos = $request->validate([
             'nombre' => 'sometimes|string|max:255',
             'tipo' => 'sometimes|string|max:100',
             'contenido' => 'sometimes|string',
             'activa' => 'sometimes|boolean',
         ]);
 
-        $plantilla->update($request->all());
+        $plantilla->update($datos);
 
         Historial::create([
             'usuario_id' => $request->user()->id,
@@ -72,21 +72,4 @@ class PlantillaController extends Controller
         return response()->json($plantilla->load('creadoPor'));
     }
 
-    public function destroy(Request $request, Plantilla $plantilla)
-    {
-        $nombre = $plantilla->nombre;
-        $plantilla->delete();
-
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Eliminación de plantilla',
-            'modulo' => 'plantillas',
-            'registro_tipo' => 'Plantilla',
-            'registro_id' => $nombre,
-            'detalles' => "Plantilla '{$nombre}' eliminada",
-            'ip_address' => $request->ip(),
-        ]);
-
-        return response()->json(['message' => 'Plantilla eliminada']);
-    }
 }

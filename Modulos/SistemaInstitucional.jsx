@@ -18,34 +18,6 @@ import Representantes from "./Representantes";
 import logoSicep from "../img/logo.png";
 import { api, getAuthToken, setPinConfigurado } from "../src/api";
 
-const PERMISOS = {
-  administrador: [
-    "principal",
-    "urd",
-    "nna",
-    "representantes",
-    "expedientes",
-    "solicitudArchivos",
-    "usuarios",
-    "reportes",
-    "plantillas",
-    "historial",
-    "asignacionCasos",
-    "configuracion",
-  ],
-  supervisor: [
-    "principal",
-    "urd",
-    "nna",
-    "representantes",
-    "expedientes",
-    "solicitudArchivos",
-    "reportes",
-    "historial",
-    "asignacionCasos",
-  ],
-  consejero: ["principal", "urd", "nna", "representantes", "expedientes", "solicitudArchivos"],
-};
 const TITULOS_MODULOS = {
   principal: "Panel Principal",
 
@@ -95,9 +67,9 @@ function StatCard({ title, value, subtitle, tone }) {
   );
 }
 
-function BarraLateral({ abierta, moduloActivo, cambiarModulo, rol }) {
+function BarraLateral({ abierta, moduloActivo, cambiarModulo, modulos }) {
   const modulosVisibles = Object.keys(TITULOS_MODULOS).filter((modulo) =>
-    PERMISOS[rol]?.includes(modulo)
+    modulos.includes(modulo)
   );
 
   return (
@@ -212,37 +184,57 @@ export default function SistemaInstitucional() {
   const [loginError, setLoginError] = useState("");
   const [ingresando, setIngresando] = useState(false);
 
-  const rolUsuario = usuario?.rol || null;
+  // Los módulos visibles los decide el servidor a partir de la matriz de
+  // Configuración; el frontend nunca los deduce del rol por su cuenta.
+  const [modulos, setModulos] = useState([]);
 
-  const puedeVerModulo = (modulo, rol = rolUsuario) => {
-    return !!PERMISOS[rol]?.includes(modulo);
-  };
+  const puedeVerModulo = (modulo) => modulos.includes(modulo);
 
-  const moduloInicialPermitido = useMemo(() => {
-    if (!rolUsuario) return "principal";
-    return puedeVerModulo("principal", rolUsuario) ? "principal" : "urd";
-  }, [rolUsuario]);
+  const moduloInicialPermitido = useMemo(
+    () => (modulos.includes("principal") ? "principal" : modulos[0] ?? "principal"),
+    [modulos],
+  );
 
   useEffect(() => {
     const token = getAuthToken();
-    if (token) {
-      api.getMe().then(user => {
-        setUsuario(user);
-        setVista("app");
-        setModuloActivo("principal");
-      }).catch(() => {
-        localStorage.removeItem("sicep_user");
-      });
-    }
+    if (!token) return;
+
+    api.getMe().then((user) => {
+      setUsuario(user);
+      setModulos(user.modulos ?? []);
+      setVista("app");
+      setModuloActivo("principal");
+    }).catch(() => {
+      localStorage.removeItem("sicep_user");
+    });
   }, []);
 
+  // Se revalidan en cada cambio de pantalla: si un administrador retira un
+  // módulo, deja de estar disponible sin necesidad de volver a iniciar sesión.
   useEffect(() => {
     if (vista !== "app") return;
+    let vigente = true;
+
+    api.getMisPermisos()
+      .then(({ modulos: vigentes }) => {
+        if (vigente) setModulos(vigentes ?? []);
+      })
+      .catch((error) => {
+        console.error("Error verificando permisos:", error);
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [vista, moduloActivo]);
+
+  useEffect(() => {
+    if (vista !== "app" || modulos.length === 0) return;
 
     if (!puedeVerModulo(moduloActivo)) {
       setModuloActivo(moduloInicialPermitido);
     }
-  }, [moduloActivo, vista, rolUsuario, moduloInicialPermitido]);
+  }, [moduloActivo, vista, modulos, moduloInicialPermitido]);
 
   const cambiarModulo = (nuevoModulo) => {
     if (!puedeVerModulo(nuevoModulo)) {
@@ -267,6 +259,7 @@ export default function SistemaInstitucional() {
       console.error('Error al cerrar sesión:', error);
     }
     setUsuario(null);
+    setModulos([]);
     setVista("login");
     setVerPerfil(false);
     setMenuUsuarioAbierto(false);
@@ -288,6 +281,7 @@ export default function SistemaInstitucional() {
     try {
       const data = await api.login(loginData.user, loginData.pass);
       setUsuario(data.user);
+      setModulos(data.user.modulos ?? []);
       setPinConfigurado(data.user.pin_configurado);
       setModuloActivo("principal");
       setVista("app");
@@ -425,6 +419,14 @@ export default function SistemaInstitucional() {
       );
     }
 
+    if (modulos.length === 0) {
+      return <p className="cargando-modulos">Verificando permisos...</p>;
+    }
+
+    if (!puedeVerModulo(moduloActivo)) {
+      return <p className="cargando-modulos">No tiene acceso a este módulo.</p>;
+    }
+
     switch (moduloActivo) {
       case "principal":
         return <PanelPrincipal irAModulo={cambiarModulo} />;
@@ -472,7 +474,7 @@ export default function SistemaInstitucional() {
         abierta={panelLateralAbierto}
         moduloActivo={moduloActivo}
         cambiarModulo={cambiarModulo}
-        rol={rolUsuario}
+        modulos={modulos}
       />
 
       <main

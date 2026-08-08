@@ -1,14 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 
-const emptyForm = {
-  codigo: "",
-  nombres: "",
-  sector: "",
-  vulneracion: "",
-  prioridad: "Media",
-  observacion: "",
+const formInicial = {
+  expedienteId: "",
+  consejeroId: "",
+  motivo: "",
 };
 
 function normalizar(texto = "") {
@@ -24,17 +21,10 @@ function getChipClass(valor = "") {
   if (key === "media") return "pill amber";
   if (key === "baja") return "pill green";
   if (key === "registrado") return "chip registrado";
-  if (key === "enrevision" || key === "enrevisión") return "chip enrevision";
+  if (key === "enrevision") return "chip enrevision";
   if (key === "aprobado") return "chip aprobado";
   if (key === "observado") return "chip observado";
   return "pill default";
-}
-
-function puntajeEspecialidad(caso, consejero) {
-  const texto = normalizar(`${caso.vulneracion} ${caso.sector} ${caso.nombres}`);
-  return consejero.especialidades.reduce((acc, item) => {
-    return texto.includes(normalizar(item)) ? acc + 1 : acc;
-  }, 0);
 }
 
 function fechaBonita(fechaISO) {
@@ -47,19 +37,34 @@ function fechaBonita(fechaISO) {
   });
 }
 
-function getSiguienteRotativo(consejeros, asignaciones) {
-  const carga = consejeros.map((c) => {
-    const usados = asignaciones.filter((a) => a.consejeroId === c.id).length;
-    return { ...c, usados };
-  });
+// El caso que devuelve la API anida el expediente y el consejero; la tabla
+// trabaja con una fila plana.
+function normalizarCaso(caso) {
+  const expediente = caso.expediente || {};
+  const consejero = caso.asignado_a || {};
 
-  const min = Math.min(...carga.map((c) => c.usados));
-  return carga.filter((c) => c.usados === min);
+  return {
+    id: caso.id,
+    codigo: caso.codigo,
+    expedienteId: caso.expediente_id,
+    expedienteCodigo: expediente.codigo || "—",
+    nombres: expediente.nna_nombre || "—",
+    sector: expediente.sector || "—",
+    vulneracion: expediente.tipificacion || "Sin tipificar",
+    prioridad: expediente.prioridad || "Media",
+    fecha: (caso.created_at || "").slice(0, 10),
+    asignacion: caso.tipo_asignacion || "Rotativa",
+    consejeroId: consejero.id ?? null,
+    asignadoA: consejero.display_name || consejero.name || "Sin asignar",
+    despacho: consejero.position || "Consejería",
+    observacion: caso.observaciones || caso.motivo || "Sin observación adicional.",
+  };
 }
 
 export default function AsignacionCasosConsejeros() {
   const [consejeros, setConsejeros] = useState([]);
   const [casos, setCasos] = useState([]);
+  const [expedientes, setExpedientes] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroConsejero, setFiltroConsejero] = useState("todos");
@@ -67,134 +72,186 @@ export default function AsignacionCasosConsejeros() {
   const [modalNuevo, setModalNuevo] = useState(false);
   const [modalDetalle, setModalDetalle] = useState(false);
   const [casoSeleccionado, setCasoSeleccionado] = useState(null);
-  const [formNuevo, setFormNuevo] = useState(emptyForm);
+  const [formNuevo, setFormNuevo] = useState(formInicial);
   const [consejeroManual, setConsejeroManual] = useState("");
   const [toast, setToast] = useState("");
+  const [guardando, setGuardando] = useState(false);
   const { executeWithPin, PinModalWrapper } = usePinAction();
+
+  const cargarDatos = async () => {
+    try {
+      const [casosData, usuariosData, expedientesData] = await Promise.all([
+        api.getCasos(),
+        api.getUsuarios(),
+        api.getExpedientes(),
+      ]);
+
+      setConsejeros(
+        usuariosData
+          .filter((u) => (u.role === "consejero" || u.role === "supervisor") && u.active)
+          .map((u) => ({
+            id: u.id,
+            nombre: u.display_name || u.name,
+            despacho: u.position || "Consejería",
+          })),
+      );
+
+      setCasos(casosData.map(normalizarCaso));
+      setExpedientes(expedientesData);
+    } catch (error) {
+      console.error("Error cargando datos:", error);
+    }
+  };
 
   useEffect(() => {
     cargarDatos();
   }, []);
 
-  const cargarDatos = async () => {
-    try {
-      const [casosData, usuariosData] = await Promise.all([
-        api.getCasos(),
-        api.getUsuarios(),
-      ]);
-      
-      const consejerosData = usuariosData
-        .filter(u => u.role === 'consejero' || u.role === 'supervisor')
-        .map(u => ({
-          id: u.id,
-          nombre: u.display_name || u.name,
-          despacho: u.position || 'Consejería',
-          fuerte: '',
-          especialidades: [],
-          color: 'blue',
-        }));
-      
-      setCasos(casosData);
-      setConsejeros(consejerosData);
-    } catch (error) {
-      console.error('Error cargando datos:', error);
-    }
-  };
+  // Se compara por id de usuario. Antes se comparaba el nombre contra el objeto
+  // anidado que devuelve la API, así que el conteo siempre daba 0.
+  const conteoConsejeros = useMemo(
+    () =>
+      consejeros.map((c) => ({
+        ...c,
+        total: casos.filter((caso) => caso.consejeroId === c.id).length,
+      })),
+    [consejeros, casos],
+  );
 
-  const conteoConsejeros = useMemo(() => {
-    return consejeros.map((c) => ({
-      ...c,
-      total: casos.filter((caso) => caso.asignadoA === c.nombre).length,
-    }));
-  }, [consejeros, casos]);
+  // Un expediente se asigna una sola vez: los ya repartidos salen de la lista.
+  const expedientesSinAsignar = useMemo(() => {
+    const asignados = new Set(casos.map((c) => c.expedienteId));
+    return expedientes.filter((e) => !asignados.has(e.id));
+  }, [expedientes, casos]);
 
   const casosFiltrados = useMemo(() => {
     const q = normalizar(busqueda);
     return casos.filter((caso) => {
       const cumpleBusqueda =
         !q ||
-        [caso.codigo, caso.nombres, caso.sector, caso.vulneracion, caso.asignadoA, caso.despacho]
-          .join(" ")
-          .toLowerCase()
-          .includes(q);
+        normalizar(
+          [caso.codigo, caso.expedienteCodigo, caso.nombres, caso.sector, caso.vulneracion, caso.asignadoA, caso.despacho]
+            .filter(Boolean)
+            .join(" "),
+        ).includes(q);
 
-      const cumpleTipo =
-        filtroTipo === "todos" || normalizar(caso.asignacion).replace(/\s+/g, "") === normalizar(filtroTipo).replace(/\s+/g, "");
+      const cumpleTipo = filtroTipo === "todos" || caso.asignacion === filtroTipo;
       const cumpleConsejero =
-        filtroConsejero === "todos" || caso.asignadoA === filtroConsejero;
+        filtroConsejero === "todos" || String(caso.consejeroId) === filtroConsejero;
 
       return cumpleBusqueda && cumpleTipo && cumpleConsejero;
     });
   }, [casos, busqueda, filtroTipo, filtroConsejero]);
 
   const resumen = useMemo(() => {
-    const total = casos.length;
-    const rotativas = casos.filter((c) => c.asignacion === "Rotativa").length;
-    const manuales = casos.filter((c) => c.asignacion === "Manual").length;
-    const equilibrio = consejeros.map((c) => casos.filter((caso) => caso.asignadoA === c.nombre).length);
-    const max = Math.max(...equilibrio, 0);
-    const min = Math.min(...equilibrio, 0);
-    const diferencia = max - min;
-    return { total, rotativas, manuales, diferencia };
-  }, [casos, consejeros]);
+    const cargas = consejeros.map((c) => casos.filter((caso) => caso.consejeroId === c.id).length);
+    return {
+      total: casos.length,
+      rotativas: casos.filter((c) => c.asignacion === "Rotativa").length,
+      manuales: casos.filter((c) => c.asignacion === "Manual").length,
+      diferencia: cargas.length ? Math.max(...cargas) - Math.min(...cargas) : 0,
+      pendientes: expedientesSinAsignar.length,
+    };
+  }, [casos, consejeros, expedientesSinAsignar]);
 
   const mostrarToast = (mensaje) => {
     setToast(mensaje);
     window.clearTimeout(window.__asigToast);
-    window.__asigToast = window.setTimeout(() => setToast(""), 2400);
+    window.__asigToast = window.setTimeout(() => setToast(""), 2800);
   };
 
-  const asignarAutomatica = (caso) => {
-    const candidatos = getSiguienteRotativo(consejeros, casos);
+  // Reparto rotativo: gana quien menos casos acumula.
+  const consejeroConMenorCarga = () => {
+    if (!consejeros.length) return null;
 
-    let ganador = candidatos[0];
-    let mejorPuntaje = -1;
-
-    candidatos.forEach((c) => {
-      const puntaje = puntajeEspecialidad(caso, c);
-      if (puntaje > mejorPuntaje) {
-        mejorPuntaje = puntaje;
-        ganador = c;
-      }
-    });
-
-    return ganador || consejeros[0];
+    return conteoConsejeros.reduce(
+      (menor, actual) => (actual.total < menor.total ? actual : menor),
+      conteoConsejeros[0],
+    );
   };
 
-  const guardarCasoNuevo = () => {
-    if (!formNuevo.codigo || !formNuevo.nombres || !formNuevo.sector || !formNuevo.vulneracion) {
-      mostrarToast("Complete los campos obligatorios para continuar.");
+  const asignarExpediente = async () => {
+    if (!formNuevo.expedienteId) {
+      mostrarToast("Seleccione el expediente que desea asignar.");
       return;
     }
 
-    const casoBase = {
-      id: Date.now(),
-      codigo: formNuevo.codigo,
-      nombres: formNuevo.nombres,
-      sector: formNuevo.sector,
-      vulneracion: formNuevo.vulneracion,
-      prioridad: formNuevo.prioridad,
-      estado: "Registrado",
-      fecha: new Date().toISOString().slice(0, 10),
-      observacion: formNuevo.observacion || "Sin observación adicional.",
-    };
+    const manual = Boolean(formNuevo.consejeroId);
+    const consejero = manual
+      ? consejeros.find((c) => String(c.id) === String(formNuevo.consejeroId))
+      : consejeroConMenorCarga();
 
-    const consejeroElegido = asignarAutomatica(casoBase);
+    if (!consejero) {
+      mostrarToast("No hay consejeros activos disponibles para asignar.");
+      return;
+    }
 
-    const casoFinal = {
-      ...casoBase,
-      asignacion: "Rotativa",
-      asignadoA: consejeroElegido.nombre,
-      despacho: consejeroElegido.despacho,
-      observacion:
-        formNuevo.observacion ||
-        `Asignado automáticamente por equilibrio de carga y afinidad temática a ${consejeroElegido.nombre}.`,
-    };
+    setGuardando(true);
 
-    setCasos((prev) => [casoFinal, ...prev]);
-    setFormNuevo(emptyForm);
-    setModalNuevo(false);
-    mostrarToast(`Caso ${casoFinal.codigo} asignado a ${consejeroElegido.nombre}.`);
+    try {
+      await executeWithPin(
+        (pin) =>
+          api.createCaso(
+            {
+              expediente_id: Number(formNuevo.expedienteId),
+              asignado_a: consejero.id,
+              tipo_asignacion: manual ? "Manual" : "Rotativa",
+              motivo:
+                formNuevo.motivo.trim() ||
+                (manual
+                  ? `Asignado manualmente por la Presidencia a ${consejero.nombre}.`
+                  : `Asignado automáticamente por equilibrio de carga a ${consejero.nombre}.`),
+            },
+            pin,
+          ),
+        "Asignar expediente",
+      );
+
+      await cargarDatos();
+      setFormNuevo(formInicial);
+      setModalNuevo(false);
+      mostrarToast(`Expediente asignado a ${consejero.nombre}.`);
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        mostrarToast(error.message || "No se pudo asignar el expediente.");
+      }
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const reasignar = async (caso, consejero, tipo) => {
+    setGuardando(true);
+
+    try {
+      await executeWithPin(
+        (pin) =>
+          api.updateCaso(
+            caso.id,
+            {
+              asignado_a: consejero.id,
+              tipo_asignacion: tipo,
+              observaciones:
+                tipo === "Manual"
+                  ? `Reasignado manualmente por la Presidencia a ${consejero.nombre}.`
+                  : `Reasignado automáticamente por equilibrio de carga a ${consejero.nombre}.`,
+            },
+            pin,
+          ),
+        "Reasignar caso",
+      );
+
+      await cargarDatos();
+      setModalManual(false);
+      setModalDetalle(false);
+      mostrarToast(`Caso ${caso.codigo} reasignado a ${consejero.nombre}.`);
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        mostrarToast(error.message || "No se pudo reasignar el caso.");
+      }
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const abrirDetalle = (caso) => {
@@ -204,53 +261,30 @@ export default function AsignacionCasosConsejeros() {
 
   const abrirManual = (caso) => {
     setCasoSeleccionado(caso);
-    setConsejeroManual(caso.asignadoA || "");
+    setConsejeroManual(caso.consejeroId ? String(caso.consejeroId) : "");
     setModalManual(true);
   };
 
   const aplicarAsignacionManual = () => {
-    if (!casoSeleccionado || !consejeroManual) {
+    const consejero = consejeros.find((c) => String(c.id) === String(consejeroManual));
+
+    if (!casoSeleccionado || !consejero) {
       mostrarToast("Seleccione un consejero para reasignar.");
       return;
     }
 
-    const consejero = consejeros.find((c) => c.nombre === consejeroManual);
-    if (!consejero) return;
-
-    setCasos((prev) =>
-      prev.map((caso) =>
-        caso.id === casoSeleccionado.id
-          ? {
-              ...caso,
-              asignacion: "Manual",
-              asignadoA: consejero.nombre,
-              despacho: consejero.despacho,
-              observacion: `Reasignado manualmente por la Presidencia a ${consejero.nombre}.`,
-            }
-          : caso
-      )
-    );
-
-    setModalManual(false);
-    mostrarToast(`Reasignado a ${consejero.nombre}.`);
+    reasignar(casoSeleccionado, consejero, "Manual");
   };
 
   const reasignarAutomaticamente = (caso) => {
-    const consejero = asignarAutomatica(caso);
-    setCasos((prev) =>
-      prev.map((item) =>
-        item.id === caso.id
-          ? {
-              ...item,
-              asignacion: "Rotativa",
-              asignadoA: consejero.nombre,
-              despacho: consejero.despacho,
-              observacion: `Asignado automáticamente según equilibrio de carga y especialidad a ${consejero.nombre}.`,
-            }
-          : item
-      )
-    );
-    mostrarToast(`Caso ${caso.codigo} reasignado automáticamente.`);
+    const consejero = consejeroConMenorCarga();
+
+    if (!consejero) {
+      mostrarToast("No hay consejeros activos disponibles.");
+      return;
+    }
+
+    reasignar(caso, consejero, "Rotativa");
   };
 
   return (
@@ -259,10 +293,11 @@ export default function AsignacionCasosConsejeros() {
         <div>
           <span className="expedientes-badge">Gestión operativa</span>
           <h2>Asignación de Casos a Consejeros</h2>
+          <p>Los expedientes ya registrados se reparten entre los consejeros activos.</p>
         </div>
 
         <button className="btn-primary" onClick={() => setModalNuevo(true)}>
-          + Registrar y asignar caso
+          + Asignar expediente
         </button>
       </div>
 
@@ -275,18 +310,26 @@ export default function AsignacionCasosConsejeros() {
             <span className="stat-dot" />
           </div>
           <div className="stat-value">{resumen.total}</div>
-          <div className="stat-subtitle">Total de registros con despacho definido</div>
+          <div className="stat-subtitle">Expedientes con despacho definido</div>
+        </article>
+
+        <article className="stat-card amber">
+          <div className="stat-top">
+            <span className="stat-title">Sin asignar</span>
+            <span className="stat-dot" />
+          </div>
+          <div className="stat-value">{resumen.pendientes}</div>
+          <div className="stat-subtitle">Expedientes a la espera de consejero</div>
         </article>
 
         <article className="stat-card green">
           <div className="stat-top">
-            <span className="stat-title">Asignaciones</span>
+            <span className="stat-title">Asignación manual</span>
             <span className="stat-dot" />
           </div>
           <div className="stat-value">{resumen.manuales}</div>
-          <div className="stat-subtitle">Asignaciones efectuadas</div>
+          <div className="stat-subtitle">{resumen.rotativas} rotativas · brecha de carga {resumen.diferencia}</div>
         </article>
-
       </div>
 
       <div className="panel">
@@ -299,13 +342,17 @@ export default function AsignacionCasosConsejeros() {
               <div key={c.id}>
                 <span>{index + 1}</span>
                 <strong>{c.nombre}</strong>
-                <div style={{ marginTop: 6, fontSize: 11, color: "var(--muted)" }}>{c.fuerte}</div>
+                <div style={{ marginTop: 6, fontSize: 11, color: "var(--muted)" }}>{c.despacho}</div>
                 <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: "#20354F" }}>
                   {c.total} casos · {porcentaje}%
                 </div>
               </div>
             );
           })}
+
+          {!conteoConsejeros.length ? (
+            <div style={{ color: "var(--muted)" }}>No hay consejeros activos registrados.</div>
+          ) : null}
         </div>
       </div>
 
@@ -314,7 +361,7 @@ export default function AsignacionCasosConsejeros() {
           <input
             className="datatable-input"
             type="text"
-            placeholder="Buscar por código, nombre, sector o consejero..."
+            placeholder="Buscar por caso, expediente, NNA, sector o consejero..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
@@ -325,10 +372,14 @@ export default function AsignacionCasosConsejeros() {
             <option value="Manual">Manual</option>
           </select>
 
-          <select className="datatable-select" value={filtroConsejero} onChange={(e) => setFiltroConsejero(e.target.value)}>
+          <select
+            className="datatable-select"
+            value={filtroConsejero}
+            onChange={(e) => setFiltroConsejero(e.target.value)}
+          >
             <option value="todos">Todos los consejeros</option>
             {consejeros.map((c) => (
-              <option key={c.id} value={c.nombre}>
+              <option key={c.id} value={String(c.id)}>
                 {c.nombre}
               </option>
             ))}
@@ -339,14 +390,14 @@ export default function AsignacionCasosConsejeros() {
           <table className="tabla-datos">
             <thead>
               <tr>
-                <th>Código</th>
+                <th>Caso</th>
+                <th>Expediente</th>
                 <th>Nombre del NNA</th>
                 <th>Sector</th>
                 <th>Vulneración</th>
                 <th>Prioridad</th>
                 <th>Asignación</th>
                 <th>Consejero</th>
-                <th>Despacho</th>
                 <th>Fecha</th>
                 <th>Acciones</th>
               </tr>
@@ -355,6 +406,7 @@ export default function AsignacionCasosConsejeros() {
               {casosFiltrados.map((caso) => (
                 <tr key={caso.id}>
                   <td className="mono">{caso.codigo}</td>
+                  <td className="mono">{caso.expedienteCodigo}</td>
                   <td>{caso.nombres}</td>
                   <td>{caso.sector}</td>
                   <td>{caso.vulneracion}</td>
@@ -362,14 +414,16 @@ export default function AsignacionCasosConsejeros() {
                     <span className={getChipClass(caso.prioridad)}>{caso.prioridad}</span>
                   </td>
                   <td>
-                    <span className={caso.asignacion === "Manual" ? "pill amber" : "pill blue"}>{caso.asignacion}</span>
+                    <span className={caso.asignacion === "Manual" ? "pill amber" : "pill blue"}>
+                      {caso.asignacion}
+                    </span>
                   </td>
                   <td>{caso.asignadoA}</td>
-                  <td>{caso.despacho}</td>
                   <td>{fechaBonita(caso.fecha)}</td>
                   <td>
                     <div className="row-actions">
-                      <button onClick={() => abrirManual(caso)}>Asignar</button>
+                      <button onClick={() => abrirDetalle(caso)}>Ver</button>
+                      <button onClick={() => abrirManual(caso)}>Reasignar</button>
                     </div>
                   </td>
                 </tr>
@@ -392,9 +446,11 @@ export default function AsignacionCasosConsejeros() {
           <div className="expedientes-modal modal-nuevo" onClick={(e) => e.stopPropagation()}>
             <div className="expedientes-modal-header">
               <div>
-                <span className="expedientes-badge">Registro inmediato</span>
-                <h3>Guardar y asignar caso automáticamente</h3>
-                <p>Al guardar, el sistema evalúa carga de trabajo y afinidad temática para decidir el despacho receptor.</p>
+                <span className="expedientes-badge">Asignación</span>
+                <h3>Asignar un expediente a un consejero</h3>
+                <p>
+                  Si no elige consejero, el sistema entrega el expediente al despacho con menor carga de trabajo.
+                </p>
               </div>
               <button className="btn-close" onClick={() => setModalNuevo(false)}>
                 ✕
@@ -402,64 +458,48 @@ export default function AsignacionCasosConsejeros() {
             </div>
 
             <div className="form-nuevo-expediente">
-              <div className="campo">
-                <label>Código</label>
-                <input
-                  type="text"
-                  value={formNuevo.codigo}
-                  onChange={(e) => setFormNuevo((p) => ({ ...p, codigo: e.target.value }))}
-                  placeholder="URD-2026-00015"
-                />
-              </div>
-
-              <div className="campo">
-                <label>Nombre del NNA</label>
-                <input
-                  type="text"
-                  value={formNuevo.nombres}
-                  onChange={(e) => setFormNuevo((p) => ({ ...p, nombres: e.target.value }))}
-                  placeholder="Nombres y apellidos"
-                />
-              </div>
-
-              <div className="campo">
-                <label>Sector</label>
-                <input
-                  type="text"
-                  value={formNuevo.sector}
-                  onChange={(e) => setFormNuevo((p) => ({ ...p, sector: e.target.value }))}
-                  placeholder="Sector o comunidad"
-                />
-              </div>
-
-              <div className="campo">
-                <label>Tipo de vulneración</label>
-                <select value={formNuevo.vulneracion} onChange={(e) => setFormNuevo((p) => ({ ...p, vulneracion: e.target.value }))}>
-                  <option value="">Seleccione</option>
-                  <option value="Civil / Familiar">Civil / Familiar</option>
-                  <option value="Integridad Física / Maltrato">Integridad Física / Maltrato</option>
-                  <option value="Derecho a la Educación">Derecho a la Educación</option>
-                  <option value="Negligencia">Negligencia</option>
-                  <option value="Abuso">Abuso</option>
+              <div className="campo ancho">
+                <label>Expediente *</label>
+                <select
+                  value={formNuevo.expedienteId}
+                  onChange={(e) => setFormNuevo((p) => ({ ...p, expedienteId: e.target.value }))}
+                >
+                  <option value="">Seleccione un expediente sin asignar</option>
+                  {expedientesSinAsignar.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.codigo} — {e.nna_nombre || "Sin NNA"} · {e.sector}
+                    </option>
+                  ))}
                 </select>
+                {!expedientesSinAsignar.length ? (
+                  <small style={{ color: "var(--muted)" }}>
+                    Todos los expedientes registrados ya tienen consejero asignado.
+                  </small>
+                ) : null}
               </div>
 
               <div className="campo">
-                <label>Prioridad</label>
-                <select value={formNuevo.prioridad} onChange={(e) => setFormNuevo((p) => ({ ...p, prioridad: e.target.value }))}>
-                  <option value="Alta">Alta</option>
-                  <option value="Media">Media</option>
-                  <option value="Baja">Baja</option>
+                <label>Consejero</label>
+                <select
+                  value={formNuevo.consejeroId}
+                  onChange={(e) => setFormNuevo((p) => ({ ...p, consejeroId: e.target.value }))}
+                >
+                  <option value="">Automática (menor carga)</option>
+                  {consejeros.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.nombre} — {c.despacho}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div className="campo ancho">
-                <label>Observación inicial</label>
+                <label>Motivo</label>
                 <textarea
-                  rows="4"
-                  value={formNuevo.observacion}
-                  onChange={(e) => setFormNuevo((p) => ({ ...p, observacion: e.target.value }))}
-                  placeholder="Notas de recepción para orientar la asignación."
+                  rows="3"
+                  value={formNuevo.motivo}
+                  onChange={(e) => setFormNuevo((p) => ({ ...p, motivo: e.target.value }))}
+                  placeholder="Opcional. Si lo deja vacío se registra el criterio aplicado."
                 />
               </div>
             </div>
@@ -468,8 +508,13 @@ export default function AsignacionCasosConsejeros() {
               <button className="btn-secondary" onClick={() => setModalNuevo(false)}>
                 Cancelar
               </button>
-              <button className="btn-primary small" onClick={guardarCasoNuevo} style={{ marginLeft: 10 }}>
-                Guardar y asignar
+              <button
+                className="btn-primary small"
+                onClick={asignarExpediente}
+                disabled={guardando || !expedientesSinAsignar.length}
+                style={{ marginLeft: 10 }}
+              >
+                {guardando ? "Asignando..." : "Asignar"}
               </button>
             </div>
           </div>
@@ -483,7 +528,7 @@ export default function AsignacionCasosConsejeros() {
               <div>
                 <span className="expedientes-badge">Asignación manual</span>
                 <h3>Reasignar caso a un consejero específico</h3>
-                <p>La Presidenta puede intervenir sobre la distribución automática cuando el análisis del caso lo amerite.</p>
+                <p>La Presidencia puede intervenir sobre la distribución automática cuando el caso lo amerite.</p>
               </div>
               <button className="btn-close" onClick={() => setModalManual(false)}>
                 ✕
@@ -493,8 +538,9 @@ export default function AsignacionCasosConsejeros() {
             <div className="detalle-grid">
               <div className="detalle-card">
                 <h4>Datos del caso</h4>
-                <p><span className="detalle-label">Código</span>{casoSeleccionado.codigo}</p>
-                <p><span className="detalle-label">Nombre</span>{casoSeleccionado.nombres}</p>
+                <p><span className="detalle-label">Caso</span>{casoSeleccionado.codigo}</p>
+                <p><span className="detalle-label">Expediente</span>{casoSeleccionado.expedienteCodigo}</p>
+                <p><span className="detalle-label">NNA</span>{casoSeleccionado.nombres}</p>
                 <p><span className="detalle-label">Vulneración</span>{casoSeleccionado.vulneracion}</p>
                 <p><span className="detalle-label">Asignación actual</span>{casoSeleccionado.asignadoA}</p>
               </div>
@@ -505,9 +551,9 @@ export default function AsignacionCasosConsejeros() {
                   <label>Consejero titular</label>
                   <select value={consejeroManual} onChange={(e) => setConsejeroManual(e.target.value)}>
                     <option value="">Seleccione un consejero</option>
-                    {consejeros.map((c) => (
-                      <option key={c.id} value={c.nombre}>
-                        {c.nombre} — {c.fuerte}
+                    {conteoConsejeros.map((c) => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.nombre} — {c.total} casos
                       </option>
                     ))}
                   </select>
@@ -517,8 +563,7 @@ export default function AsignacionCasosConsejeros() {
                   <strong style={{ display: "block", marginBottom: 6, color: "var(--navy)" }}>Criterio sugerido</strong>
                   <ul>
                     <li>Se respeta la carga equilibrada de trabajo.</li>
-                    <li>Se prioriza la especialidad por materia.</li>
-                    <li>La reasignación queda registrada en la trazabilidad del expediente.</li>
+                    <li>La reasignación queda registrada en el historial del sistema.</li>
                   </ul>
                 </div>
               </div>
@@ -528,8 +573,13 @@ export default function AsignacionCasosConsejeros() {
               <button className="btn-secondary" onClick={() => setModalManual(false)}>
                 Cancelar
               </button>
-              <button className="btn-primary small" onClick={aplicarAsignacionManual} style={{ marginLeft: 10 }}>
-                Confirmar reasignación
+              <button
+                className="btn-primary small"
+                onClick={aplicarAsignacionManual}
+                disabled={guardando}
+                style={{ marginLeft: 10 }}
+              >
+                {guardando ? "Guardando..." : "Confirmar reasignación"}
               </button>
             </div>
           </div>
@@ -550,19 +600,17 @@ export default function AsignacionCasosConsejeros() {
               </button>
             </div>
 
-            <div className="detalle-tabs">
-              <div className="detalle-tab active">Asignación</div>
-              <div className="detalle-tab">Trazabilidad</div>
-              <div className="detalle-tab">Observaciones</div>
-            </div>
-
             <div className="detalle-grid">
               <div className="detalle-card">
                 <h4>Información principal</h4>
-                <p><span className="detalle-label">Nombre</span>{casoSeleccionado.nombres}</p>
+                <p><span className="detalle-label">Expediente</span>{casoSeleccionado.expedienteCodigo}</p>
+                <p><span className="detalle-label">NNA</span>{casoSeleccionado.nombres}</p>
                 <p><span className="detalle-label">Sector</span>{casoSeleccionado.sector}</p>
                 <p><span className="detalle-label">Vulneración</span>{casoSeleccionado.vulneracion}</p>
-                <p><span className="detalle-label">Prioridad</span><span className={getChipClass(casoSeleccionado.prioridad)}>{casoSeleccionado.prioridad}</span></p>
+                <p>
+                  <span className="detalle-label">Prioridad</span>
+                  <span className={getChipClass(casoSeleccionado.prioridad)}>{casoSeleccionado.prioridad}</span>
+                </p>
               </div>
 
               <div className="detalle-card">
@@ -583,10 +631,14 @@ export default function AsignacionCasosConsejeros() {
               <div className="detalle-card">
                 <h4>Acciones rápidas</h4>
                 <div className="espejo-actions" style={{ marginTop: 12 }}>
-                  <button className="btn-secondary" onClick={() => abrirManual(casoSeleccionado)}>
+                  <button className="btn-secondary" disabled={guardando} onClick={() => abrirManual(casoSeleccionado)}>
                     Reasignar manual
                   </button>
-                  <button className="btn-secondary" onClick={() => reasignarAutomaticamente(casoSeleccionado)}>
+                  <button
+                    className="btn-secondary"
+                    disabled={guardando}
+                    onClick={() => reasignarAutomaticamente(casoSeleccionado)}
+                  >
                     Reasignar automática
                   </button>
                 </div>

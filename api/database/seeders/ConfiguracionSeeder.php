@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Configuracion;
+use App\Support\Permisos;
 use Illuminate\Database\Seeder;
 
 class ConfiguracionSeeder extends Seeder
@@ -40,11 +41,6 @@ class ConfiguracionSeeder extends Seeder
             ['clave' => 'color_secundario', 'valor' => '#3b82f6', 'tipo' => 'color', 'categoria' => 'apariencia', 'descripcion' => 'Color secundario de la interfaz'],
             ['clave' => 'color_acento', 'valor' => '#f59e0b', 'tipo' => 'color', 'categoria' => 'apariencia', 'descripcion' => 'Color de acento'],
             
-            // Permisos por rol (JSON)
-            ['clave' => 'permisos_administrador', 'valor' => json_encode(['ver_expedientes', 'crear_expedientes', 'editar_expedientes', 'eliminar_expedientes', 'ver_usuarios', 'crear_usuarios', 'editar_usuarios', 'eliminar_usuarios', 'ver_reportes', 'ver_historial', 'configurar_sistema', 'asignar_casos', 'gestionar_plantillas']), 'tipo' => 'json', 'categoria' => 'permisos', 'descripcion' => 'Permisos del rol administrador'],
-            ['clave' => 'permisos_supervisor', 'valor' => json_encode(['ver_expedientes', 'crear_expedientes', 'editar_expedientes', 'ver_usuarios', 'ver_reportes', 'ver_historial', 'asignar_casos', 'gestionar_plantillas']), 'tipo' => 'json', 'categoria' => 'permisos', 'descripcion' => 'Permisos del rol supervisor'],
-            ['clave' => 'permisos_consejero', 'valor' => json_encode(['ver_expedientes', 'crear_expedientes', 'editar_expedientes']), 'tipo' => 'json', 'categoria' => 'permisos', 'descripcion' => 'Permisos del rol consejero'],
-            
             // Configuración del sistema
             ['clave' => 'dias_alerta_verde', 'valor' => '20', 'tipo' => 'numero', 'categoria' => 'sistema', 'descripcion' => 'Días para alerta verde (LOPNNA)'],
             ['clave' => 'dias_alerta_amarillo', 'valor' => '21', 'tipo' => 'numero', 'categoria' => 'sistema', 'descripcion' => 'Días para alerta amarillo (LOPNNA)'],
@@ -53,8 +49,20 @@ class ConfiguracionSeeder extends Seeder
             ['clave' => 'tiempo_sesion_minutos', 'valor' => '60', 'tipo' => 'numero', 'categoria' => 'seguridad', 'descripcion' => 'Tiempo de sesión en minutos'],
         ];
 
+        // Los módulos visibles por rol viven en la misma tabla, pero su lista
+        // canónica está en App\Support\Permisos para que API y menú coincidan.
+        foreach (Permisos::PREDETERMINADOS as $rol => $modulos) {
+            $configuraciones[] = [
+                'clave' => Permisos::clave($rol),
+                'valor' => json_encode($modulos),
+                'tipo' => 'json',
+                'categoria' => 'permisos',
+                'descripcion' => "Módulos visibles para el rol {$rol}",
+            ];
+        }
+
         foreach ($configuraciones as $config) {
-            Configuracion::create($config);
+            Configuracion::firstOrCreate(['clave' => $config['clave']], $config);
         }
     }
 }

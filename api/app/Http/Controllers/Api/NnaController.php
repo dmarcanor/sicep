@@ -31,7 +31,7 @@ class NnaController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $datos = $request->validate([
             'documento_identidad' => 'required|string|unique:nna',
             'nombres' => 'required|string|max:255',
             'apellidos' => 'required|string|max:255',
@@ -43,7 +43,7 @@ class NnaController extends Controller
             'fecha_nacimiento.before_or_equal' => 'La fecha de nacimiento no puede ser futura.',
         ]);
 
-        $nna = Nna::create($request->all());
+        $nna = Nna::create($datos);
 
         Historial::create([
             'usuario_id' => $request->user()->id,
@@ -65,19 +65,19 @@ class NnaController extends Controller
 
     public function update(Request $request, Nna $nna)
     {
-        $request->validate([
+        $datos = $request->validate([
             'documento_identidad' => 'sometimes|string|unique:nna,documento_identidad,' . $nna->id,
             'nombres' => 'sometimes|string|max:255',
             'apellidos' => 'sometimes|string|max:255',
             'fecha_nacimiento' => 'sometimes|date|before_or_equal:today',
             'sexo' => 'sometimes|in:Masculino,Femenino',
-            'lugar_nacimiento' => 'nullable|string|max:255',
-            'observaciones' => 'nullable|string',
+            'lugar_nacimiento' => 'sometimes|nullable|string|max:255',
+            'observaciones' => 'sometimes|nullable|string',
         ], [
             'fecha_nacimiento.before_or_equal' => 'La fecha de nacimiento no puede ser futura.',
         ]);
 
-        $nna->update($request->all());
+        $nna->update($datos);
 
         Historial::create([
             'usuario_id' => $request->user()->id,
