@@ -48,7 +48,7 @@ class ExpedienteController extends Controller
             });
         }
 
-        return response()->json($query->orderBy('fecha', 'desc')->get());
+        return response()->json($query->orderByDesc('id')->get());
     }
 
     public function store(Request $request)

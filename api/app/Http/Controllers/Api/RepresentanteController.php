@@ -22,7 +22,7 @@ class RepresentanteController extends Controller
             });
         }
 
-        $representantes = $query->withCount('expedientes')->orderBy('created_at', 'desc')->get();
+        $representantes = $query->withCount('expedientes')->orderByDesc('id')->get();
         
         return response()->json($representantes);
     }

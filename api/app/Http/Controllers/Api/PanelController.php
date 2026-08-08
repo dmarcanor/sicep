@@ -14,7 +14,7 @@ class PanelController extends Controller
     {
         $totalExpedientes = Expediente::count();
         $expedientesRecientes = Expediente::with(['registradoPor', 'asignadoA'])
-            ->orderBy('fecha', 'desc')
+            ->orderByDesc('id')
             ->limit(5)
             ->get();
 

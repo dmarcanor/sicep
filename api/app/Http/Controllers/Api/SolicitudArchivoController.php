@@ -21,7 +21,7 @@ class SolicitudArchivoController extends Controller
             $query->where('solicitante_id', $request->solicitante_id);
         }
 
-        return response()->json($query->orderBy('created_at', 'desc')->get());
+        return response()->json($query->orderByDesc('id')->get());
     }
 
     public function store(Request $request)

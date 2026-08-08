@@ -28,6 +28,6 @@ class HistorialController extends Controller
             $query->where('created_at', '<=', $request->fecha_hasta);
         }
 
-        return response()->json($query->orderBy('created_at', 'desc')->limit(100)->get());
+        return response()->json($query->orderByDesc('id')->limit(100)->get());
     }
 }

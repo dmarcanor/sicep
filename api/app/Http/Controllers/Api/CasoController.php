@@ -21,7 +21,7 @@ class CasoController extends Controller
             $query->where('asignado_a', $request->asignado_a);
         }
 
-        return response()->json($query->orderBy('created_at', 'desc')->get());
+        return response()->json($query->orderByDesc('id')->get());
     }
 
     public function store(Request $request)

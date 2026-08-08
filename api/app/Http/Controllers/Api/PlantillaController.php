@@ -11,7 +11,7 @@ class PlantillaController extends Controller
 {
     public function index()
     {
-        return response()->json(Plantilla::with('creadoPor')->where('activa', true)->get());
+        return response()->json(Plantilla::with('creadoPor')->where('activa', true)->orderByDesc('id')->get());
     }
 
     public function store(Request $request)

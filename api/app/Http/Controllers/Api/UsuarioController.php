@@ -12,7 +12,7 @@ class UsuarioController extends Controller
 {
     public function index()
     {
-        return response()->json(User::all());
+        return response()->json(User::orderByDesc('id')->get());
     }
 
     public function store(Request $request)
