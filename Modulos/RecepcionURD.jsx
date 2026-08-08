@@ -3,6 +3,8 @@ import "./css/RecepcionURD.css";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha, hoyISO } from "../src/formato";
+import Campo from "../componentes/Campo";
+import { AYUDAS_EXPEDIENTE } from "../src/ayudas";
 import SelectorConAlta, {
   CAMPOS_NNA,
   CAMPOS_REPRESENTANTE,
@@ -88,15 +90,16 @@ export default function RecepcionURD() {
   const validar = () => {
     const nuevosErrores = {};
 
-    if (!formulario.nna_id) nuevosErrores.nna_id = true;
-    if (!formulario.representante_id) nuevosErrores.representante_id = true;
+    if (!formulario.nna_id) nuevosErrores.nna_id = "Seleccione el NNA.";
+    if (!formulario.representante_id)
+      nuevosErrores.representante_id = "Seleccione el representante.";
     if (!formulario.fecha) {
       nuevosErrores.fecha = "Indique la fecha de ingreso.";
     } else if (formulario.fecha > hoyISO()) {
       nuevosErrores.fecha = "La fecha del expediente no puede ser futura.";
     }
-    if (!formulario.sector.trim()) nuevosErrores.sector = true;
-    if (!formulario.prioridad) nuevosErrores.prioridad = true;
+    if (!formulario.sector.trim()) nuevosErrores.sector = "Indique el sector.";
+    if (!formulario.prioridad) nuevosErrores.prioridad = "Seleccione la prioridad.";
 
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
@@ -242,6 +245,7 @@ export default function RecepcionURD() {
               camposAlta={CAMPOS_NNA}
               onCrear={crearNna}
               error={errores.nna_id}
+                ayuda={AYUDAS_EXPEDIENTE.nna}
               placeholder="Seleccione un NNA"
               textoAlta="+ Nuevo NNA"
             />
@@ -263,6 +267,7 @@ export default function RecepcionURD() {
               camposAlta={CAMPOS_REPRESENTANTE}
               onCrear={crearRepresentante}
               error={errores.representante_id}
+                ayuda={AYUDAS_EXPEDIENTE.representante}
               placeholder="Seleccione un representante"
               textoAlta="+ Nuevo representante"
             />
@@ -273,8 +278,11 @@ export default function RecepcionURD() {
           <h3>Datos del Caso</h3>
 
           <div className="recepcion-form">
-            <div className="campo">
-              <label>Fecha *</label>
+            <Campo
+              label="Fecha *"
+              ayuda={AYUDAS_EXPEDIENTE.fecha}
+              error={errores.fecha}
+            >
               <input
                 type="date"
                 name="fecha"
@@ -288,10 +296,13 @@ export default function RecepcionURD() {
                   {errores.fecha}
                 </small>
               )}
-            </div>
+            </Campo>
 
-            <div className="campo">
-              <label>Sector *</label>
+            <Campo
+              label="Sector *"
+              ayuda={AYUDAS_EXPEDIENTE.sector}
+              error={errores.sector}
+            >
               <input
                 name="sector"
                 value={formulario.sector}
@@ -299,10 +310,13 @@ export default function RecepcionURD() {
                 className={errores.sector ? "error" : ""}
                 placeholder="Ej. Centro, Guariquén..."
               />
-            </div>
+            </Campo>
 
-            <div className="campo">
-              <label>Prioridad *</label>
+            <Campo
+              label="Prioridad *"
+              ayuda={AYUDAS_EXPEDIENTE.prioridad}
+              error={errores.prioridad}
+            >
               <select
                 name="prioridad"
                 value={formulario.prioridad}
@@ -313,10 +327,13 @@ export default function RecepcionURD() {
                 <option>Media</option>
                 <option>Alta</option>
               </select>
-            </div>
+            </Campo>
 
-            <div className="campo">
-              <label>Tipificación</label>
+            <Campo
+              label="Tipificación"
+              ayuda={AYUDAS_EXPEDIENTE.tipificacion}
+              error={errores.tipificacion}
+            >
               <select
                 name="tipificacion"
                 value={formulario.tipificacion}
@@ -333,10 +350,14 @@ export default function RecepcionURD() {
                 <option>Explotación</option>
                 <option>Otro</option>
               </select>
-            </div>
+            </Campo>
 
-            <div className="campo ancho">
-              <label>Causa</label>
+            <Campo
+              label="Causa"
+              ayuda={AYUDAS_EXPEDIENTE.causa}
+              error={errores.causa}
+              ancho
+            >
               <textarea
                 name="causa"
                 value={formulario.causa}
@@ -344,7 +365,7 @@ export default function RecepcionURD() {
                 rows={3}
                 placeholder="Describa la causa del expediente"
               />
-            </div>
+            </Campo>
           </div>
         </div>
       </div>

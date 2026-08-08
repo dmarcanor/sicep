@@ -5,6 +5,8 @@ import autoTable from "jspdf-autotable";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha } from "../src/formato";
+import Campo from "../componentes/Campo";
+import { AYUDAS_REPRESENTANTE } from "../src/ayudas";
 import "./css/Expedientes.css";
 import "./css/Representantes.css";
 
@@ -309,8 +311,11 @@ export default function Representantes() {
             </div>
 
             <div className="form-nuevo-expediente">
-              <div className="campo">
-                <label>Cédula *</label>
+              <Campo
+                label="Cédula *"
+                ayuda={AYUDAS_REPRESENTANTE.cedula}
+                error={errores.cedula}
+              >
                 <input
                   type="text"
                   value={form.cedula}
@@ -321,13 +326,13 @@ export default function Representantes() {
                   placeholder="V-12345678"
                   className={errores.cedula ? "error" : ""}
                 />
-                {errores.cedula && (
-                  <span className="error-message">{errores.cedula}</span>
-                )}
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Nombres *</label>
+              <Campo
+                label="Nombres *"
+                ayuda={AYUDAS_REPRESENTANTE.nombres}
+                error={errores.nombres}
+              >
                 <input
                   type="text"
                   value={form.nombres}
@@ -337,13 +342,13 @@ export default function Representantes() {
                   }}
                   className={errores.nombres ? "error" : ""}
                 />
-                {errores.nombres && (
-                  <span className="error-message">{errores.nombres}</span>
-                )}
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Apellidos *</label>
+              <Campo
+                label="Apellidos *"
+                ayuda={AYUDAS_REPRESENTANTE.apellidos}
+                error={errores.apellidos}
+              >
                 <input
                   type="text"
                   value={form.apellidos}
@@ -353,23 +358,26 @@ export default function Representantes() {
                   }}
                   className={errores.apellidos ? "error" : ""}
                 />
-                {errores.apellidos && (
-                  <span className="error-message">{errores.apellidos}</span>
-                )}
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Teléfono</label>
+              <Campo
+                label="Teléfono"
+                ayuda={AYUDAS_REPRESENTANTE.telefono}
+                error={errores.telefono}
+              >
                 <input
                   type="text"
                   value={form.telefono}
                   onChange={(e) => setForm({ ...form, telefono: e.target.value })}
                   placeholder="0414-1234567"
                 />
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Email</label>
+              <Campo
+                label="Email"
+                ayuda={AYUDAS_REPRESENTANTE.email}
+                error={errores.email}
+              >
                 <input
                   type="email"
                   value={form.email}
@@ -379,37 +387,45 @@ export default function Representantes() {
                   }}
                   className={errores.email ? "error" : ""}
                 />
-                {errores.email && (
-                  <span className="error-message">{errores.email}</span>
-                )}
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Profesión</label>
+              <Campo
+                label="Profesión"
+                ayuda={AYUDAS_REPRESENTANTE.profesion}
+                error={errores.profesion}
+              >
                 <input
                   type="text"
                   value={form.profesion}
                   onChange={(e) => setForm({ ...form, profesion: e.target.value })}
                 />
-              </div>
+              </Campo>
 
-              <div className="campo ancho">
-                <label>Dirección</label>
+              <Campo
+                label="Dirección"
+                ayuda={AYUDAS_REPRESENTANTE.direccion}
+                error={errores.direccion}
+                ancho
+              >
                 <textarea
                   value={form.direccion}
                   onChange={(e) => setForm({ ...form, direccion: e.target.value })}
                   rows={2}
                 />
-              </div>
+              </Campo>
 
-              <div className="campo ancho">
-                <label>Lugar de Trabajo</label>
+              <Campo
+                label="Lugar de Trabajo"
+                ayuda={AYUDAS_REPRESENTANTE.lugar_trabajo}
+                error={errores.lugar_trabajo}
+                ancho
+              >
                 <input
                   type="text"
                   value={form.lugar_trabajo}
                   onChange={(e) => setForm({ ...form, lugar_trabajo: e.target.value })}
                 />
-              </div>
+              </Campo>
             </div>
 
             <div className="detalle-footer">

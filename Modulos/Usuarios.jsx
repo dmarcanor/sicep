@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./css/Usuarios.css";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
+import Campo from "../componentes/Campo";
 
 const formVacio = {
   id: null,
@@ -31,26 +32,6 @@ const AYUDAS = {
 const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RE_TELEFONO =
   /^(\+58|0)?(414|424|412|426|416|212|244|243|283|234|235|273|275|277|278|291|293|295)\d{7}$/;
-
-function Campo({ label, ayuda, error, children }) {
-  return (
-    <div className="campo">
-      <label>{label}</label>
-      {children}
-      {error ? (
-        <small style={{ color: "#c0392b", display: "block", marginTop: "4px" }}>
-          {error}
-        </small>
-      ) : (
-        ayuda && (
-          <small style={{ color: "#6b7789", display: "block", marginTop: "4px" }}>
-            {ayuda}
-          </small>
-        )
-      )}
-    </div>
-  );
-}
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([]);

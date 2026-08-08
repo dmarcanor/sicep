@@ -1,0 +1,14 @@
+.campo-ayuda,
+.campo-error {
+  display: block;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.campo-ayuda {
+  color: #6b7789;
+}
+
+.campo-error {
+  color: #c0392b;
+}

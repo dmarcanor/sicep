@@ -8,6 +8,8 @@ import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha, hoyISO } from "../src/formato";
 import { estilosTabla } from "../src/tablaEstilos";
+import Campo from "../componentes/Campo";
+import { AYUDAS_EXPEDIENTE } from "../src/ayudas";
 import SelectorConAlta, {
   CAMPOS_NNA,
   CAMPOS_REPRESENTANTE,
@@ -376,10 +378,11 @@ export default function Expedientes() {
       errores.fecha = "La fecha del expediente no puede ser futura.";
     }
 
-    if (!nuevoExpediente.nna_id) errores.nna_id = true;
-    if (!nuevoExpediente.representante_id) errores.representante_id = true;
-    if (!nuevoExpediente.sector.trim()) errores.sector = true;
-    if (!nuevoExpediente.prioridad.trim()) errores.prioridad = true;
+    if (!nuevoExpediente.nna_id) errores.nna_id = "Seleccione el NNA del expediente.";
+    if (!nuevoExpediente.representante_id)
+      errores.representante_id = "Seleccione el representante.";
+    if (!nuevoExpediente.sector.trim()) errores.sector = "Indique el sector.";
+    if (!nuevoExpediente.prioridad) errores.prioridad = "Seleccione la prioridad.";
 
     setErroresNuevo(errores);
 
@@ -652,8 +655,11 @@ export default function Expedientes() {
             </div>
 
             <div className="form-nuevo-expediente">
-              <div className="campo">
-                <label>Fecha *</label>
+              <Campo
+                label="Fecha *"
+                ayuda={AYUDAS_EXPEDIENTE.fecha}
+                error={erroresNuevo.fecha}
+              >
                 <input
                   type="date"
                   name="fecha"
@@ -667,10 +673,13 @@ export default function Expedientes() {
                     {erroresNuevo.fecha}
                   </small>
                 )}
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Prioridad *</label>
+              <Campo
+                label="Prioridad *"
+                ayuda={AYUDAS_EXPEDIENTE.prioridad}
+                error={erroresNuevo.prioridad}
+              >
                 <select
                   name="prioridad"
                   value={nuevoExpediente.prioridad}
@@ -682,20 +691,26 @@ export default function Expedientes() {
                   <option>Media</option>
                   <option>Alta</option>
                 </select>
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Hora de Registro</label>
+              <Campo
+                label="Hora de Registro"
+                ayuda={AYUDAS_EXPEDIENTE.hora_registro}
+                error={erroresNuevo.hora_registro}
+              >
                 <input
                   type="time"
                   name="hora_registro"
                   value={nuevoExpediente.hora_registro || ""}
                   onChange={actualizarNuevo}
                 />
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Tipificación</label>
+              <Campo
+                label="Tipificación"
+                ayuda={AYUDAS_EXPEDIENTE.tipificacion}
+                error={erroresNuevo.tipificacion}
+              >
                 <select
                   name="tipificacion"
                   value={nuevoExpediente.tipificacion || ""}
@@ -712,10 +727,14 @@ export default function Expedientes() {
                   <option>Explotación</option>
                   <option>Otro</option>
                 </select>
-              </div>
+              </Campo>
 
-              <div className="campo ancho">
-                <label>Causa</label>
+              <Campo
+                label="Causa"
+                ayuda={AYUDAS_EXPEDIENTE.causa}
+                error={erroresNuevo.causa}
+                ancho
+              >
                 <textarea
                   name="causa"
                   value={nuevoExpediente.causa || ""}
@@ -723,7 +742,7 @@ export default function Expedientes() {
                   rows={3}
                   placeholder="Describa la causa del expediente"
                 />
-              </div>
+              </Campo>
 
               <SelectorConAlta
                 label="NNA *"
@@ -736,6 +755,7 @@ export default function Expedientes() {
                 camposAlta={CAMPOS_NNA}
                 onCrear={crearNna}
                 error={erroresNuevo.nna_id}
+                ayuda={AYUDAS_EXPEDIENTE.nna}
                 placeholder="Seleccione un NNA"
                 textoAlta="+ Nuevo NNA"
               />
@@ -751,12 +771,17 @@ export default function Expedientes() {
                 camposAlta={CAMPOS_REPRESENTANTE}
                 onCrear={crearRepresentante}
                 error={erroresNuevo.representante_id}
+                ayuda={AYUDAS_EXPEDIENTE.representante}
                 placeholder="Seleccione un representante"
                 textoAlta="+ Nuevo representante"
               />
 
-              <div className="campo ancho">
-                <label>Sector *</label>
+              <Campo
+                label="Sector *"
+                ayuda={AYUDAS_EXPEDIENTE.sector}
+                error={erroresNuevo.sector}
+                ancho
+              >
                 <input
                   name="sector"
                   value={nuevoExpediente.sector}
@@ -764,7 +789,7 @@ export default function Expedientes() {
                   className={erroresNuevo.sector ? "error" : ""}
                   placeholder="Ej. Centro, Guariquén..."
                 />
-              </div>
+              </Campo>
             </div>
 
             <div className="detalle-footer">

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import "./css/Campo.css";
 import "./css/SelectorConAlta.css";
 
 // Sin acentos y en minúsculas: quien busca "perez" debe encontrar "Pérez".
@@ -45,6 +46,7 @@ export default function SelectorConAlta({
   camposAlta = [],
   onCrear,
   error = false,
+  ayuda = "",
   placeholder = "Seleccione",
   textoAlta = "+ Nuevo",
   ancho = true,
@@ -277,6 +279,12 @@ export default function SelectorConAlta({
           {abierto ? "Cancelar" : textoAlta}
         </button>
       </div>
+
+      {error ? (
+        <small className="campo-error">{error}</small>
+      ) : (
+        ayuda && !abierto && <small className="campo-ayuda">{ayuda}</small>
+      )}
 
       {abierto && (
         <div

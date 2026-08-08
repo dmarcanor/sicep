@@ -7,6 +7,8 @@ import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha, fechaParaInput } from "../src/formato";
 import { estilosTabla } from "../src/tablaEstilos";
+import Campo from "../componentes/Campo";
+import { AYUDAS_NNA } from "../src/ayudas";
 import "./css/Expedientes.css";
 
 export default function Nna() {
@@ -301,8 +303,11 @@ export default function Nna() {
             </div>
 
             <div className="form-nuevo-expediente">
-              <div className="campo">
-                <label>Documento de Identidad *</label>
+              <Campo
+                label="Documento de Identidad *"
+                ayuda={AYUDAS_NNA.documento_identidad}
+                error={errores.documento_identidad}
+              >
                 <input
                   type="text"
                   value={form.documento_identidad}
@@ -313,13 +318,13 @@ export default function Nna() {
                   placeholder="V-12345678"
                   className={errores.documento_identidad ? "error" : ""}
                 />
-                {errores.documento_identidad && (
-                  <span className="error-message">{errores.documento_identidad}</span>
-                )}
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Nombres *</label>
+              <Campo
+                label="Nombres *"
+                ayuda={AYUDAS_NNA.nombres}
+                error={errores.nombres}
+              >
                 <input
                   type="text"
                   value={form.nombres}
@@ -329,13 +334,13 @@ export default function Nna() {
                   }}
                   className={errores.nombres ? "error" : ""}
                 />
-                {errores.nombres && (
-                  <span className="error-message">{errores.nombres}</span>
-                )}
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Apellidos *</label>
+              <Campo
+                label="Apellidos *"
+                ayuda={AYUDAS_NNA.apellidos}
+                error={errores.apellidos}
+              >
                 <input
                   type="text"
                   value={form.apellidos}
@@ -345,13 +350,13 @@ export default function Nna() {
                   }}
                   className={errores.apellidos ? "error" : ""}
                 />
-                {errores.apellidos && (
-                  <span className="error-message">{errores.apellidos}</span>
-                )}
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Fecha de Nacimiento *</label>
+              <Campo
+                label="Fecha de Nacimiento *"
+                ayuda={AYUDAS_NNA.fecha_nacimiento}
+                error={errores.fecha_nacimiento}
+              >
                 <input
                   type="date"
                   value={form.fecha_nacimiento}
@@ -362,13 +367,13 @@ export default function Nna() {
                   max={new Date().toISOString().split('T')[0]}
                   className={errores.fecha_nacimiento ? "error" : ""}
                 />
-                {errores.fecha_nacimiento && (
-                  <span className="error-message">{errores.fecha_nacimiento}</span>
-                )}
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Sexo *</label>
+              <Campo
+                label="Sexo *"
+                ayuda={AYUDAS_NNA.sexo}
+                error={errores.sexo}
+              >
                 <select
                   value={form.sexo}
                   onChange={(e) => {
@@ -381,28 +386,32 @@ export default function Nna() {
                   <option value="Masculino">Masculino</option>
                   <option value="Femenino">Femenino</option>
                 </select>
-                {errores.sexo && (
-                  <span className="error-message">{errores.sexo}</span>
-                )}
-              </div>
+              </Campo>
 
-              <div className="campo">
-                <label>Lugar de Nacimiento</label>
+              <Campo
+                label="Lugar de Nacimiento"
+                ayuda={AYUDAS_NNA.lugar_nacimiento}
+                error={errores.lugar_nacimiento}
+              >
                 <input
                   type="text"
                   value={form.lugar_nacimiento}
                   onChange={(e) => setForm({ ...form, lugar_nacimiento: e.target.value })}
                 />
-              </div>
+              </Campo>
 
-              <div className="campo ancho">
-                <label>Observaciones</label>
+              <Campo
+                label="Observaciones"
+                ayuda={AYUDAS_NNA.observaciones}
+                error={errores.observaciones}
+                ancho
+              >
                 <textarea
                   value={form.observaciones}
                   onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
                   rows={3}
                 />
-              </div>
+              </Campo>
             </div>
 
             <div className="detalle-footer">
