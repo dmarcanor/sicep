@@ -12,9 +12,10 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     ports:
-      # Sólo para conectarse con un cliente externo. Coméntelo para no exponer
-      # la base de datos fuera del host.
-      - "${DB_PORT_HOST:-3306}:3306"
+      # Atado a 127.0.0.1 a propósito: sirve para conectarse con un cliente
+      # desde la propia máquina (o por un túnel SSH), pero no queda expuesto en
+      # la IP pública del servidor aunque el cortafuegos abra el puerto.
+      - "127.0.0.1:${DB_PORT_HOST:-3306}:3306"
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
