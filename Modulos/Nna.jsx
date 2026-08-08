@@ -6,6 +6,7 @@ import autoTable from "jspdf-autotable";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha, fechaParaInput } from "../src/formato";
+import { estilosTabla } from "../src/tablaEstilos";
 import "./css/Expedientes.css";
 
 export default function Nna() {
@@ -272,12 +273,12 @@ export default function Nna() {
       </div>
 
       <DataTable
+        customStyles={estilosTabla}
         columns={columnas}
         data={nnaFiltrado}
         progressPending={cargando}
         pagination
         highlightOnHover
-        striped
         noDataComponent="No hay NNA registrados"
       />
 

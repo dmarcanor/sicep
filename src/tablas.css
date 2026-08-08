@@ -1,0 +1,116 @@
+/* ============================================================
+   Diseño único de tablas, tomado del módulo de Usuarios.
+
+   Para una tabla nueva basta con envolverla así:
+
+     <div className="tabla-card">
+       <table className="tabla-datos"> ... </table>
+     </div>
+
+   Los demás nombres de clase que aparecen aquí son los que ya
+   usaban los módulos (cada uno inventó el suyo); se mantienen
+   para que hereden el mismo diseño sin tocar su marcado.
+
+   Los selectores llevan el nombre del elemento (table.x, div.x)
+   a propósito: así ganan por especificidad a las reglas sueltas
+   de cada hoja de módulo, sin depender del orden de carga ni de
+   !important.
+   ============================================================ */
+
+div.tabla-card,
+div.usuarios-card,
+div.tabla-container,
+div.tablaContenedor,
+div.tabla-wrap {
+  background: #fff;
+  border: 1px solid var(--line-2);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  overflow: auto;
+}
+
+table.tabla-datos,
+table.usuarios-table,
+table.tabla,
+table.tablaDatos,
+table.tabla-reportes,
+table.tabla-simple {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.tabla-datos th,
+table.tabla-datos td,
+table.usuarios-table th,
+table.usuarios-table td,
+table.tabla th,
+table.tabla td,
+table.tablaDatos th,
+table.tablaDatos td,
+table.tabla-reportes th,
+table.tabla-reportes td,
+table.tabla-simple th,
+table.tabla-simple td {
+  padding: 14px 12px;
+  font-size: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e8eef5;
+  color: var(--text);
+}
+
+table.tabla-datos th,
+table.usuarios-table th,
+table.tabla th,
+table.tablaDatos th,
+table.tabla-reportes th,
+table.tabla-simple th {
+  background: #f4f8fd;
+  color: var(--navy);
+  font-weight: 700;
+}
+
+table.tabla-datos tbody tr:last-child td,
+table.usuarios-table tbody tr:last-child td,
+table.tabla tbody tr:last-child td,
+table.tablaDatos tbody tr:last-child td,
+table.tabla-reportes tbody tr:last-child td,
+table.tabla-simple tbody tr:last-child td {
+  border-bottom: none;
+}
+
+table.tabla-datos tbody tr:hover,
+table.usuarios-table tbody tr:hover,
+table.tabla tbody tr:hover,
+table.tablaDatos tbody tr:hover,
+table.tabla-reportes tbody tr:hover {
+  background: #f9fbfe;
+}
+
+/* ------------------------------------------------------------
+   react-data-table-component (v8) se ajusta con sus variables
+   CSS, no con reglas sueltas: sus celdas no llevan relleno
+   vertical y la altura sale de --rdt-row-height. Estos valores
+   reproducen el mismo aspecto que las tablas de arriba.
+   ------------------------------------------------------------ */
+
+.rdt_table {
+  --rdt-cell-padding-x: 12px;
+  --rdt-row-height: 46px;
+  --rdt-header-height: 46px;
+  --rdt-font-size: 12px;
+  --rdt-font-size-header: 12px;
+  --rdt-color-header-bg: #f4f8fd;
+  --rdt-color-divider: #e8eef5;
+  --rdt-color-highlight: #f9fbfe;
+  --rdt-color-text-primary: var(--text);
+  --rdt-border-radius: 8px;
+}
+
+/* Fila de "no hay registros" */
+.tabla-vacia,
+.usuarios-vacio,
+.sinRegistros {
+  text-align: center !important;
+  color: var(--muted);
+  padding: 28px 12px !important;
+}

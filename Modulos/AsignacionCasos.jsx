@@ -335,8 +335,8 @@ export default function AsignacionCasosConsejeros() {
           </select>
         </div>
 
-        <div className="contenedorTabla table-wrap">
-          <table>
+        <div className="contenedorTabla table-wrap tabla-card">
+          <table className="tabla-datos">
             <thead>
               <tr>
                 <th>Código</th>

@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./css/Expedientes.css";
 import { api } from "../src/api";
+import { estilosTabla } from "../src/tablaEstilos";
 import { usePinAction } from "../src/hooks/usePinAction";
 
 const estadoOpciones = [
@@ -707,31 +708,14 @@ export default function SolicitudArchivos() {
       </div>
 
       <DataTable
+        customStyles={estilosTabla}
         columns={columnas}
         data={solicitudes}
         pagination
         highlightOnHover
         pointerOnHover
         responsive
-        dense
-        striped
         onRowClicked={abrirDetalle}
-        customStyles={{
-          headCells: {
-            style: {
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "#41556E",
-              backgroundColor: "#F4F8FD",
-            },
-          },
-          cells: {
-            style: {
-              fontSize: "12px",
-              color: "#223043",
-            },
-          },
-        }}
       />
 
       {mostrarModalNuevo && (

@@ -7,6 +7,7 @@ import autoTable from "jspdf-autotable";
 import "./css/PanelPrincipal.css";
 import { api } from "../src/api";
 import { formatearFecha } from "../src/formato";
+import { estilosTabla } from "../src/tablaEstilos";
 
 import AsignacionCasos from "./AsignacionCasos";
 
@@ -214,12 +215,11 @@ export default function PanelPrincipal() {
 
       
       <DataTable
+        customStyles={estilosTabla}
         columns={columnas}
         data={datosFiltrados}
         pagination
         responsive
-        dense
-        striped
         highlightOnHover
         pointerOnHover
         paginationPerPage={10}

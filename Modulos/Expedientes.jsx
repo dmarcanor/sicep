@@ -7,6 +7,7 @@ import "./css/Expedientes.css";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha, hoyISO } from "../src/formato";
+import { estilosTabla } from "../src/tablaEstilos";
 import SelectorConAlta, {
   CAMPOS_NNA,
   CAMPOS_REPRESENTANTE,
@@ -625,31 +626,14 @@ export default function Expedientes() {
       </div>
 
       <DataTable
+        customStyles={estilosTabla}
         columns={columnas}
         data={expedientes}
         pagination
         highlightOnHover
         pointerOnHover
         responsive
-        dense
-        striped
         onRowClicked={abrirDetalle}
-        customStyles={{
-          headCells: {
-            style: {
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "#41556E",
-              backgroundColor: "#F4F8FD",
-            },
-          },
-          cells: {
-            style: {
-              fontSize: "12px",
-              color: "#223043",
-            },
-          },
-        }}
       />
 
       {mostrarModalNuevo && (
