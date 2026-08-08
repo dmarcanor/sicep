@@ -1,0 +1,41 @@
+# Sobrecapa de producción. Se usa junto al compose base:
+#
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d
+#
+# Añade HTTPS automático (Caddy pide y renueva el certificado de Let's Encrypt)
+# y deja de publicar la base de datos y el frontend: el único puerto abierto de
+# la máquina pasa a ser el 80 y el 443 de Caddy.
+
+services:
+  db:
+    # Los contenedores se hablan por la red interna: publicar 3306 en el host
+    # sólo expondría la base de datos a la red de la VPS.
+    ports: !override []
+
+  web:
+    # Detrás de Caddy; deja de asomarse al host.
+    ports: !override []
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMINIO: ${DOMINIO:?defina DOMINIO en .env, p. ej. sicep.midominio.gob.ve}
+      ACME_EMAIL: ${ACME_EMAIL:?defina ACME_EMAIL en .env para los avisos del certificado}
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Guarda los certificados: sin este volumen se volverían a pedir en cada
+      # despliegue y Let's Encrypt limita los reintentos.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_started
+
+volumes:
+  caddy_data:
+  caddy_config:

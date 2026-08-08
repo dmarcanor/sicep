@@ -1,0 +1,25 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMINIO} {
+	encode gzip
+
+	# El sistema guarda datos de niños, niñas y adolescentes: el token de sesión
+	# y el PIN viajan en cada petición, así que HSTS evita cualquier salto a
+	# HTTP en claro una vez el navegador ha visitado el sitio.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+
+	reverse_proxy web:80
+
+	log {
+		output stdout
+		format console
+	}
+}

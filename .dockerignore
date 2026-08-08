@@ -1,0 +1,12 @@
+.git
+.idea
+node_modules
+dist
+api
+*.md
+*.pdf
+*.log
+.vite-dev.log
+.DS_Store
+.env
+.env.*

@@ -80,29 +80,34 @@ El proyecto se basa en un documento proporcionado por el cliente que especifica:
 ### Stack Tecnológico
 
 **Frontend:**
-- React 18 con Vite
+- React 19 con Vite
 - JavaScript (ES6+)
 - CSS3 (módulos por componente)
 - Bibliotecas: `recharts` (gráficos), `xlsx` (Excel), `jspdf` (PDF)
 
 **Backend:**
 - Laravel 13
-- PHP 8.2+
+- PHP 8.3+
 - MariaDB 11
 - Laravel Sanctum (autenticación API)
 
 **Infraestructura:**
-- Docker (MariaDB)
-- Vite dev server (puerto 5173)
-- Laravel artisan serve (puerto 8000)
+- Docker Compose: tres servicios (`db`, `api`, `web`)
+- `web`: nginx sirviendo el build de React y haciendo de proxy de `/api`
+- `api`: PHP-FPM + nginx (supervisor) con Laravel
+- `db`: MariaDB 11 con volumen persistente
+- En desarrollo sin Docker: Vite (5173) y `artisan serve` (8000)
 
 ### Patrones de Diseño
 
 - **Arquitectura cliente-servidor**: Frontend React consume API REST de Laravel
 - **Role-Based Access Control (RBAC)**: Middleware para control de permisos
 - **PIN Verification**: Middleware adicional para acciones críticas
-- **Soft Deletes**: Eliminación lógica de registros
-- **Audit Trail**: Historial automático de todas las operaciones
+- **Sin borrado**: el sistema no expone eliminación en ninguna capa. Un
+  expediente es la fuente legal del caso: sólo cambia de estatus (incluido
+  `Cerrado`). No existen rutas `DELETE` ni botones de eliminar
+- **Audit Trail**: Historial automático de todas las operaciones, con
+  `estado` en `Exitoso` / `Error`
 
 ---
 
@@ -203,7 +208,6 @@ lopna/
 - `GET /api/nna` - Listar NNA
 - `POST /api/nna` - Crear NNA
 - `PUT /api/nna/{id}` - Actualizar NNA
-- `DELETE /api/nna/{id}` - Eliminar NNA
 
 ### 4. Expedientes (`Expedientes.jsx`)
 **Función:** Gestión completa de expedientes
@@ -219,8 +223,7 @@ lopna/
 **API Endpoints:**
 - `GET /api/expedientes` - Listar expedientes
 - `POST /api/expedientes` - Crear expediente
-- `PUT /api/expedientes/{id}` - Actualizar expediente
-- `DELETE /api/expedientes/{id}` - Eliminar expediente
+- `PUT /api/expedientes/{id}` - Actualizar expediente (incluye cambio de estatus)
 
 ### 5. Representantes (`Representantes.jsx`)
 **Función:** Gestión de representantes legales
@@ -236,14 +239,13 @@ lopna/
 - `GET /api/representantes` - Listar representantes
 - `POST /api/representantes` - Crear representante
 - `PUT /api/representantes/{id}` - Actualizar representante
-- `DELETE /api/representantes/{id}` - Eliminar representante
 - `GET /api/representantes/buscar/{cedula}` - Buscar por cédula
 
 ### 6. Usuarios (`Usuarios.jsx`)
 **Función:** Administración de usuarios del sistema
 
 **Características:**
-- CRUD completo de usuarios
+- Alta y edición de usuarios (no se eliminan: se deshabilitan)
 - Asignación de roles
 - Activación/desactivación de cuentas
 - Configuración de PIN
@@ -251,31 +253,34 @@ lopna/
 **API Endpoints:**
 - `GET /api/usuarios` - Listar usuarios
 - `POST /api/usuarios` - Crear usuario
-- `PUT /api/usuarios/{id}` - Actualizar usuario
-- `DELETE /api/usuarios/{id}` - Eliminar usuario
+- `PUT /api/usuarios/{id}` - Actualizar usuario (incluye habilitar/deshabilitar)
 
 ### 7. Asignación de Casos (`AsignacionCasos.jsx`)
 **Función:** Distribución de expedientes a consejeros
 
 **Características:**
-- Vista de casos pendientes
-- Asignación manual o automática
-- Balance de carga entre consejeros
-- Seguimiento de casos asignados
+- Reparto de **expedientes ya registrados** (el módulo no crea expedientes)
+- Asignación manual, o automática al consejero con menor carga
+- Distribución y carga por consejero
+- Reasignación manual o automática de un caso existente
+
+Un expediente se asigna una sola vez: los ya repartidos no vuelven a ofrecerse.
 
 **API Endpoints:**
-- `GET /api/casos` - Listar casos
-- `POST /api/casos` - Crear asignación
-- `PUT /api/casos/{id}` - Actualizar estado
+- `GET /api/casos` - Listar casos (con expediente y consejero anidados)
+- `POST /api/casos` - Asignar un expediente a un consejero
+- `PUT /api/casos/{id}` - Reasignar, o cambiar estatus/observaciones
 
 ### 8. Solicitud de Archivos (`SolicitudArchivos.jsx`)
 **Función:** Gestión de solicitudes de documentos
 
 **Características:**
-- Registro de solicitudes
-- Seguimiento de estado
-- Historial de movimientos
-- Ubicación física de archivos
+- Registro de solicitudes sobre un expediente existente
+- Estado del expediente físico (Disponible, Prestado, Devuelto, En consulta,
+  Reservado, Extraviado, En digitalización)
+- Ubicación física: archivo, estante, nivel y caja
+- Préstamo y devolución con sus fechas
+- Historial de movimientos (sólo en pantalla, aún sin persistir)
 
 **API Endpoints:**
 - `GET /api/solicitudes` - Listar solicitudes
@@ -343,7 +348,8 @@ lopna/
 - Configuración de PIN
 
 **API Endpoints:**
-- `GET /api/me` - Obtener perfil
+- `GET /api/me` - Obtener perfil (incluye los módulos permitidos)
+- `GET /api/me/permisos` - Módulos vigentes del rol
 - `PUT /api/profile` - Actualizar perfil
 - `POST /api/pin/setup` - Configurar PIN
 - `POST /api/pin/change` - Cambiar PIN
@@ -421,6 +427,7 @@ lopna/
 - expediente_id (FK → expedientes)
 - asignado_a (FK → users)
 - asignado_por (FK → users)
+- tipo_asignacion (Rotativa, Manual)
 - motivo
 - estatus (Pendiente, En proceso, Resuelto, Cerrado)
 - observaciones
@@ -432,11 +439,18 @@ lopna/
 - id (PK)
 - codigo (unique)
 - expediente_id (FK → expedientes)
-- solicitante_id (FK → users)
-- documentos_solicitados
-- estatus (Pendiente, En proceso, Completado, Rechazado)
+- solicitante_id (FK → users)      -- usuario del sistema que registra
+- solicitante_nombre               -- quien pide físicamente el expediente
+- cargo
+- caso
+- motivo
+- documentos_solicitados (nullable)
+- estatus (Pendiente, En proceso, Completado, Rechazado,
+           Disponible, Reservado, Prestado, Devuelto,
+           En consulta, Extraviado, En digitalización)
 - observaciones
-- fecha_entrega
+- fecha_solicitud / fecha_prestamo / fecha_devolucion / fecha_entrega
+- ubicacion_archivo / ubicacion_estante / ubicacion_nivel / ubicacion_caja
 - timestamps
 ```
 
@@ -491,8 +505,9 @@ lopna/
 
 ### Sistema de Autenticación
 
-1. **Login inicial**: Usuario y contraseña
-2. **Token JWT**: Generado por Laravel Sanctum
+1. **Login inicial**: Usuario y contraseña, con bloqueo temporal tras
+   `max_intentos_login` fallos (configurable, 5 por defecto)
+2. **Token de acceso**: token opaco de Laravel Sanctum (no es un JWT)
 3. **Almacenamiento**: `localStorage` (frontend)
 4. **Validación**: Middleware `auth:sanctum` (backend)
 
@@ -509,29 +524,53 @@ lopna/
 8. Si es válido: permite la acción
 9. Si es inválido: retorna error 401
 
+El PIN protege acciones, no consultas: ninguna lectura lo exige. Tras 5 PIN
+incorrectos el usuario queda bloqueado un minuto y cada fallo se registra en el
+historial con `estado = Error`.
+
 **Acciones que requieren PIN:**
-- Crear/editar/eliminar expedientes
-- Crear/editar/eliminar usuarios
-- Crear/editar/eliminar NNA
-- Crear/editar/eliminar representantes
+- Crear/editar expedientes (incluido el cambio de estatus)
+- Crear/editar usuarios
+- Crear/editar NNA
+- Crear/editar representantes
 - Crear/editar plantillas
 - Crear/editar solicitudes
+- Asignar y actualizar casos
 - Actualizar perfil
+- Guardar configuración y la matriz de permisos
 
 ### Control de Roles
 
-**Middleware `role`:**
+El control es de dos capas.
+
+**1. Middleware `role` (techo fijo, no configurable).** Todas las rutas salvo
+`POST /api/login` lo llevan: es la única sin usuario autenticado todavía.
+
 ```php
-// Ejemplo de uso en rutas
 Route::middleware(['auth:sanctum', 'role:administrador'])->group(function () {
     // Rutas solo para administradores
 });
 ```
 
-**Permisos por rol:**
-- **Administrador**: Acceso completo
-- **Supervisor**: Gestión de expedientes, reportes, historial
-- **Consejero**: Solo lectura de expedientes y panel
+| Rol | Alcance en la API |
+|-----|-------------------|
+| **Administrador** | Todo |
+| **Supervisor** | Todo excepto usuarios y configuración |
+| **Consejero** | Panel, NNA, representantes, expedientes y solicitudes |
+
+**2. Matriz de permisos por módulo (configurable).** En *Configuración →
+Permisos por rol* se elige qué módulos ve cada rol. La lista canónica vive en
+`api/app/Support/Permisos.php` y se sirve por `GET /api/me/permisos`.
+
+- El frontend la consulta **en cada cambio de pantalla**, así que retirar un
+  módulo surte efecto sin que el usuario vuelva a iniciar sesión.
+- La matriz se recorta siempre al techo del rol: no puede conceder un módulo
+  cuya API respondería 403.
+- `principal` se concede siempre, para que ningún rol quede sin pantalla.
+
+Módulos: `principal`, `urd`, `nna`, `representantes`, `expedientes`,
+`solicitudArchivos`, `asignacionCasos`, `plantillas`, `reportes`, `historial`,
+`usuarios`, `configuracion`.
 
 ---
 
@@ -546,9 +585,9 @@ Route::middleware(['auth:sanctum', 'role:administrador'])->group(function () {
 - ✅ Presupuesto detallado
 
 #### Fase 2: Implementación Backend
-- ✅ Migraciones de base de datos (19 migraciones)
+- ✅ Migraciones de base de datos (23 migraciones)
 - ✅ Modelos Eloquent con relaciones
-- ✅ Controladores API (11 controladores)
+- ✅ Controladores API (12 controladores)
 - ✅ Middleware de autenticación y roles
 - ✅ Middleware de verificación de PIN
 - ✅ Seeders para datos iniciales
@@ -582,14 +621,19 @@ Route::middleware(['auth:sanctum', 'role:administrador'])->group(function () {
 - API endpoints operativos
 - Autenticación y PIN funcionando
 
-**Frontend:** 100% funcional
-- Todos los módulos conectados a API
-- Sin datos mock
+**Frontend:** parcialmente conectado
+- Conectados a la API: Panel, Recepción URD, NNA, Representantes, Expedientes
+  (listado, alta y cambio de estatus), Usuarios, Reportes, Historial,
+  Configuración, Perfil, Asignación de Casos y Solicitud de Archivos
+- **Pendiente de conectar**: `Plantillas.jsx` — trabaja sólo contra
+  `localStorage`
+- Persisten sólo en pantalla: la bitácora de actuaciones del expediente y el
+  historial de movimientos del archivo físico
 - PIN integrado en acciones críticas
 - Validaciones activas
 
 **Base de Datos:** Esquema completo
-- 10 tablas principales
+- 9 tablas principales
 - Relaciones establecidas
 - Datos de prueba cargados
 
@@ -716,7 +760,123 @@ Route::middleware(['auth:sanctum', 'role:administrador'])->group(function () {
 
 ## Comandos Útiles
 
-### Desarrollo
+### Despliegue con Docker (recomendado)
+
+Levanta base de datos, API y frontend con un solo comando. Sólo hace falta
+Docker instalado.
+
+```bash
+cp .env.docker.example .env
+docker compose run --rm --no-deps api php artisan key:generate --show
+# pegue el valor devuelto en APP_KEY dentro de .env, y cambie las claves de la
+# base de datos
+
+docker compose up -d --build
+```
+
+El sistema queda en <http://localhost:8080>.
+
+| Comando | Para qué |
+|---------|----------|
+| `docker compose ps` | Estado de los tres servicios |
+| `docker compose logs -f api` | Ver los registros de Laravel |
+| `docker compose down` | Detener (los datos se conservan) |
+| `docker compose down -v` | Detener **y borrar la base de datos** |
+| `docker compose exec api php artisan ...` | Cualquier comando de artisan |
+
+Al arrancar, el contenedor `api` espera a que MariaDB responda, aplica las
+migraciones y ejecuta los seeders. Los seeders usan `firstOrCreate`: añaden lo
+que falte sin pisar lo que se haya cambiado desde Configuración, de modo que
+reiniciar es inofensivo.
+
+Los datos viven en dos volúmenes (`sicep_db_data` y `sicep_api_storage`) y
+sobreviven a `docker compose down` y a la reconstrucción de las imágenes.
+
+> Si el puerto 3306 ya está ocupado en la máquina, cambie `DB_PORT_HOST` en
+> `.env`. Ese puerto sólo sirve para conectarse a la base con un cliente
+> externo; los contenedores se hablan por la red interna.
+
+### Despliegue en una VPS (producción, con HTTPS)
+
+La sobrecapa `compose.prod.yaml` añade Caddy —que pide y renueva solo el
+certificado de Let's Encrypt— y deja de publicar la base de datos y el
+frontend. Los únicos puertos abiertos pasan a ser el 80 y el 443.
+
+**Antes de empezar:** el DNS del dominio debe apuntar ya a la VPS (Caddy pide el
+certificado al arrancar y falla si el dominio no resuelve), y el cortafuegos
+debe permitir `tcp:80` y `tcp:443`. En Google Cloud sólo el SSH está abierto de
+fábrica:
+
+```bash
+gcloud compute firewall-rules create sicep-http \
+  --allow tcp:80,tcp:443 --target-tags=sicep
+```
+
+```bash
+git clone <repositorio> && cd lopna
+cp .env.docker.example .env
+
+docker compose run --rm --no-deps api php artisan key:generate --show
+# pegue el valor en APP_KEY
+
+# en .env: DOMINIO, ACME_EMAIL, APP_URL=https://su-dominio y claves de BD reales
+docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+```
+
+A partir de ahí, cada despliegue es:
+
+```bash
+git pull
+docker compose -f compose.yaml -f compose.prod.yaml up -d --build
+```
+
+Las migraciones se aplican solas al arrancar el contenedor `api`.
+
+> `DOMINIO` y `ACME_EMAIL` tienen que estar en `.env`: **todos** los comandos que
+> usen `-f compose.prod.yaml` los exigen, incluidos `ps`, `logs` y `down`.
+
+#### Construir sin levantar nada
+
+`docker compose build` construye las imágenes sin arrancar ni un contenedor, y
+en una máquina pequeña esa diferencia importa. Medido en este proyecto:
+
+| | Memoria |
+|---|---------|
+| Pico del build del frontend | **516 MiB** |
+| Stack en marcha (web + api + db) | **169 MiB** |
+
+En una `e2-micro` de 1 GB, construir con el stack levantado suma unos 690 MiB
+sobre el sistema y el demonio de Docker, y el build muere por falta de memoria.
+Construyendo con todo parado:
+
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml down   # libera 169 MiB
+docker compose -f compose.yaml -f compose.prod.yaml build  # no arranca nada
+docker compose -f compose.yaml -f compose.prod.yaml up -d
+```
+
+Esto implica un minuto de corte del servicio. Las dos alternativas sin corte:
+
+- **Añadir memoria de intercambio** (lo más simple, y suficiente):
+  ```bash
+  sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+  sudo mkswap /swapfile && sudo swapon /swapfile
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+  ```
+- **Construir fuera de la VPS** y publicar las imágenes en un registro
+  (Artifact Registry), de modo que la máquina sólo haga `pull`. Es lo
+  recomendable si el servidor se queda en 1 GB.
+
+#### Copias de seguridad
+
+Los datos viven en el volumen `sicep_db_data`. Un volcado diario:
+
+```bash
+docker compose exec -T db mariadb-dump -usicep -p"$DB_PASSWORD" sicep \
+  | gzip > respaldo-sicep-$(date +%F).sql.gz
+```
+
+### Desarrollo sin Docker
 
 **Iniciar backend:**
 ```bash
@@ -727,11 +887,6 @@ php artisan serve
 **Iniciar frontend:**
 ```bash
 npm run dev
-```
-
-**Iniciar base de datos:**
-```bash
-docker start sicep-mariadb
 ```
 
 ### Base de Datos
@@ -775,6 +930,14 @@ git log --oneline
 ## URLs y Accesos
 
 ### Desarrollo Local
+
+Con Docker Compose:
+
+- **Sistema completo:** http://localhost:8080 (el frontend habla con `/api` en
+  el mismo origen, no hay CORS)
+- **Base de datos:** localhost:3306 (configurable con `DB_PORT_HOST`)
+
+En desarrollo sin Docker:
 
 - **Frontend:** http://localhost:5173
 - **Backend API:** http://localhost:8000
