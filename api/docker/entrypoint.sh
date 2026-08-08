@@ -11,7 +11,7 @@ fi
 if [ -z "$APP_KEY" ]; then
     echo "ERROR: falta APP_KEY."
     echo "Genere una y póngala en el archivo .env de la raíz del proyecto:"
-    echo "  docker compose run --rm --no-deps api php artisan key:generate --show"
+    echo "  echo \"base64:\$(openssl rand -base64 32)\""
     exit 1
 fi
 

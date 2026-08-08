@@ -767,7 +767,7 @@ Docker instalado.
 
 ```bash
 cp .env.docker.example .env
-docker compose run --rm --no-deps api php artisan key:generate --show
+echo "base64:$(openssl rand -base64 32)"
 # pegue el valor devuelto en APP_KEY dentro de .env, y cambie las claves de la
 # base de datos
 
@@ -816,7 +816,8 @@ gcloud compute firewall-rules create sicep-http \
 git clone <repositorio> && cd lopna
 cp .env.docker.example .env
 
-docker compose run --rm --no-deps api php artisan key:generate --show
+# La clave es base64 de 32 bytes aleatorios: no hace falta Docker ni PHP.
+echo "base64:$(openssl rand -base64 32)"
 # pegue el valor en APP_KEY
 
 # en .env: DOMINIO, ACME_EMAIL, APP_URL=https://su-dominio y claves de BD reales
