@@ -1,4 +1,14 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import "./css/SelectorConAlta.css";
+
+// Sin acentos y en minúsculas: quien busca "perez" debe encontrar "Pérez".
+const normalizar = (texto) =>
+  String(texto ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const MAX_VISIBLES = 50;
 
 export const CAMPOS_NNA = [
   { name: "documento_identidad", label: "Documento", required: true, placeholder: "V-31234567" },
@@ -44,6 +54,91 @@ export default function SelectorConAlta({
   const [faltantes, setFaltantes] = useState({});
   const [errorAlta, setErrorAlta] = useState("");
   const [guardando, setGuardando] = useState(false);
+
+  const [consulta, setConsulta] = useState("");
+  const [listaAbierta, setListaAbierta] = useState(false);
+  const [indiceActivo, setIndiceActivo] = useState(0);
+  const contenedorRef = useRef(null);
+
+  const seleccionada = opciones.find((o) => o.id === value) || null;
+
+  const coincidencias = useMemo(() => {
+    const q = normalizar(consulta).trim();
+    if (!q) return opciones.slice(0, MAX_VISIBLES);
+
+    // Cada palabra debe aparecer en algún punto de la etiqueta, así "perez maria"
+    // encuentra igual que "maria perez".
+    const palabras = q.split(/\s+/);
+    return opciones
+      .filter((o) => {
+        const texto = normalizar(getEtiqueta(o));
+        return palabras.every((p) => texto.includes(p));
+      })
+      .slice(0, MAX_VISIBLES);
+  }, [consulta, opciones, getEtiqueta]);
+
+  const totalCoincidencias = useMemo(() => {
+    const q = normalizar(consulta).trim();
+    if (!q) return opciones.length;
+    const palabras = q.split(/\s+/);
+    return opciones.filter((o) => {
+      const texto = normalizar(getEtiqueta(o));
+      return palabras.every((p) => texto.includes(p));
+    }).length;
+  }, [consulta, opciones, getEtiqueta]);
+
+  // Cerrar al pulsar fuera del componente.
+  useEffect(() => {
+    if (!listaAbierta) return undefined;
+
+    const alPulsarFuera = (e) => {
+      if (!contenedorRef.current?.contains(e.target)) setListaAbierta(false);
+    };
+
+    document.addEventListener("mousedown", alPulsarFuera);
+    return () => document.removeEventListener("mousedown", alPulsarFuera);
+  }, [listaAbierta]);
+
+  const elegir = (opcion) => {
+    onChange(opcion.id);
+    setConsulta("");
+    setListaAbierta(false);
+  };
+
+  const limpiar = () => {
+    onChange(null);
+    setConsulta("");
+    setListaAbierta(false);
+  };
+
+  const alTeclear = (e) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!listaAbierta) {
+        setListaAbierta(true);
+        return;
+      }
+      setIndiceActivo((prev) => {
+        const siguiente = e.key === "ArrowDown" ? prev + 1 : prev - 1;
+        if (siguiente < 0) return coincidencias.length - 1;
+        if (siguiente >= coincidencias.length) return 0;
+        return siguiente;
+      });
+      return;
+    }
+
+    if (e.key === "Enter" && listaAbierta) {
+      e.preventDefault();
+      const opcion = coincidencias[indiceActivo];
+      if (opcion) elegir(opcion);
+      return;
+    }
+
+    if (e.key === "Escape") {
+      setListaAbierta(false);
+      setConsulta("");
+    }
+  };
 
   const actualizar = (e) => {
     const { name, value: v } = e.target;
@@ -96,22 +191,82 @@ export default function SelectorConAlta({
     <div className={ancho ? "campo ancho" : "campo"}>
       <label>{label}</label>
 
-      <div style={{ display: "flex", gap: "8px", alignItems: "stretch" }}>
-        <select
-          value={value ?? ""}
-          onChange={(e) =>
-            onChange(e.target.value ? Number(e.target.value) : null)
-          }
-          className={error ? "error" : ""}
-          style={{ flex: 1 }}
-        >
-          <option value="">{placeholder}</option>
-          {opciones.map((opcion) => (
-            <option key={opcion.id} value={opcion.id}>
-              {getEtiqueta(opcion)}
-            </option>
-          ))}
-        </select>
+      <div
+        ref={contenedorRef}
+        style={{ display: "flex", gap: "8px", alignItems: "stretch" }}
+      >
+        <div className="selector-busqueda">
+          <input
+            type="text"
+            role="combobox"
+            aria-expanded={listaAbierta}
+            autoComplete="off"
+            className={error ? "error" : ""}
+            placeholder={placeholder}
+            value={
+              listaAbierta
+                ? consulta
+                : seleccionada
+                  ? getEtiqueta(seleccionada)
+                  : ""
+            }
+            onChange={(e) => {
+              setConsulta(e.target.value);
+              setIndiceActivo(0);
+              setListaAbierta(true);
+            }}
+            onFocus={() => {
+              setConsulta("");
+              setIndiceActivo(0);
+              setListaAbierta(true);
+            }}
+            onKeyDown={alTeclear}
+          />
+
+          {seleccionada && !listaAbierta && (
+            <button
+              type="button"
+              className="selector-limpiar"
+              onClick={limpiar}
+              title="Quitar selección"
+            >
+              ✕
+            </button>
+          )}
+
+          {listaAbierta && (
+            <ul className="selector-lista">
+              {coincidencias.length === 0 ? (
+                <li className="selector-vacio">
+                  Sin resultados para “{consulta}”.
+                </li>
+              ) : (
+                coincidencias.map((opcion, i) => (
+                  <li
+                    key={opcion.id}
+                    className={`selector-opcion ${i === indiceActivo ? "activa" : ""}`}
+                    // onMouseDown: se adelanta al blur del input, que si no
+                    // cerraría la lista antes de registrar el clic.
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      elegir(opcion);
+                    }}
+                    onMouseEnter={() => setIndiceActivo(i)}
+                  >
+                    {getEtiqueta(opcion)}
+                  </li>
+                ))
+              )}
+
+              {totalCoincidencias > coincidencias.length && (
+                <li className="selector-conteo">
+                  Mostrando {coincidencias.length} de {totalCoincidencias}. Afine
+                  la búsqueda para ver el resto.
+                </li>
+              )}
+            </ul>
+          )}
+        </div>
 
         <button
           type="button"

@@ -1,0 +1,79 @@
+.selector-busqueda {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.selector-busqueda input {
+  width: 100%;
+}
+
+/* Botón para limpiar la selección, dentro del propio campo. */
+.selector-limpiar {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: #6b7789;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.selector-limpiar:hover {
+  background: #eef2f8;
+  color: #223043;
+}
+
+.selector-lista {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #d8dee8;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(10, 20, 35, 0.16);
+}
+
+.selector-opcion {
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #223043;
+}
+
+.selector-opcion.activa {
+  background: #eaf1fb;
+}
+
+.selector-opcion mark {
+  background: #fde68a;
+  color: inherit;
+  padding: 0;
+  border-radius: 2px;
+}
+
+.selector-vacio {
+  padding: 10px;
+  font-size: 13px;
+  color: #6b7789;
+}
+
+.selector-conteo {
+  padding: 6px 10px 2px;
+  font-size: 11px;
+  color: #6b7789;
+  border-top: 1px solid #eef2f8;
+}
