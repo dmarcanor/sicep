@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
+import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
 
 const formInicial = {
   expedienteId: "",
@@ -78,10 +79,10 @@ export default function AsignacionCasosConsejeros() {
   const [guardando, setGuardando] = useState(false);
   const { executeWithPin, PinModalWrapper } = usePinAction();
 
-  const cargarDatos = async () => {
+  const cargarDatos = async (search = "") => {
     try {
       const [casosData, usuariosData, expedientesData] = await Promise.all([
-        api.getCasos(),
+        api.getCasos(search.trim() ? { search: search.trim() } : {}),
         api.getUsuarios(),
         api.getExpedientes(),
       ]);
@@ -103,9 +104,11 @@ export default function AsignacionCasosConsejeros() {
     }
   };
 
+  const busquedaDiferida = useBusquedaDiferida(busqueda);
+
   useEffect(() => {
-    cargarDatos();
-  }, []);
+    cargarDatos(busquedaDiferida);
+  }, [busquedaDiferida]);
 
   // Se compara por id de usuario. Antes se comparaba el nombre contra el objeto
   // anidado que devuelve la API, así que el conteo siempre daba 0.
@@ -125,23 +128,14 @@ export default function AsignacionCasosConsejeros() {
   }, [expedientes, casos]);
 
   const casosFiltrados = useMemo(() => {
-    const q = normalizar(busqueda);
     return casos.filter((caso) => {
-      const cumpleBusqueda =
-        !q ||
-        normalizar(
-          [caso.codigo, caso.expedienteCodigo, caso.nombres, caso.sector, caso.vulneracion, caso.asignadoA, caso.despacho]
-            .filter(Boolean)
-            .join(" "),
-        ).includes(q);
-
       const cumpleTipo = filtroTipo === "todos" || caso.asignacion === filtroTipo;
       const cumpleConsejero =
         filtroConsejero === "todos" || String(caso.consejeroId) === filtroConsejero;
 
-      return cumpleBusqueda && cumpleTipo && cumpleConsejero;
+      return cumpleTipo && cumpleConsejero;
     });
-  }, [casos, busqueda, filtroTipo, filtroConsejero]);
+  }, [casos, filtroTipo, filtroConsejero]);
 
   const resumen = useMemo(() => {
     const cargas = consejeros.map((c) => casos.filter((caso) => caso.consejeroId === c.id).length);

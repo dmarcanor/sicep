@@ -19,6 +19,26 @@ class SolicitudArchivoController extends Controller
     {
         $query = SolicitudArchivo::with(['expediente.nna', 'expediente.representante', 'solicitante']);
 
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('codigo', 'like', "%{$search}%")
+                  ->orWhere('caso', 'like', "%{$search}%")
+                  ->orWhere('solicitante_nombre', 'like', "%{$search}%")
+                  ->orWhere('cargo', 'like', "%{$search}%")
+                  ->orWhere('motivo', 'like', "%{$search}%")
+                  ->orWhere('ubicacion_archivo', 'like', "%{$search}%")
+                  ->orWhereHas('expediente', function ($e) use ($search) {
+                      $e->where('codigo', 'like', "%{$search}%")
+                        ->orWhereHas('nna', function ($n) use ($search) {
+                            $n->where('nombres', 'like', "%{$search}%")
+                              ->orWhere('apellidos', 'like', "%{$search}%")
+                              ->orWhereRaw("CONCAT(nombres, ' ', apellidos) like ?", ["%{$search}%"]);
+                        });
+                  });
+            });
+        }
+
         if ($request->has('estatus')) {
             $query->where('estatus', $request->estatus);
         }

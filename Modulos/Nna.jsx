@@ -4,6 +4,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { api } from "../src/api";
+import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha, fechaParaInput } from "../src/formato";
 import { estilosTabla } from "../src/tablaEstilos";
@@ -31,14 +32,13 @@ export default function Nna() {
     observaciones: "",
   });
 
-  useEffect(() => {
-    cargarNna();
-  }, []);
 
-  const cargarNna = async () => {
+  const cargarNna = async (search = busqueda) => {
     try {
       setCargando(true);
-      const data = await api.getNna();
+      // El filtrado lo hace la API: descargar todo y filtrar en memoria no
+      // aguanta un registro real.
+      const data = await api.getNna(search.trim() ? { search: search.trim() } : {});
       setNna(data);
     } catch (error) {
       console.error("Error cargando NNA:", error);
@@ -47,14 +47,13 @@ export default function Nna() {
     }
   };
 
-  const nnaFiltrado = nna.filter((item) => {
-    const q = busqueda.toLowerCase();
-    return (
-      item.nombres.toLowerCase().includes(q) ||
-      item.apellidos.toLowerCase().includes(q) ||
-      item.documento_identidad.toLowerCase().includes(q)
-    );
-  });
+  const busquedaDiferida = useBusquedaDiferida(busqueda);
+
+  useEffect(() => {
+    cargarNna(busquedaDiferida);
+  }, [busquedaDiferida]);
+
+  const nnaFiltrado = nna;
 
   const validarDocumento = (documento) => {
     // Formato venezolano: V-12345678 o E-12345678

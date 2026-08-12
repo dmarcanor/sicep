@@ -14,6 +14,28 @@ class CasoController extends Controller
     {
         $query = Caso::with(['expediente.nna', 'expediente.representante', 'asignadoA', 'asignadoPor']);
 
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('codigo', 'like', "%{$search}%")
+                  ->orWhere('motivo', 'like', "%{$search}%")
+                  ->orWhereHas('expediente', function ($e) use ($search) {
+                      $e->where('codigo', 'like', "%{$search}%")
+                        ->orWhere('sector', 'like', "%{$search}%")
+                        ->orWhere('tipificacion', 'like', "%{$search}%")
+                        ->orWhereHas('nna', function ($n) use ($search) {
+                            $n->where('nombres', 'like', "%{$search}%")
+                              ->orWhere('apellidos', 'like', "%{$search}%")
+                              ->orWhereRaw("CONCAT(nombres, ' ', apellidos) like ?", ["%{$search}%"]);
+                        });
+                  })
+                  ->orWhereHas('asignadoA', function ($u) use ($search) {
+                      $u->where('name', 'like', "%{$search}%")
+                        ->orWhere('display_name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
         if ($request->has('estatus')) {
             $query->where('estatus', $request->estatus);
         }

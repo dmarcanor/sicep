@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import DataTable from "react-data-table-component";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { api } from "../src/api";
+import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha } from "../src/formato";
+import { estilosTabla } from "../src/tablaEstilos";
 import Campo from "../componentes/Campo";
 import { AYUDAS_REPRESENTANTE } from "../src/ayudas";
 import "./css/Expedientes.css";
@@ -31,14 +34,12 @@ export default function Representantes() {
     lugar_trabajo: "",
   });
 
-  useEffect(() => {
-    cargarRepresentantes();
-  }, []);
 
-  const cargarRepresentantes = async () => {
+  const cargarRepresentantes = async (search = busqueda) => {
     try {
       setCargando(true);
-      const data = await api.getRepresentantes();
+      // El filtrado lo hace la API, igual que en NNA y Expedientes.
+      const data = await api.getRepresentantes(search.trim() ? { search: search.trim() } : {});
       setRepresentantes(data);
     } catch (error) {
       console.error("Error cargando representantes:", error);
@@ -47,14 +48,13 @@ export default function Representantes() {
     }
   };
 
-  const representantesFiltrados = representantes.filter((item) => {
-    const q = busqueda.toLowerCase();
-    return (
-      item.nombres.toLowerCase().includes(q) ||
-      item.apellidos.toLowerCase().includes(q) ||
-      item.cedula.toLowerCase().includes(q)
-    );
-  });
+  const busquedaDiferida = useBusquedaDiferida(busqueda);
+
+  useEffect(() => {
+    cargarRepresentantes(busquedaDiferida);
+  }, [busquedaDiferida]);
+
+  const representantesFiltrados = representantes;
 
   const validarCedula = (cedula) => {
     const regex = /^[VE]-?\d{6,8}$/i;
@@ -209,6 +209,33 @@ export default function Representantes() {
     return <div className="modulo">Cargando representantes...</div>;
   }
 
+  // Mismo componente de tabla que NNA: aporta paginación y ordenación, que
+  // faltaban aquí y se notaban al crecer el listado.
+  const columnas = [
+    { name: "Cédula", selector: (r) => r.cedula, sortable: true, width: "140px" },
+    { name: "Nombres", selector: (r) => r.nombres, sortable: true },
+    { name: "Apellidos", selector: (r) => r.apellidos, sortable: true },
+    { name: "Teléfono", selector: (r) => r.telefono || "-", width: "150px" },
+    { name: "Email", selector: (r) => r.email || "-" },
+    {
+      name: "Expedientes",
+      selector: (r) => r.expedientes_count ?? 0,
+      sortable: true,
+      width: "130px",
+      cell: (r) => <span className="badge">{r.expedientes_count || 0}</span>,
+    },
+    {
+      name: "Acciones",
+      width: "170px",
+      cell: (row) => (
+        <div className="acciones">
+          <button className="btn-secondary" onClick={() => abrirDetalle(row)}>Ver</button>
+          <button className="btn-secondary" onClick={() => abrirEdicion(row)}>Editar</button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="modulo">
       <div className="cabeceraModulo">
@@ -236,61 +263,15 @@ export default function Representantes() {
         </div>
       </div>
 
-      <div className="tabla-container">
-        <table className="tabla">
-          <thead>
-            <tr>
-              <th>Cédula</th>
-              <th>Nombres</th>
-              <th>Apellidos</th>
-              <th>Teléfono</th>
-              <th>Email</th>
-              <th>Expedientes</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {representantesFiltrados.length === 0 ? (
-              <tr>
-                <td colSpan="7" className="sinRegistros">
-                  No hay representantes registrados
-                </td>
-              </tr>
-            ) : (
-              representantesFiltrados.map((rep) => (
-                <tr key={rep.id}>
-                  <td>{rep.cedula}</td>
-                  <td>{rep.nombres}</td>
-                  <td>{rep.apellidos}</td>
-                  <td>{rep.telefono || "-"}</td>
-                  <td>{rep.email || "-"}</td>
-                  <td>
-                    <span className="badge">
-                      {rep.expedientes_count || 0}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="acciones">
-                      <button
-                        className="btn-secondary"
-                        onClick={() => abrirDetalle(rep)}
-                      >
-                        Ver
-                      </button>
-                      <button
-                        className="btn-secondary"
-                        onClick={() => abrirEdicion(rep)}
-                      >
-                        Editar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        customStyles={estilosTabla}
+        columns={columnas}
+        data={representantesFiltrados}
+        progressPending={cargando}
+        pagination
+        highlightOnHover
+        noDataComponent="No hay representantes registrados"
+      />
 
       {mostrarModal && (
         <div className="expedientes-modal-overlay" onClick={() => setMostrarModal(false)}>

@@ -26,11 +26,11 @@ export const getPinConfigurado = () => {
   return localStorage.getItem('pin_configurado') === 'true';
 };
 
-const getHeaders = (pin = null) => {
-  const headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
+const getHeaders = (pin = null, { json = true } = {}) => {
+  const headers = { 'Accept': 'application/json' };
+  if (json) {
+    headers['Content-Type'] = 'application/json';
+  }
   const token = getAuthToken();
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -51,9 +51,14 @@ const handleResponse = async (response, opciones = {}) => {
     if (data.pin_required) {
       throw new Error('PIN_REQUIRED');
     }
-    setAuthToken(null);
-    window.location.href = '/';
-    throw new Error('No autorizado');
+
+    // Un PIN mal tecleado no es una sesión vencida: se avisa y la acción
+    // simplemente no se ejecuta.
+    if (!data.pin_invalido) {
+      setAuthToken(null);
+      window.location.href = '/';
+      throw new Error('No autorizado');
+    }
   }
 
   if (response.status === 403 && data.pin_required) {
@@ -135,6 +140,13 @@ export const api = {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ pin_actual: pinActual, pin_nuevo: pinNuevo }),
+    });
+    return handleResponse(response);
+  },
+
+  async getInstitucion() {
+    const response = await fetch(`${API_BASE}/institucion`, {
+      headers: getHeaders(),
     });
     return handleResponse(response);
   },
@@ -268,6 +280,55 @@ export const api = {
   },
 
 
+  async subirResumen(expedienteId, archivo, pin = null) {
+    const cuerpo = new FormData();
+    cuerpo.append('resumen', archivo);
+
+    const response = await fetch(`${API_BASE}/expedientes/${expedienteId}/resumen`, {
+      method: 'POST',
+      headers: getHeaders(pin, { json: false }),
+      body: cuerpo,
+    });
+    return handleResponse(response);
+  },
+
+  // El PDF va protegido: hay que pedirlo con la sesión y abrirlo desde memoria.
+  async descargarResumen(expedienteId) {
+    const response = await fetch(`${API_BASE}/expedientes/${expedienteId}/resumen`, {
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      await handleResponse(response);
+    }
+
+    return response.blob();
+  },
+
+  async quitarResumen(expedienteId, pin = null) {
+    const response = await fetch(`${API_BASE}/expedientes/${expedienteId}/resumen`, {
+      method: 'DELETE',
+      headers: getHeaders(pin),
+    });
+    return handleResponse(response);
+  },
+
+  async getBitacora(expedienteId) {
+    const response = await fetch(`${API_BASE}/expedientes/${expedienteId}/bitacora`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  async createActuacion(expedienteId, data, pin = null) {
+    const response = await fetch(`${API_BASE}/expedientes/${expedienteId}/bitacora`, {
+      method: 'POST',
+      headers: getHeaders(pin),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
   async getCasos(params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const response = await fetch(`${API_BASE}/casos?${queryString}`, {
@@ -346,8 +407,9 @@ export const api = {
     return handleResponse(response);
   },
 
-  async getUsuarios() {
-    const response = await fetch(`${API_BASE}/usuarios`, {
+  async getUsuarios(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetch(`${API_BASE}/usuarios?${queryString}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -380,8 +442,9 @@ export const api = {
     return handleResponse(response);
   },
 
-  async getReportes() {
-    const response = await fetch(`${API_BASE}/reportes`, {
+  async getReportes(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetch(`${API_BASE}/reportes?${queryString}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);

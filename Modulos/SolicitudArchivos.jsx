@@ -7,6 +7,7 @@ import "./css/Expedientes.css";
 import { api } from "../src/api";
 import { estilosTabla } from "../src/tablaEstilos";
 import { usePinAction } from "../src/hooks/usePinAction";
+import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
 
 // Debe coincidir con el enum de solicitudes_archivo.estatus.
 const ESTATUS_ARCHIVO = [
@@ -136,9 +137,9 @@ export default function SolicitudArchivos() {
   const [expedientes, setExpedientes] = useState([]);
   const [guardando, setGuardando] = useState(false);
 
-  const cargarSolicitudes = async () => {
+  const cargarSolicitudes = async (search = "") => {
     try {
-      const data = await api.getSolicitudes();
+      const data = await api.getSolicitudes(search.trim() ? { search: search.trim() } : {});
       return data.map(normalizarSolicitud);
     } catch (error) {
       console.error("Error cargando solicitudes:", error);
@@ -146,12 +147,18 @@ export default function SolicitudArchivos() {
     }
   };
 
-  const recargar = async () => setSolicitudesBase(await cargarSolicitudes());
+  const recargar = async (search = busquedaDiferida) =>
+    setSolicitudesBase(await cargarSolicitudes(search));
+
+  const busquedaDiferida = useBusquedaDiferida(busqueda);
 
   useEffect(() => {
-    recargar();
     api.getExpedientes().then(setExpedientes).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    recargar(busquedaDiferida);
+  }, [busquedaDiferida]);
 
   const solicitudes = useMemo(() => {
     return solicitudesBase.filter((item) => {

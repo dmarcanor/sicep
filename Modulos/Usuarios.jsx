@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import "./css/Usuarios.css";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import Campo from "../componentes/Campo";
+import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
 
 const formVacio = {
   id: null,
@@ -44,14 +45,15 @@ export default function Usuarios() {
   const [cargando, setCargando] = useState(true);
   const { executeWithPin, PinModalWrapper } = usePinAction();
 
-  useEffect(() => {
-    cargarUsuarios();
-  }, []);
 
-  const cargarUsuarios = async () => {
+
+  const cargarUsuarios = async (search = "", rol = filtroRol) => {
     try {
       setCargando(true);
-      const data = await api.getUsuarios();
+      const params = {};
+      if (search.trim()) params.search = search.trim();
+      if (rol && rol !== "Todos") params.role = rol.toLowerCase();
+      const data = await api.getUsuarios(params);
       setUsuarios(data);
     } catch (error) {
       console.error('Error cargando usuarios:', error);
@@ -60,21 +62,13 @@ export default function Usuarios() {
     }
   };
 
-  const usuariosFiltrados = useMemo(() => {
-    return usuarios.filter((u) => {
-      const q = busqueda.toLowerCase().trim();
+  const busquedaDiferida = useBusquedaDiferida(busqueda);
 
-      const coincideBusqueda =
-        !q ||
-        `${u.name} ${u.username} ${u.email} ${u.role}`
-          .toLowerCase()
-          .includes(q);
+  useEffect(() => {
+    cargarUsuarios(busquedaDiferida, filtroRol);
+  }, [busquedaDiferida, filtroRol]);
 
-      const coincideRol = filtroRol === "Todos" ? true : u.role === filtroRol;
-
-      return coincideBusqueda && coincideRol;
-    });
-  }, [usuarios, busqueda, filtroRol]);
+  const usuariosFiltrados = usuarios;
 
   const abrirNuevo = () => {
     setForm(formVacio);
