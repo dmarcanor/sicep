@@ -13,9 +13,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // No hay pantalla de login servida por Laravel: sin esto, una petición
+        // sin sesión intentaba redirigir a la ruta 'login' inexistente y salía
+        // un 500 en vez de un 401.
+        $middleware->redirectGuestsTo(fn () => null);
+
         $middleware->alias([
             'verify.pin' => \App\Http\Middleware\VerifyPin::class,
             'role' => \App\Http\Middleware\CheckRole::class,
+            'permiso' => \App\Http\Middleware\CheckPermiso::class,
         ]);
 
         // Tras el nginx del contenedor web, sin esto el historial guardaría la
