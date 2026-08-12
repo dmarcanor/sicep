@@ -6,14 +6,11 @@ use App\Models\Historial;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\RateLimiter;
+use App\Support\IntentosPin;
 use Symfony\Component\HttpFoundation\Response;
 
 class VerifyPin
 {
-    private const MAXIMO_FALLOS = 5;
-    private const VENTANA_BLOQUEO = 60;
-
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
@@ -36,17 +33,15 @@ class VerifyPin
             ], 401);
         }
 
-        $llave = 'pin:' . $user->id;
-
-        if (RateLimiter::tooManyAttempts($llave, self::MAXIMO_FALLOS)) {
+        if (IntentosPin::bloqueado($user->id)) {
             return response()->json([
                 'message' => 'Demasiados intentos con PIN incorrecto. Espere '
-                    . RateLimiter::availableIn($llave) . ' segundos antes de reintentar.',
+                    . IntentosPin::segundosRestantes($user->id) . ' segundos antes de reintentar.',
             ], 429);
         }
 
         if (!Hash::check($pin, $user->pin)) {
-            RateLimiter::hit($llave, self::VENTANA_BLOQUEO);
+            IntentosPin::registrarFallo($user->id);
 
             Historial::create([
                 'usuario_id' => $user->id,
@@ -59,10 +54,13 @@ class VerifyPin
 
             return response()->json([
                 'message' => 'PIN de seguridad incorrecto',
+                // Distingue este 401 del de sesión vencida: el cliente sólo
+                // debe avisar, no cerrar la sesión por un PIN mal tecleado.
+                'pin_invalido' => true,
             ], 401);
         }
 
-        RateLimiter::clear($llave);
+        IntentosPin::limpiar($user->id);
 
         return $next($request);
     }

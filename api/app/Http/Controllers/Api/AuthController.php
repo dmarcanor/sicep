@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Configuracion;
 use App\Models\Historial;
 use App\Models\User;
+use App\Support\IntentosPin;
 use App\Support\Permisos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 class AuthController extends Controller
 {
     private const VENTANA_BLOQUEO = 60;
+    private const MAXIMO_INTENTOS = 5;
 
     public function login(Request $request)
     {
@@ -24,7 +25,7 @@ class AuthController extends Controller
         ]);
 
         $llave = 'login:' . Str::lower($request->username) . '|' . $request->ip();
-        $maximo = max(1, (int) Configuracion::obtener('max_intentos_login', 5));
+        $maximo = self::MAXIMO_INTENTOS;
 
         if (RateLimiter::tooManyAttempts($llave, $maximo)) {
             return response()->json([
@@ -143,14 +144,27 @@ class AuthController extends Controller
 
         $user = $request->user();
 
+        // Mismo contador que el middleware: es el otro camino para probar PINes.
+        if (IntentosPin::bloqueado($user->id)) {
+            return response()->json([
+                'message' => 'Demasiados intentos con PIN incorrecto. Espere '
+                    . IntentosPin::segundosRestantes($user->id) . ' segundos antes de reintentar.',
+                'valid' => false,
+            ], 429);
+        }
+
         if (!Hash::check($request->pin, $user->pin)) {
+            IntentosPin::registrarFallo($user->id);
             $this->registrar($user->id, 'Verificación de PIN fallida', $request, 'Error');
 
             return response()->json([
                 'message' => 'PIN incorrecto',
                 'valid' => false,
+                'pin_invalido' => true,
             ], 401);
         }
+
+        IntentosPin::limpiar($user->id);
 
         return response()->json([
             'message' => 'PIN válido',
@@ -172,6 +186,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'message' => 'PIN actual incorrecto',
+                'pin_invalido' => true,
             ], 401);
         }
 
