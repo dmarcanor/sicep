@@ -280,3 +280,13 @@
   color: #6c757d;
   font-size: 12px;
 }
+
+.permisos-nota {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-left: 3px solid #1e3a8a;
+  background: #eef2ff;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #1e293b;
+}

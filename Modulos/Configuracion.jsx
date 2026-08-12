@@ -16,11 +16,8 @@ export default function Configuracion() {
     { id: "general", nombre: "General", icono: "🏢" },
     { id: "membrete", nombre: "Membrete", icono: "📄" },
     { id: "contacto", nombre: "Contacto", icono: "📞" },
-    { id: "jefatura", nombre: "Jefatura", icono: "👔" },
-    { id: "apariencia", nombre: "Apariencia", icono: "🎨" },
     { id: "permisos", nombre: "Permisos por Rol", icono: "🔐" },
     { id: "sistema", nombre: "Sistema", icono: "⚙️" },
-    { id: "seguridad", nombre: "Seguridad", icono: "🛡️" },
   ];
 
   useEffect(() => {
@@ -81,26 +78,6 @@ export default function Configuracion() {
     if (!config) return null;
 
     switch (config.tipo) {
-      case "color":
-        return (
-          <div className="config-campo" key={config.clave}>
-            <label>{config.descripcion || config.clave}</label>
-            <div className="color-input-wrapper">
-              <input
-                type="color"
-                value={config.valor || "#000000"}
-                onChange={(e) => actualizarValor(config.clave, e.target.value)}
-              />
-              <input
-                type="text"
-                value={config.valor || ""}
-                onChange={(e) => actualizarValor(config.clave, e.target.value)}
-                placeholder="#000000"
-              />
-            </div>
-          </div>
-        );
-
       case "numero":
         return (
           <div className="config-campo" key={config.clave}>
@@ -110,33 +87,6 @@ export default function Configuracion() {
               value={config.valor || ""}
               onChange={(e) => actualizarValor(config.clave, e.target.value)}
             />
-          </div>
-        );
-
-      case "json":
-        let jsonValue = "";
-        try {
-          const parsed = JSON.parse(config.valor || "[]");
-          jsonValue = parsed.join(", ");
-        } catch {
-          jsonValue = config.valor || "";
-        }
-
-        return (
-          <div className="config-campo" key={config.clave}>
-            <label>{config.descripcion || config.clave}</label>
-            <textarea
-              value={jsonValue}
-              onChange={(e) => {
-                const valores = e.target.value.split(",").map((v) => v.trim());
-                actualizarValor(config.clave, JSON.stringify(valores));
-              }}
-              rows={4}
-              placeholder="Separar permisos con comas"
-            />
-            <small className="config-help">
-              Separe los permisos con comas
-            </small>
           </div>
         );
 
@@ -188,13 +138,18 @@ export default function Configuracion() {
           <h2>Configuración del Sistema</h2>
           <p>Administre los parámetros generales del sistema</p>
         </div>
-        <button
-          className="btn-primary"
-          onClick={guardarCambios}
-          disabled={guardando}
-        >
-          {guardando ? "Guardando..." : "Guardar Cambios"}
-        </button>
+        {/* En Permisos manda el botón propio de PermisosPorRol. Este guardaba
+            los valores cargados al montar, así que deshacía en silencio la
+            matriz que se acababa de guardar. */}
+        {categoriaActiva !== "permisos" && (
+          <button
+            className="btn-primary"
+            onClick={guardarCambios}
+            disabled={guardando}
+          >
+            {guardando ? "Guardando..." : "Guardar Cambios"}
+          </button>
+        )}
       </div>
 
       {mensaje && <div className="toast-exito">{mensaje}</div>}

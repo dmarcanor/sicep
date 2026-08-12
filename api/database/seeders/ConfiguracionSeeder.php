@@ -27,26 +27,12 @@ class ConfiguracionSeeder extends Seeder
             ['clave' => 'telefono_institucion', 'valor' => '(0244) 000-0000', 'tipo' => 'texto', 'categoria' => 'contacto', 'descripcion' => 'Teléfono de contacto'],
             ['clave' => 'email_institucion', 'valor' => 'contacto@cpnna.gob.ve', 'tipo' => 'texto', 'categoria' => 'contacto', 'descripcion' => 'Correo electrónico institucional'],
             
-            // Jefatura
-            ['clave' => 'jefe_nombre', 'valor' => 'Nombre del Jefe(a)', 'tipo' => 'texto', 'categoria' => 'jefatura', 'descripcion' => 'Nombre completo del jefe de la institución'],
-            ['clave' => 'jefe_cargo', 'valor' => 'Presidente del Consejo de Protección', 'tipo' => 'texto', 'categoria' => 'jefatura', 'descripcion' => 'Cargo oficial del jefe'],
-            ['clave' => 'jefe_firma', 'valor' => 'Firma Autorizada', 'tipo' => 'texto', 'categoria' => 'jefatura', 'descripcion' => 'Texto o imagen de firma'],
             
-            // Logo
-            ['clave' => 'logo_url', 'valor' => '/img/logo.png', 'tipo' => 'texto', 'categoria' => 'apariencia', 'descripcion' => 'Ruta del logo institucional'],
-            ['clave' => 'logo_secundario_url', 'valor' => '', 'tipo' => 'texto', 'categoria' => 'apariencia', 'descripcion' => 'Ruta del logo secundario'],
             
-            // Colores
-            ['clave' => 'color_primario', 'valor' => '#1e3a8a', 'tipo' => 'color', 'categoria' => 'apariencia', 'descripcion' => 'Color primario de la interfaz'],
-            ['clave' => 'color_secundario', 'valor' => '#3b82f6', 'tipo' => 'color', 'categoria' => 'apariencia', 'descripcion' => 'Color secundario de la interfaz'],
-            ['clave' => 'color_acento', 'valor' => '#f59e0b', 'tipo' => 'color', 'categoria' => 'apariencia', 'descripcion' => 'Color de acento'],
             
             // Configuración del sistema
-            ['clave' => 'dias_alerta_verde', 'valor' => '20', 'tipo' => 'numero', 'categoria' => 'sistema', 'descripcion' => 'Días para alerta verde (LOPNNA)'],
-            ['clave' => 'dias_alerta_amarillo', 'valor' => '21', 'tipo' => 'numero', 'categoria' => 'sistema', 'descripcion' => 'Días para alerta amarillo (LOPNNA)'],
-            ['clave' => 'dias_alerta_rojo', 'valor' => '25', 'tipo' => 'numero', 'categoria' => 'sistema', 'descripcion' => 'Días para alerta rojo (LOPNNA)'],
-            ['clave' => 'max_intentos_login', 'valor' => '5', 'tipo' => 'numero', 'categoria' => 'seguridad', 'descripcion' => 'Máximo de intentos de login fallidos'],
-            ['clave' => 'tiempo_sesion_minutos', 'valor' => '60', 'tipo' => 'numero', 'categoria' => 'seguridad', 'descripcion' => 'Tiempo de sesión en minutos'],
+            ['clave' => 'dias_alerta_amarillo', 'valor' => '21', 'tipo' => 'numero', 'categoria' => 'sistema', 'descripcion' => 'Días para marcar el expediente en amarillo (por vencer)'],
+            ['clave' => 'dias_alerta_rojo', 'valor' => '25', 'tipo' => 'numero', 'categoria' => 'sistema', 'descripcion' => 'Días para marcar el expediente en rojo (lapso vencido)'],
         ];
 
         // Los módulos visibles por rol viven en la misma tabla, pero su lista
