@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 
-const ROLES = ["administrador", "supervisor", "consejero"];
+// El administrador no se configura: por definición tiene todos los módulos.
+const ROLES = ["supervisor", "consejero"];
 
 // Deben coincidir con App\Support\Permisos::MODULOS del backend.
 const MODULOS = [
   { id: "principal", nombre: "Panel Principal", descripcion: "Pantalla de inicio con los indicadores del despacho" },
-  { id: "urd", nombre: "Recepción URD", descripcion: "Registro inicial de expedientes en recepción" },
+  { id: "urd", nombre: "Recepción URD", descripcion: "Registro inicial en recepción. Requiere también NNA, Representantes y Expedientes" },
   { id: "nna", nombre: "Gestión de NNA", descripcion: "Fichas de niños, niñas y adolescentes" },
   { id: "representantes", nombre: "Representantes", descripcion: "Fichas de los representantes legales" },
   { id: "expedientes", nombre: "Expedientes", descripcion: "Listado, seguimiento y cambio de estatus" },
@@ -24,18 +25,7 @@ const MODULOS = [
 // siempre, así que aquí se muestra fijo para no prometer algo que no se aplica.
 const MODULO_BASE = "principal";
 
-// Techo por rol: la API responde 403 en los módulos fuera de esta lista, así que
-// ofrecerlos en la matriz sería ofrecer un permiso que no se puede conceder.
-const TOPE_POR_ROL = {
-  administrador: MODULOS.map((m) => m.id),
-  supervisor: [
-    "principal", "urd", "nna", "representantes", "expedientes",
-    "solicitudArchivos", "asignacionCasos", "plantillas", "reportes", "historial",
-  ],
-  consejero: ["principal", "urd", "nna", "representantes", "expedientes", "solicitudArchivos"],
-};
-
-const vacio = { administrador: [], supervisor: [], consejero: [] };
+const vacio = { supervisor: [], consejero: [] };
 
 export default function PermisosPorRol() {
   const [permisos, setPermisos] = useState(vacio);
@@ -103,7 +93,7 @@ export default function PermisosPorRol() {
         );
       }, "Guardar Permisos");
 
-      setMensaje("Permisos guardados. Se aplican al recargar cada pantalla.");
+      setMensaje("Permisos guardados. Se aplican de inmediato, sin volver a entrar.");
       setTimeout(() => setMensaje(""), 4000);
     } catch (error) {
       if (error.message !== "Acción cancelada") {
@@ -123,7 +113,15 @@ export default function PermisosPorRol() {
     <div className="permisos-container">
       <div className="permisos-header">
         <h3>Control de Permisos por Rol</h3>
-        <p>Elija qué módulos ve cada rol en el menú lateral.</p>
+        <p>
+          Todos los módulos pueden concederse a cualquier rol; lo que cambia
+          de partida es qué trae activado cada uno. Se aplica al menú y también
+          a la API: un módulo desactivado deja de responder.
+        </p>
+        <p className="permisos-nota">
+          El rol <strong>Administrador</strong> no se configura: siempre tiene
+          acceso a todo.
+        </p>
         <button className="btn-primary" onClick={guardarPermisos} disabled={guardando}>
           {guardando ? "Guardando..." : "Guardar Permisos"}
         </button>
@@ -133,13 +131,11 @@ export default function PermisosPorRol() {
 
       <div className="permisos-grid">
         {ROLES.map((rol) => {
-          const permitidos = TOPE_POR_ROL[rol] || [];
-
           return (
             <div key={rol} className="permisos-rol">
               <h4 className="rol-titulo">{rol.charAt(0).toUpperCase() + rol.slice(1)}</h4>
               <div className="permisos-lista">
-                {MODULOS.filter((modulo) => permitidos.includes(modulo.id)).map((modulo) => {
+                {MODULOS.map((modulo) => {
                   const fijo = modulo.id === MODULO_BASE;
 
                   return (

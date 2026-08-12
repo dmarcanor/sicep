@@ -7,8 +7,9 @@ use App\Models\Configuracion;
 class Permisos
 {
     /**
-     * Los módulos que el menú lateral puede mostrar. La matriz configurable de
-     * Configuración → Permisos por rol se expresa en estos identificadores.
+     * Los módulos del sistema. La matriz de Configuración → Permisos por rol
+     * ofrece esta misma lista a todos los roles configurables: lo que cambia
+     * entre ellos son los valores de partida, no lo que se les puede conceder.
      */
     public const MODULOS = [
         'principal',
@@ -33,23 +34,19 @@ class Permisos
     public const MODULO_BASE = 'principal';
 
     /**
-     * Techo por rol: lo máximo que la matriz puede llegar a conceder. Refleja
-     * las rutas que el middleware `role` deja pasar, de modo que la matriz
-     * nunca pueda ofrecer un módulo cuya API responderá 403.
+     * El administrador no aparece en la matriz: su definición es tener acceso a
+     * todo. Hacerlo configurable permitiría además que se quitara a sí mismo
+     * Configuración y se quedara sin forma de volver a entrar.
      */
-    public const TOPE_POR_ROL = [
-        'administrador' => self::MODULOS,
-        'supervisor' => [
-            'principal', 'urd', 'nna', 'representantes', 'expedientes',
-            'solicitudArchivos', 'asignacionCasos', 'plantillas', 'reportes', 'historial',
-        ],
-        'consejero' => [
-            'principal', 'urd', 'nna', 'representantes', 'expedientes', 'solicitudArchivos',
-        ],
-    ];
+    public const ROL_TOTAL = 'administrador';
 
+    public const ROLES_CONFIGURABLES = ['supervisor', 'consejero'];
+
+    /**
+     * Punto de partida de cada rol. Son sólo los valores por defecto: desde
+     * Configuración se le puede conceder a cualquier rol cualquier módulo.
+     */
     public const PREDETERMINADOS = [
-        'administrador' => self::MODULOS,
         'supervisor' => [
             'principal', 'urd', 'nna', 'representantes', 'expedientes',
             'solicitudArchivos', 'asignacionCasos', 'reportes', 'historial',
@@ -65,15 +62,16 @@ class Permisos
     }
 
     /**
-     * Módulos efectivos de un rol: lo guardado en configuración, recortado al
-     * techo del rol. Si el valor guardado no es utilizable se cae a los
+     * Módulos efectivos de un rol. Si lo guardado no es utilizable se cae a los
      * predeterminados, nunca a una lista vacía.
      */
     public static function delRol(?string $rol): array
     {
-        $tope = self::TOPE_POR_ROL[$rol] ?? [];
+        if ($rol === self::ROL_TOTAL) {
+            return self::MODULOS;
+        }
 
-        if ($tope === []) {
+        if (!in_array($rol, self::ROLES_CONFIGURABLES, true)) {
             return [];
         }
 
@@ -81,12 +79,12 @@ class Permisos
 
         $lista = is_array($guardado)
             ? $guardado
-            : (self::PREDETERMINADOS[$rol] ?? []);
+            : self::PREDETERMINADOS[$rol];
 
-        $lista = array_intersect($lista, $tope);
         $lista[] = self::MODULO_BASE;
 
-        // Se reordena según MODULOS para que el menú salga siempre igual.
+        // Se reordena según MODULOS para que el menú salga siempre igual, y de
+        // paso se descarta cualquier identificador que ya no exista.
         return array_values(array_intersect(self::MODULOS, array_unique($lista)));
     }
 
