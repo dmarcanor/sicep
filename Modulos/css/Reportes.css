@@ -128,3 +128,29 @@
       align-items:flex-start;
     }
   }
+.reporte-periodo {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.reporte-periodo label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.reporte-vacio {
+  padding: 40px 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.tarjetaResumen small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
