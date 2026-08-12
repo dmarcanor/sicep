@@ -216,14 +216,23 @@ lopna/
 - Tabla con filtros avanzados
 - Búsqueda por múltiples campos
 - Cambio de estatus
-- Asignación a consejeros
 - Exportación a Excel/PDF
-- Modal de detalle con bitácora
+- Modal de detalle con bitácora de actuaciones (persistida, sólo se añade)
+- Semáforo de lapso legal según Configuración → Sistema
+- Espejo digital: ubicación del expediente físico y resumen final en PDF
+
+El responsable de un expediente se decide en **Asignación de Casos**, que crea
+un registro en `casos`: el expediente no guarda un asignado por su cuenta.
 
 **API Endpoints:**
 - `GET /api/expedientes` - Listar expedientes
 - `POST /api/expedientes` - Crear expediente
 - `PUT /api/expedientes/{id}` - Actualizar expediente (incluye cambio de estatus)
+- `GET /api/expedientes/{id}/bitacora` - Actuaciones del expediente
+- `POST /api/expedientes/{id}/bitacora` - Registrar una actuación
+- `GET /api/expedientes/{id}/resumen` - Descargar el resumen en PDF
+- `POST /api/expedientes/{id}/resumen` - Cargar o reemplazar el resumen
+- `DELETE /api/expedientes/{id}/resumen` - Retirar el adjunto (el expediente no se toca)
 
 ### 5. Representantes (`Representantes.jsx`)
 **Función:** Gestión de representantes legales
@@ -306,10 +315,18 @@ Un expediente se asigna una sola vez: los ya repartidos no vuelven a ofrecerse.
 **Función:** Análisis y estadísticas
 
 **Características:**
-- Gráficos de vulneraciones por sector
-- Distribución por prioridad
-- Tendencias temporales
-- Exportación de reportes
+- Selector de período (desde / hasta); todos los indicadores se calculan sobre él
+- Gráfico de vulneraciones por motivo
+- Expedientes por sector
+- Tiempo promedio de resolución, medido con `expedientes.cerrado_en`
+- Exportación a Excel y PDF
+
+No hay comparación contra un período anterior: la tendencia se obtiene
+moviendo el propio selector.
+
+**Pendiente:** la distribución por prioridad (la API la devuelve en
+`por_prioridad`, pero no se pinta) y la matriz de recomendaciones automáticas
+que pide el documento de requisitos.
 
 **API Endpoints:**
 - `GET /api/reportes` - Obtener datos de reportes
@@ -411,11 +428,12 @@ Un expediente se asigna una sola vez: los ya repartidos no vuelven a ofrecerse.
 - hora_registro
 - sector
 - estatus (Registrado, En revisión, Aprobado, Observado, Cerrado)
+- estatus_fisico (Pendiente, En Despacho, En Archivo Central)
 - prioridad (Alta, Media, Baja)
 - tipificacion (Maltrato Físico, Abuso Sexual, etc.)
 - causa
 - observaciones
-- asignado_a (FK → users, nullable)
+- resumen_pdf_ruta / resumen_pdf_nombre (nullable)
 - registrado_por (FK → users)
 - timestamps
 ```
@@ -494,7 +512,8 @@ Un expediente se asigna una sola vez: los ya repartidos no vuelven a ofrecerse.
 
 - **NNA → Expedientes**: 1 a muchos
 - **Representantes → Expedientes**: 1 a muchos
-- **Usuarios → Expedientes**: 1 a muchos (registrado_por, asignado_a)
+- **Usuarios → Expedientes**: 1 a muchos (registrado_por)
+- **Expedientes → Bitácora**: 1 a muchos (actuaciones, sólo se añaden)
 - **Expedientes → Casos**: 1 a muchos
 - **Expedientes → Solicitudes**: 1 a muchos
 - **Usuarios → Historial**: 1 a muchos
@@ -875,6 +894,26 @@ Los datos viven en el volumen `sicep_db_data`. Un volcado diario:
 ```bash
 docker compose exec -T db mariadb-dump -usicep -p"$DB_PASSWORD" sicep \
   | gzip > respaldo-sicep-$(date +%F).sql.gz
+```
+
+### Desarrollo con recarga en caliente
+
+La imagen `web` sirve el build ya compilado, así que para trabajar en el
+frontend se levanta Vite en el host y se deja el backend en Docker:
+
+```bash
+docker compose up -d      # base de datos + API + web
+npm run dev               # Vite en http://localhost:5173
+```
+
+Se trabaja en <http://localhost:5173>: recarga en caliente, y las llamadas a
+`/api` las reenvía Vite al nginx del contenedor `web`, que ya sabe llevarlas a
+Laravel. No hace falta publicar el puerto de la API en el host.
+
+El destino se toma de `WEB_PORT`; para apuntar a un backend levantado a mano:
+
+```bash
+VITE_API_TARGET=http://localhost:8000 npm run dev
 ```
 
 ### Desarrollo sin Docker
