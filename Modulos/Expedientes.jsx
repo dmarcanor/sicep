@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -7,6 +7,8 @@ import "./css/Expedientes.css";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha, hoyISO } from "../src/formato";
+import { alertaLapso, useInstitucion } from "../src/institucion";
+import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
 import { estilosTabla } from "../src/tablaEstilos";
 import Campo from "../componentes/Campo";
 import { AYUDAS_EXPEDIENTE } from "../src/ayudas";
@@ -27,8 +29,6 @@ export default function Expedientes() {
   const [detalleVista, setDetalleVista] = useState("resumen");
 
   const [bitacoras, setBitacoras] = useState({});
-  const [estatusFisico, setEstatusFisico] = useState({});
-  const [pdfResumenes, setPdfResumenes] = useState({});
 
   const [bitacoraForm, setBitacoraForm] = useState({
     fecha: new Date().toISOString().slice(0, 10),
@@ -56,11 +56,24 @@ export default function Expedientes() {
   const [nnas, setNnas] = useState([]);
   const { executeWithPin, PinModalWrapper } = usePinAction();
 
+  // Suscribe el módulo a los ajustes: alertaLapso lee los umbrales de
+  // Configuración → Sistema, y sin esto la columna seguía pintando los
+  // valores que hubiera al montar la pantalla.
+  useInstitucion();
+
   const [cambiandoEstatus, setCambiandoEstatus] = useState(false);
   const [errorEstatus, setErrorEstatus] = useState("");
 
-  const recargarExpedientes = () =>
-    api.getExpedientes().then(setExpedientesAPI).catch(console.error);
+  // El filtrado lo hace la API: antes se descargaba la lista completa y se
+  // filtraba en memoria, lo que no aguanta un archivo real.
+  const recargarExpedientes = () => {
+    const params = {};
+    const q = busqueda.trim();
+    if (q) params.search = q;
+    if (filtro !== "Todos") params.estatus = filtro;
+
+    return api.getExpedientes(params).then(setExpedientesAPI).catch(console.error);
+  };
 
   // El estatus es el ciclo de vida legal del expediente
   // (Registrado → En revisión → Aprobado / Observado → Cerrado).
@@ -88,36 +101,29 @@ export default function Expedientes() {
   };
 
   useEffect(() => {
-    recargarExpedientes();
     api.getRepresentantes().then(setRepresentantes).catch(console.error);
     api.getNna().then(setNnas).catch(console.error);
   }, []);
 
-  const expedientes = useMemo(() => {
-    return expedientesAPI.filter((item) => {
-      const q = busqueda.toLowerCase().trim();
-      const texto = [
-        item.codigo,
-        item.nna_nombre,
-        item.representante_nombre,
-        item.sector,
-        item.estatus,
-        item.prioridad,
-        item.tipificacion,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+  const busquedaDiferida = useBusquedaDiferida(busqueda);
 
-      const coincideBusqueda = !q || texto.includes(q);
-      const coincideFiltro = filtro === "Todos" ? true : item.estatus === filtro;
+  useEffect(() => {
+    const params = {};
+    if (busquedaDiferida.trim()) params.search = busquedaDiferida.trim();
+    if (filtro !== "Todos") params.estatus = filtro;
+    api.getExpedientes(params).then(setExpedientesAPI).catch(console.error);
+  }, [busquedaDiferida, filtro]);
 
-      return coincideBusqueda && coincideFiltro;
-    });
-  }, [busqueda, filtro, expedientesAPI]);
+  const expedientes = expedientesAPI;
+
+  const cargarBitacora = (expedienteId) =>
+    api.getBitacora(expedienteId)
+      .then((entradas) => setBitacoras((prev) => ({ ...prev, [expedienteId]: entradas })))
+      .catch(console.error);
 
   const abrirDetalle = (row) => {
     setFicha(row);
+    cargarBitacora(row.id);
     setDetalleVista("resumen");
     setBitacoraForm({
       fecha: new Date().toISOString().slice(0, 10),
@@ -219,6 +225,15 @@ export default function Expedientes() {
       width: "150px",
     },
     {
+      name: "Lapso",
+      cell: (r) => {
+        const alerta = alertaLapso(r.fecha);
+        if (!alerta || r.estatus === "Cerrado") return <span className="chip">—</span>;
+        return <span className={`chip lapso-${alerta.nivel}`}>{alerta.texto}</span>;
+      },
+      width: "160px",
+    },
+    {
       name: "Prioridad",
       cell: (r) => (
         <span className={`chip prioridad-${r.prioridad.toLowerCase()}`}>
@@ -229,7 +244,7 @@ export default function Expedientes() {
     },
   ];
 
-  const guardarBitacora = () => {
+  const guardarBitacora = async () => {
     if (!ficha) return;
 
     const errores = {};
@@ -243,89 +258,110 @@ export default function Expedientes() {
       return;
     }
 
-    const nuevaEntrada = {
-      fecha: bitacoraForm.fecha,
-      nota: bitacoraForm.nota.trim(),
-    };
+    try {
+      await executeWithPin(
+        (pin) => api.createActuacion(
+          ficha.id,
+          { fecha: bitacoraForm.fecha, nota: bitacoraForm.nota.trim() },
+          pin,
+        ),
+        "Registrar actuación en bitácora",
+      );
 
-    setBitacoras((prev) => ({
-      ...prev,
-      [ficha.id]: [...(prev[ficha.id] || []), nuevaEntrada],
-    }));
-
-    setBitacoraForm({
-      fecha: new Date().toISOString().slice(0, 10),
-      nota: "",
-    });
-
-    alert("Bitácora guardada con éxito.");
+      await cargarBitacora(ficha.id);
+      setBitacoraForm({ fecha: hoyISO(), nota: "" });
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        alert(error.message || "No se pudo registrar la actuación.");
+      }
+    }
   };
 
-  const cambiarEstatusFisico = (nuevoEstatus) => {
-    if (!ficha) return;
+  // Guarda en el expediente dónde está la carpeta física.
+  const cambiarEstatusFisico = async (nuevoEstatus) => {
+    if (!ficha || nuevoEstatus === ficha.estatus_fisico) return;
 
-    setEstatusFisico((prev) => ({
-      ...prev,
-      [ficha.id]: nuevoEstatus,
-    }));
-
-    alert(`Cambio exitoso: expediente físico actualizado a "${nuevoEstatus}".`);
+    try {
+      const actualizado = await executeWithPin(
+        (pin) => api.updateExpediente(ficha.id, { estatus_fisico: nuevoEstatus }, pin),
+        "Mover el expediente físico",
+      );
+      setFicha(actualizado);
+      await recargarExpedientes();
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        alert(error.message || "No se pudo actualizar el estatus físico.");
+      }
+    }
   };
 
-  const manejarPdfResumen = (e) => {
-    if (!ficha) return;
+  const manejarPdfResumen = async (evento) => {
+    const archivo = evento.target.files?.[0];
+    evento.target.value = "";
 
-    const archivo = e.target.files?.[0];
-    if (!archivo) return;
+    if (!ficha || !archivo) return;
 
     if (archivo.type !== "application/pdf") {
       alert("Solo se permite cargar archivos PDF.");
       return;
     }
 
-    const url = URL.createObjectURL(archivo);
-
-    setPdfResumenes((prev) => ({
-      ...prev,
-      [ficha.id]: {
-        nombre: archivo.name,
-        url,
-      },
-    }));
-
-    alert("Resumen PDF cargado correctamente.");
+    try {
+      const actualizado = await executeWithPin(
+        (pin) => api.subirResumen(ficha.id, archivo, pin),
+        "Cargar resumen del expediente",
+      );
+      setFicha(actualizado);
+      await recargarExpedientes();
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        alert(error.message || "No se pudo cargar el resumen.");
+      }
+    }
   };
 
-  const verPdfResumen = () => {
-    if (!ficha) return;
-
-    const pdf = pdfResumenes[ficha.id];
-    if (!pdf?.url) {
+  const verPdfResumen = async () => {
+    if (!ficha?.resumen_pdf_nombre) {
       alert("No hay PDF cargado para este expediente.");
       return;
     }
 
-    window.open(pdf.url, "_blank", "noopener,noreferrer");
+    try {
+      // El archivo va protegido por sesión, así que se descarga y se abre
+      // desde memoria en vez de apuntar el navegador a una URL.
+      const blob = await api.descargarResumen(ficha.id);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      alert(error.message || "No se pudo abrir el resumen.");
+    }
   };
 
-  const quitarPdfResumen = () => {
-    if (!ficha) return;
+  const quitarPdfResumen = async () => {
+    if (!ficha?.resumen_pdf_nombre) return;
+    if (!confirm("¿Retirar el resumen PDF de este expediente?")) return;
 
-    setPdfResumenes((prev) => {
-      const copia = { ...prev };
-      delete copia[ficha.id];
-      return copia;
-    });
-
-    alert("PDF eliminado del expediente.");
+    try {
+      const actualizado = await executeWithPin(
+        (pin) => api.quitarResumen(ficha.id, pin),
+        "Retirar resumen del expediente",
+      );
+      setFicha(actualizado);
+      await recargarExpedientes();
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        alert(error.message || "No se pudo retirar el resumen.");
+      }
+    }
   };
 
   const generarPlantilla = (tipo) => {
     if (!ficha) return;
 
     const bitacoraActual = bitacoras[ficha.id] || [];
-    const estatusActual = estatusFisico[ficha.id] || "Pendiente";
-    const pdfActual = pdfResumenes[ficha.id]?.nombre || "No cargado";
+    const estatusActual = ficha.estatus_fisico || "Pendiente";
+    const pdfActual = ficha.resumen_pdf_nombre || "No cargado";
 
     const doc = new jsPDF();
 
@@ -469,7 +505,7 @@ export default function Expedientes() {
             <h4>Estado actual</h4>
             <p><b>Prioridad:</b> {ficha.prioridad}</p>
             <p><b>Fecha:</b> {formatearFecha(ficha.fecha)}</p>
-            <p><b>Vista física:</b> {estatusFisico[ficha.id] || "Pendiente"}</p>
+            <p><b>Vista física:</b> {ficha.estatus_fisico || "Pendiente"}</p>
 
             <label className="detalle-estatus">
               <span><b>Estatus:</b></span>
@@ -526,12 +562,16 @@ export default function Expedientes() {
                 No hay actuaciones registradas aún.
               </div>
             ) : (
-              bitacoras[ficha.id].map((item, index) => (
-                <div key={`${item.fecha}-${index}`} className="timeline-item">
+              bitacoras[ficha.id].map((item) => (
+                <div key={item.id} className="timeline-item">
                   <div className="timeline-dot" />
                   <div className="timeline-content">
-                    <strong>{item.fecha}</strong>
+                    <strong>{formatearFecha(item.fecha)}</strong>
                     <span>{item.nota}</span>
+                    {/* Quién firma la actuación importa: es un registro legal. */}
+                    <small className="timeline-autor">
+                      Registrada por {item.usuario?.display_name || item.usuario?.name || "—"}
+                    </small>
                   </div>
                 </div>
               ))
@@ -548,7 +588,7 @@ export default function Expedientes() {
 
           <div className="estatus-fisico">
             <span className="detalle-label">Estatus físico actual</span>
-            <strong>{estatusFisico[ficha.id] || "Pendiente"}</strong>
+            <strong>{ficha.estatus_fisico || "Pendiente"}</strong>
           </div>
 
           <div className="espejo-actions">
@@ -571,7 +611,7 @@ export default function Expedientes() {
             <span className="detalle-label">Resumen final PDF</span>
             <input type="file" accept="application/pdf" onChange={manejarPdfResumen} />
             <div className="pdf-row">
-              <small>{pdfResumenes[ficha.id]?.nombre || "Sin archivo cargado"}</small>
+              <small>{ficha.resumen_pdf_nombre || "Sin archivo cargado"}</small>
 
               <div className="pdf-actions">
                 <button className="btn-link" onClick={verPdfResumen}>Ver</button>

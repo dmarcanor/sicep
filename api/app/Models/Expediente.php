@@ -16,16 +16,20 @@ class Expediente extends Model
         'hora_registro',
         'sector',
         'estatus',
+        'estatus_fisico',
+        'cerrado_en',
         'prioridad',
         'tipificacion',
         'causa',
         'observaciones',
+        'resumen_pdf_ruta',
+        'resumen_pdf_nombre',
         'registrado_por',
-        'asignado_a',
     ];
 
     protected $casts = [
         'fecha' => 'date:Y-m-d',
+        'cerrado_en' => 'datetime',
     ];
 
     protected $appends = [
@@ -62,9 +66,9 @@ class Expediente extends Model
         return $this->belongsTo(User::class, 'registrado_por');
     }
 
-    public function asignadoA(): BelongsTo
+    public function bitacoras(): HasMany
     {
-        return $this->belongsTo(User::class, 'asignado_a');
+        return $this->hasMany(Bitacora::class);
     }
 
     public function casos(): HasMany

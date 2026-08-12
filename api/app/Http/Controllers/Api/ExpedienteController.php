@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class ExpedienteController extends Controller
 {
-    private const RELACIONES = ['nna', 'representante', 'registradoPor', 'asignadoA'];
+    private const RELACIONES = ['nna', 'representante', 'registradoPor'];
 
     public function index(Request $request)
     {
@@ -106,16 +106,20 @@ class ExpedienteController extends Controller
             'fecha' => 'sometimes|date|before_or_equal:today',
             'sector' => 'sometimes|string|max:255',
             'estatus' => 'sometimes|in:Registrado,En revisión,Aprobado,Observado,Cerrado',
+            'estatus_fisico' => 'sometimes|in:Pendiente,En Despacho,En Archivo Central',
             'prioridad' => 'sometimes|in:Alta,Media,Baja',
             'tipificacion' => 'sometimes|nullable|in:Maltrato Físico,Abuso Sexual,Negligencia,Acoso Escolar,Trabajo Infantil,Violencia Psicológica,Abandono,Explotación,Otro',
             'causa' => 'sometimes|nullable|string',
             'observaciones' => 'sometimes|nullable|string',
-            'asignado_a' => 'sometimes|nullable|exists:users,id',
         ], [
             'fecha.before_or_equal' => 'La fecha del expediente no puede ser futura.',
         ]);
 
         $estatusPrevio = $expediente->estatus;
+
+        if (array_key_exists('estatus', $datos) && $datos['estatus'] !== $estatusPrevio) {
+            $datos['cerrado_en'] = $datos['estatus'] === 'Cerrado' ? now() : null;
+        }
 
         // Sólo los campos validados: $request->all() dejaba entrar codigo y
         // registrado_por, que son asignables en el modelo.

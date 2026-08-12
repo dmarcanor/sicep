@@ -13,7 +13,7 @@ class PanelController extends Controller
     public function index()
     {
         $totalExpedientes = Expediente::count();
-        $expedientesRecientes = Expediente::with(['registradoPor', 'asignadoA'])
+        $expedientesRecientes = Expediente::with(['registradoPor'])
             ->orderByDesc('id')
             ->limit(5)
             ->get();
