@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import jsPDF from "jspdf";
+import { ajuste } from "../src/institucion";
 import "./css/Plantillas.css";
 import { usePinAction } from "../src/hooks/usePinAction";
 
@@ -128,18 +129,18 @@ function construirDocumento(tipo, form, expedienteActivo) {
   );
   const sector = limpiar(form.sector || expedienteActivo?.sector || "________________");
   const fecha = form.fechaDocumento || fechaPorDefecto();
-  const lugar = limpiar(form.lugar || "El Pilar, Municipio Benítez");
+  const lugar = limpiar(form.lugar || ajuste("direccion_institucion"));
   const hora = limpiar(form.hora || "________");
 
+  // Membrete tomado de Configuración → Membrete / General.
   const membrete = [
-    "REPÚBLICA BOLIVARIANA DE VENEZUELA",
-    "ALCALDÍA BOLIVARIANA DEL MUNICIPIO BENÍTEZ",
-    "CONSEJO DE PROTECCIÓN DE NIÑOS, NIÑAS Y ADOLESCENTES",
-    "MUNICIPIO BENÍTEZ - ESTADO SUCRE",
-  ].join("\n");
+    ajuste("membrete_titulo"),
+    ajuste("membrete_subtitulo"),
+    ajuste("membrete_tercero"),
+  ].filter(Boolean).join("\n");
 
   const firmaConsejo = [
-    "POR EL CONSEJO DE PROTECCIÓN DE NIÑOS, NIÑAS Y ADOLESCENTES",
+    `POR ${ajuste("membrete_subtitulo")}`,
     "",
     "__________________          _________________            ____________________",
     "MSc. Arleana Millán           Abg. Dimas Díaz            Abg. Francis Malavé",
@@ -159,7 +160,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
         `Niño(s), Niña(s) y Adolescente(s): ${limpiar(form.nnaGeneral || nna)}`,
         `Motivo(s): ${limpiar(form.motivos || form.motivo || "________________")}`,
         "",
-        "CONSEJO DE PROTECCIÓN DE NIÑOS, NIÑAS Y ADOLESCENTES",
+        ajuste("membrete_subtitulo"),
         `Fecha de entrada: Día ${limpiar(form.fechaEntradaDia || "___")} Mes: ${limpiar(
           form.fechaEntradaMes || "________"
         )} Año ${limpiar(form.fechaEntradaAnio || "________")}`,
@@ -181,7 +182,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
           form.fechaMes || "__"
         )}/${limpiar(form.fechaAnio || "____")}, siendo las ${hora} de la ${limpiar(
           form.turno || "________"
-        )}, se presentó ante este Consejo de Protección de Niños, Niñas y Adolescentes, del Municipio Benítez, Estado Sucre, el (la) ciudadano(a): ${limpiar(
+        )}, se presentó ante ${ajuste('nombre_institucion')}, del Municipio ${ajuste('municipio')}, Estado ${ajuste('estado')}, el (la) ciudadano(a): ${limpiar(
           form.nombreCiudadano || form.solicitante || "________________"
         )}, con el fin de formular una denuncia.`,
         "",
@@ -260,7 +261,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
           form.fechaMes || "__"
         )}/${limpiar(form.fechaAnio || "____")}, siendo las ${hora} de la ${limpiar(
           form.turno || "________"
-        )}, se presentó ante este Consejo de Protección de Niños, Niñas y Adolescentes, del Municipio Benítez, Estado Sucre, el niño(a): ${limpiar(
+        )}, se presentó ante ${ajuste('nombre_institucion')}, del Municipio ${ajuste('municipio')}, Estado ${ajuste('estado')}, el niño(a): ${limpiar(
           form.nna || "________________"
         )}, titular de la cédula de identidad N° ${limpiar(form.ciNna || "________________")}, de ${limpiar(
           form.edad || "____"
@@ -290,7 +291,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
         "",
         `En el día de hoy ${limpiar(form.fechaActa || "__")}/${limpiar(
           form.mesActa || "__"
-        )}/${limpiar(form.anioActa || "____")}; siendo las ${hora}, en el Despacho del Consejo de Protección de Niños, Niñas y Adolescentes del Municipio Benítez, Estado Sucre, estando presentes los suscritos ciudadanos(as): ${limpiar(
+        )}/${limpiar(form.anioActa || "____")}; siendo las ${hora}, en el Despacho de ${ajuste('nombre_institucion')} del Municipio ${ajuste('municipio')}, Estado ${ajuste('estado')}, estando presentes los suscritos ciudadanos(as): ${limpiar(
           form.comparecientes || "________________"
         )}, titulares de la cédula de identidad N° ${limpiar(
           form.ciComparecientes || "________________"
@@ -317,7 +318,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
         "",
         `CIUDADANO(A): ${limpiar(form.ciudadanoCitacion || form.requerido || "________________")}`,
         "",
-        `Se le informa que debe comparecer ante el despacho del Consejo de Protección de Niños, Niñas y Adolescentes del Municipio Benítez, Estado Sucre, el día ${limpiar(
+        `Se le informa que debe comparecer ante el despacho de ${ajuste('nombre_institucion')} del Municipio ${ajuste('municipio')}, Estado ${ajuste('estado')}, el día ${limpiar(
           form.fechaCitacion || "__/__/____"
         )}, hora: ${limpiar(
           form.horaCitacion || "________"
@@ -336,7 +337,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
         "",
         "___________________________",
         "Consejero(a) de PNNA",
-        "Dirección: Calle La República, Casa Social, El Pilar, Municipio Benítez, Estado Sucre.",
+        `Dirección: ${ajuste("direccion_institucion")}.`,
       ].join("\n"),
     };
   }
@@ -358,7 +359,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
         )}, venezolanos, mayores de edad, titulares de la cédula de identidad N° ${limpiar(
           form.ciSuscriben ||
             "16.398.605, 5.423.178 y 5.880.275"
-        )}, en nuestro carácter de Consejeros de Protección de Niño o Niña y Adolescentes del Municipio Benítez - Estado Sucre, haciendo uso de los deberes y atribuciones legales conferidas en la Ley Orgánica para la Protección de Niños, Niñas y Adolescentes (LOPNNA), artículo 126 y 160 literal “b”, se procede a dictar las siguientes Medidas de Protección a favor del(los) Niño(s), Niña(s) o Adolescente(s):`,
+        )}, en nuestro carácter de Consejeros de Protección de Niño o Niña y Adolescentes del Municipio ${ajuste('municipio')} - Estado ${ajuste('estado')}, haciendo uso de los deberes y atribuciones legales conferidas en la Ley Orgánica para la Protección de Niños, Niñas y Adolescentes (LOPNNA), artículo 126 y 160 literal “b”, se procede a dictar las siguientes Medidas de Protección a favor del(los) Niño(s), Niña(s) o Adolescente(s):`,
         "",
         limpiar(form.nnaProtegido || form.nna || "________________"),
         "",
@@ -394,7 +395,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
           form.condicionNotificado || "________________"
         )}, que este Consejo de Protección de Niños, Niñas y Adolescentes, por auto de fecha ${limpiar(
           form.autoFecha || "________________"
-        )}, ordenó su notificación a los fines de que concurra a esta Sede Administrativa, ubicada en: Calle La República, Casa Social N° 20, El Pilar, Municipio Benítez, Estado Sucre, en un lapso de ${limpiar(
+        )}, ordenó su notificación a los fines de que concurra a esta Sede Administrativa, ubicada en: ${ajuste('direccion_institucion')}, en un lapso de ${limpiar(
           form.lapsoNotificacion || "CINCO (05) DÍAS HÁBILES"
         )} siguiente al recibido de esta notificación, en horas comprendidas de 8:00 am a 12:00 pm, para que, de conformidad con lo previsto en el artículo 297 de la LOPNNA, proceda a presentar RAZONES O PRUEBAS en el procedimiento administrativo que cursa por ante esta Sede, según consta en expediente signado con el N° ${codigo}, de nomenclatura interna de este Consejo de Protección.`,
         "",
@@ -420,7 +421,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
         "",
         "CONSTANCIA",
         "",
-        `El Consejo de Protección de Niños, Niñas y Adolescentes del Municipio Benítez, Estado Sucre, hace constar por medio de la presente que el(la) ciudadano(a): ${limpiar(
+        `${ajuste('nombre_institucion')} del Municipio ${ajuste('municipio')}, Estado ${ajuste('estado')}, hace constar por medio de la presente que el(la) ciudadano(a): ${limpiar(
           form.constanciaCiudadano || form.nombreCiudadano || "________________"
         )}, titular de la cédula de identidad N° ${limpiar(
           form.constanciaCI || form.ciCiudadano || "________________"
@@ -455,7 +456,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
       )}, venezolanos, mayores de edad, titulares de la cédula de identidad N° ${limpiar(
         form.ciSuscribenCertificacion ||
           "16.398.605, 5.423.178 y 5.880.275"
-      )}, en nuestro carácter de Consejeros de Protección de Niños, Niñas y Adolescentes del Municipio Benítez – Estado Sucre, hacemos constar y certificamos que las copias que anteceden son fieles y exactas de sus originales, que reposan en el expediente signado bajo el número ${limpiar(
+      )}, en nuestro carácter de Consejeros de Protección de Niños, Niñas y Adolescentes del Municipio ${ajuste('municipio')} – Estado ${ajuste('estado')}, hacemos constar y certificamos que las copias que anteceden son fieles y exactas de sus originales, que reposan en el expediente signado bajo el número ${limpiar(
         form.expedienteCertificacion || codigo
       )}, constante de ${limpiar(form.foliosCertificacion || "________")} (${limpiar(
         form.foliosCertificacionLiteral || "________"
@@ -503,11 +504,11 @@ function generarPDFDocumento({ titulo, subtitulo, cuerpo, expediente, plantillaI
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(255, 255, 255);
-  doc.text("CONSEJO DE PROTECCIÓN DE NIÑOS, NIÑAS Y ADOLESCENTES", 14, 9);
+  doc.text(ajuste("membrete_subtitulo").toUpperCase(), 14, 9);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
-  doc.text("Municipio Benítez - Estado Sucre", 14, 14);
+  doc.text(`Municipio ${ajuste("municipio")} - Estado ${ajuste("estado")}`, 14, 14);
 
   doc.setTextColor(31, 41, 55);
   doc.setFont("helvetica", "bold");
@@ -644,8 +645,8 @@ function abrirVistaImpresion({ titulo, subtitulo, cuerpo, expediente, plantillaI
       </head>
       <body>
         <div class="header">
-          <div class="line1">REPÚBLICA BOLIVARIANA DE VENEZUELA</div>
-          <div class="line2">ALCALDÍA BOLIVARIANA DEL MUNICIPIO BENÍTEZ · CONSEJO DE PROTECCIÓN DE NIÑOS, NIÑAS Y ADOLESCENTES</div>
+          <div class="line1">${ajuste("membrete_titulo")}</div>
+          <div class="line2">${ajuste("membrete_subtitulo")} · ${ajuste("membrete_tercero")}</div>
         </div>
 
         <h1>${titulo || "PLANTILLA"}</h1>
@@ -733,7 +734,7 @@ export default function Plantillas() {
   const [formulario, setFormulario] = useState({
     codigoURD: "",
     fechaDocumento: fechaPorDefecto(),
-    lugar: "El Pilar, Municipio Benítez",
+    lugar: "",
     hora: "",
     solicitante: "",
     requerido: "",
@@ -1063,7 +1064,7 @@ export default function Plantillas() {
     const base = [
       { name: "codigoURD", label: "Expediente N°", type: "text", placeholder: "URD-2026-0001" },
       { name: "fechaDocumento", label: "Fecha de documento", type: "date" },
-      { name: "lugar", label: "Lugar de emisión", type: "text", placeholder: "El Pilar, Municipio Benítez" },
+      { name: "lugar", label: "Lugar de emisión", type: "text", placeholder: ajuste("direccion_institucion") },
       { name: "hora", label: "Hora", type: "text", placeholder: "________" },
     ];
 

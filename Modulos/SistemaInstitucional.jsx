@@ -17,6 +17,10 @@ import Nna from "./Nna";
 import Representantes from "./Representantes";
 import logoSicep from "../img/logo.png";
 import { api, getAuthToken, setPinConfigurado } from "../src/api";
+import { cargarInstitucion, useInstitucion } from "../src/institucion";
+
+// Minutos sin actividad antes de cerrar la sesión.
+const MINUTOS_INACTIVIDAD = 60;
 
 const TITULOS_MODULOS = {
   principal: "Panel Principal",
@@ -68,6 +72,7 @@ function StatCard({ title, value, subtitle, tone }) {
 }
 
 function BarraLateral({ abierta, moduloActivo, cambiarModulo, modulos }) {
+  const inst = useInstitucion();
   const modulosVisibles = Object.keys(TITULOS_MODULOS).filter((modulo) =>
     modulos.includes(modulo)
   );
@@ -85,7 +90,7 @@ function BarraLateral({ abierta, moduloActivo, cambiarModulo, modulos }) {
         <div className="brand">
           <img
             src={logoSicep}
-            alt="Logo SICEP-NNA"
+            alt={inst.nombre_institucion}
             className="brand-logo"
           />
         </div>
@@ -106,6 +111,7 @@ function BarraLateral({ abierta, moduloActivo, cambiarModulo, modulos }) {
 }
 
 function EncabezadoSuperior({
+  institucion,
   abrirPanel,
   moduloActivo,
   menuUsuarioAbierto,
@@ -133,10 +139,10 @@ function EncabezadoSuperior({
         </button>
 
         <div className="title-block">
-          <div className="system-name">SICEP-NNA | Municipio Benítez</div>
-          <div className="module-name">
-            Dashboard administrativo de expedientes
+          <div className="system-name">
+            {institucion.nombre_corto} | Municipio {institucion.municipio}
           </div>
+          <div className="module-name">{institucion.nombre_institucion}</div>
         </div>
       </div>
 
@@ -187,6 +193,7 @@ export default function SistemaInstitucional() {
   // Los módulos visibles los decide el servidor a partir de la matriz de
   // Configuración; el frontend nunca los deduce del rol por su cuenta.
   const [modulos, setModulos] = useState([]);
+  const institucion = useInstitucion();
 
   const puedeVerModulo = (modulo) => modulos.includes(modulo);
 
@@ -204,6 +211,7 @@ export default function SistemaInstitucional() {
       setModulos(user.modulos ?? []);
       setVista("app");
       setModuloActivo("principal");
+      cargarInstitucion();
     }).catch(() => {
       localStorage.removeItem("sicep_user");
     });
@@ -214,6 +222,8 @@ export default function SistemaInstitucional() {
   useEffect(() => {
     if (vista !== "app") return;
     let vigente = true;
+
+    cargarInstitucion();
 
     api.getMisPermisos()
       .then(({ modulos: vigentes }) => {
@@ -267,6 +277,32 @@ export default function SistemaInstitucional() {
     localStorage.removeItem("sicep_user");
   };
 
+  // Se cierra la sesión tras un rato sin actividad: es un sistema con datos
+  // de NNA en pantallas compartidas.
+  useEffect(() => {
+    if (vista !== "app") return;
+
+    const minutos = MINUTOS_INACTIVIDAD;
+
+    let temporizador;
+    const reiniciar = () => {
+      window.clearTimeout(temporizador);
+      temporizador = window.setTimeout(() => {
+        alert(`Su sesión se cerró tras ${minutos} minutos sin actividad.`);
+        cerrarSesion();
+      }, minutos * 60000);
+    };
+
+    const eventos = ["mousedown", "keydown", "touchstart", "scroll"];
+    eventos.forEach((e) => window.addEventListener(e, reiniciar, { passive: true }));
+    reiniciar();
+
+    return () => {
+      window.clearTimeout(temporizador);
+      eventos.forEach((e) => window.removeEventListener(e, reiniciar));
+    };
+  }, [vista]);
+
   const ingresar = async () => {
     if (ingresando) return;
 
@@ -283,6 +319,7 @@ export default function SistemaInstitucional() {
       setUsuario(data.user);
       setModulos(data.user.modulos ?? []);
       setPinConfigurado(data.user.pin_configurado);
+      cargarInstitucion();
       setModuloActivo("principal");
       setVista("app");
     } catch (error) {
@@ -483,6 +520,7 @@ export default function SistemaInstitucional() {
         }`}
       >
         <EncabezadoSuperior
+          institucion={institucion}
           abrirPanel={() => setPanelLateralAbierto((v) => !v)}
           moduloActivo={moduloActivo}
           menuUsuarioAbierto={menuUsuarioAbierto}

@@ -8,30 +8,27 @@ import "./css/PanelPrincipal.css";
 import { api } from "../src/api";
 import { formatearFecha } from "../src/formato";
 import { estilosTabla } from "../src/tablaEstilos";
+import { alertaLapso, useInstitucion } from "../src/institucion";
 
 import AsignacionCasos from "./AsignacionCasos";
 
 
-const calcularDias = (fechaStr) => {
-  const hoy = new Date();
-  const fecha = new Date(fechaStr);
-  return Math.floor((hoy - fecha) / (1000 * 60 * 60 * 24));
-};
+const calcularDias = (fechaStr) => alertaLapso(fechaStr)?.dias ?? 0;
 
+const EMOJI = { verde: "🟢", amarillo: "🟡", rojo: "🔴" };
 
-const BadgeDias = ({ dias }) => {
-  if (dias < 20) {
-    return <span className="badge verde">🟢 {dias} días</span>;
-  }
+const BadgeDias = ({ fecha }) => {
+  const alerta = alertaLapso(fecha);
+  if (!alerta) return <span className="badge">—</span>;
 
-  if (dias >= 21 && dias <= 24) {
-    return <span className="badge amarillo">🟡 {dias} días</span>;
-  }
-
-  return <span className="badge rojo parpadeo">🔴 {dias} días</span>;
+  const clase = alerta.nivel === "rojo" ? "badge rojo parpadeo" : `badge ${alerta.nivel}`;
+  return <span className={clase}>{EMOJI[alerta.nivel]} {alerta.dias} días</span>;
 };
 
 export default function PanelPrincipal() {
+  // Sin esto la columna seguiría con los umbrales que hubiera al montar.
+  useInstitucion();
+
   const [tipoActivo, setTipoActivo] = useState("registrados");
   const [busqueda, setBusqueda] = useState("");
   const [fichaAbierta, setFichaAbierta] = useState(null);
@@ -144,7 +141,7 @@ export default function PanelPrincipal() {
       name: "Días",
       selector: (r) => r.dias,
       sortable: true,
-      cell: (row) => <BadgeDias dias={row.dias} />,
+      cell: (row) => <BadgeDias fecha={row.fecha} />,
     },
   ];
 

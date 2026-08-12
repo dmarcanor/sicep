@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Configuracion;
 use App\Models\Historial;
+use App\Support\Institucion;
 use Illuminate\Http\Request;
 
 class ConfiguracionController extends Controller
@@ -89,6 +90,15 @@ class ConfiguracionController extends Controller
         ]);
 
         return response()->json($actualizadas);
+    }
+
+    /**
+     * Ajustes de presentación para cualquier rol autenticado: sin ellos, quien
+     * no administre el sistema no podría ni pintar el membrete de un documento.
+     */
+    public function institucion()
+    {
+        return response()->json(Institucion::valores());
     }
 
     public function obtenerPorCategoria($categoria)
