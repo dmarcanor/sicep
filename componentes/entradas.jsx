@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./css/Campo.css";
 import { hoyISO } from "../src/formato";
 
@@ -60,8 +61,17 @@ export function EntradaDigitos({ value = "", onChange, maxLength, ...resto }) {
  */
 export function EntradaDocumento({ value = "", onChange, id, className, ...resto }) {
   const texto = String(value ?? "");
-  const nacionalidad = /^[EV]/i.test(texto) ? texto[0].toUpperCase() : "V";
   const numero = texto.replace(/^[EV]-?/i, "").replace(/\D+/g, "");
+
+  /*
+   * Un documento sin número es cadena vacía, no "E-", porque el campo puede
+   * quedar en blanco. Pero entonces la nacionalidad no cabe en el valor, y
+   * elegir "E" antes de teclear la cédula se perdía en el acto. Se recuerda
+   * aparte y el valor manda en cuanto lo trae.
+   */
+  const nacEnValor = /^[EV]/i.test(texto) ? texto[0].toUpperCase() : null;
+  const [nacElegida, setNacElegida] = useState(() => nacEnValor ?? "V");
+  const nacionalidad = nacEnValor ?? nacElegida;
 
   const componer = (nac, num) => (num ? `${nac}-${num}` : "");
 
@@ -70,7 +80,10 @@ export function EntradaDocumento({ value = "", onChange, id, className, ...resto
       <select
         aria-label="Nacionalidad"
         value={nacionalidad}
-        onChange={(e) => onChange(componer(e.target.value, numero))}
+        onChange={(e) => {
+          setNacElegida(e.target.value);
+          onChange(componer(e.target.value, numero));
+        }}
       >
         <option value="V">V</option>
         <option value="E">E</option>

@@ -17,11 +17,18 @@
 .entrada-compuesta {
   display: flex;
   gap: 0;
+  width: 100%;
 }
 
+/*
+ * El reparto se fija con flex-basis, no con width: varias hojas de módulo
+ * declaran `.campo select { width: 100% }` con más especificidad que esto, y
+ * entonces el selector ocupaba la fila entera y el número quedaba en cero.
+ * En una fila flex la base gana sobre el ancho, así que la regla ajena deja
+ * de importar.
+ */
 .entrada-compuesta select {
-  width: 62px;
-  flex: 0 0 auto;
+  flex: 0 0 62px;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   border-right: none;
@@ -30,7 +37,7 @@
 }
 
 .entrada-compuesta input {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
