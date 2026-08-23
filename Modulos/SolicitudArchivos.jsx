@@ -5,6 +5,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./css/Expedientes.css";
 import { api } from "../src/api";
+import { membretePDF, pieDePaginaPDF, hojaConMembrete } from "../src/exportar";
+import { hoyISO } from "../src/formato";
 import { estilosTabla } from "../src/tablaEstilos";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
@@ -82,7 +84,7 @@ const normalizarSolicitud = (s) => ({
 const overlayStyle = {
   position: "fixed",
   inset: 0,
-  zIndex: 5000,
+  zIndex: 100,
   background: "rgba(18, 33, 53, 0.56)",
   backdropFilter: "blur(3px)",
   WebkitBackdropFilter: "blur(3px)",
@@ -93,11 +95,9 @@ const overlayStyle = {
 };
 
 const modalStyle = {
-  width: "min(860px, calc(100% - 180px))",
+  width: "min(860px, 96vw)",
   maxHeight: "calc(100vh - 40px)",
   overflowY: "auto",
-  marginLeft: "100px",
-  marginTop: "20px",
   boxSizing: "border-box",
 };
 
@@ -227,7 +227,7 @@ export default function SolicitudArchivos() {
       Ubicación: crearUbicacionTexto(item.ubicacion || {}),
     }));
 
-    const ws = XLSX.utils.json_to_sheet(data);
+    const ws = hojaConMembrete(data, "REPORTE DE SOLICITUD DE ARCHIVOS");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "SolicitudArchivos");
     XLSX.writeFile(wb, "solicitud-archivos.xlsx");
@@ -236,11 +236,10 @@ export default function SolicitudArchivos() {
   const exportarPDF = () => {
     const doc = new jsPDF();
 
-    doc.setFontSize(14);
-    doc.text("REPORTE DE SOLICITUD DE ARCHIVOS", 14, 14);
+    const inicioY = membretePDF(doc, "REPORTE DE SOLICITUD DE ARCHIVOS");
 
     autoTable(doc, {
-      startY: 22,
+      startY: inicioY,
       head: [["ID", "Expediente", "Solicitante", "Estatus", "Ubicación"]],
       body: solicitudes.map((item) => [
         item.id,
@@ -257,6 +256,8 @@ export default function SolicitudArchivos() {
         fillColor: [24, 48, 78],
       },
     });
+
+    pieDePaginaPDF(doc);
 
     doc.save("solicitud-archivos.pdf");
   };
@@ -577,6 +578,7 @@ export default function SolicitudArchivos() {
           <div className="bitacora-form">
             <input
               type="date"
+              max={hoyISO()}
               value={movimientoForm.fecha}
               onChange={(e) => setMovimientoForm((prev) => ({ ...prev, fecha: e.target.value }))}
               className={erroresDetalle.movFecha ? "error" : ""}
@@ -887,6 +889,7 @@ export default function SolicitudArchivos() {
                   <input
                     type="date"
                     name="fechaSolicitud"
+                    max={hoyISO()}
                     value={nuevaSolicitud.fechaSolicitud}
                     onChange={actualizarNuevaSolicitud}
                     className={erroresNuevo.fechaSolicitud ? "error" : ""}

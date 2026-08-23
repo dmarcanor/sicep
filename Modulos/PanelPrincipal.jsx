@@ -6,6 +6,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./css/PanelPrincipal.css";
 import { api } from "../src/api";
+import { membretePDF, pieDePaginaPDF, hojaConMembrete } from "../src/exportar";
 import { formatearFecha } from "../src/formato";
 import { estilosTabla } from "../src/tablaEstilos";
 import { alertaLapso, useInstitucion } from "../src/institucion";
@@ -103,7 +104,7 @@ export default function PanelPrincipal() {
     }));
 
   const exportarExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(filasExportables());
+    const ws = hojaConMembrete(filasExportables(), "PANEL PRINCIPAL");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Registros");
     XLSX.writeFile(wb, `${tipoActivo}-URD.xlsx`);
@@ -111,9 +112,10 @@ export default function PanelPrincipal() {
 
   const exportarPDF = () => {
     const doc = new jsPDF();
-    doc.text(`REPORTE URD - ${tipoActivo.toUpperCase()}`, 14, 10);
+    const inicioY = membretePDF(doc, `REPORTE URD · ${tipoActivo.toUpperCase()}`);
 
     autoTable(doc, {
+      startY: inicioY,
       head: [["Código", "Nombre", "Representante", "Estado", "Fecha", "Sector", "Días"]],
       body: filasExportables().map((d) => [
         d.Codigo,
@@ -125,6 +127,8 @@ export default function PanelPrincipal() {
         d.Dias,
       ]),
     });
+
+    pieDePaginaPDF(doc);
 
     doc.save(`${tipoActivo}-URD.pdf`);
   };
