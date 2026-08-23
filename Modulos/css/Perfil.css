@@ -122,3 +122,9 @@
       grid-template-columns:1fr;
     }
   }
+.perfil-nota {
+  margin: 4px 0 14px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  max-width: 62ch;
+}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./css/Perfil.css";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
+import { EntradaDigitos, EntradaTelefono } from "../componentes/entradas";
 
 export default function Perfil({ usuarioBase }) {
 
@@ -15,6 +16,39 @@ export default function Perfil({ usuarioBase }) {
   const [errores, setErrores] = useState({});
   const [mensaje, setMensaje] = useState("");
   const { executeWithPin, PinModalWrapper } = usePinAction();
+
+  const [pines, setPines] = useState({ actual: "", nuevo: "", repetir: "" });
+  const [errorPin, setErrorPin] = useState("");
+  const [cambiandoPin, setCambiandoPin] = useState(false);
+
+  const cambiarPin = async () => {
+    if (pines.nuevo.length < 4 || pines.nuevo.length > 6) {
+      setErrorPin("El PIN nuevo debe tener entre 4 y 6 dígitos.");
+      return;
+    }
+    if (pines.nuevo !== pines.repetir) {
+      setErrorPin("El PIN nuevo y su repetición no coinciden.");
+      return;
+    }
+    if (!pines.actual) {
+      setErrorPin("Indique su PIN actual.");
+      return;
+    }
+
+    setErrorPin("");
+    setCambiandoPin(true);
+
+    try {
+      await api.changePin(pines.actual, pines.nuevo);
+      setPines({ actual: "", nuevo: "", repetir: "" });
+      setMensaje("PIN actualizado correctamente");
+      setTimeout(() => setMensaje(""), 4000);
+    } catch (error) {
+      setErrorPin(error.message || "No se pudo cambiar el PIN.");
+    } finally {
+      setCambiandoPin(false);
+    }
+  };
 
   
   useEffect(() => {
@@ -106,6 +140,57 @@ export default function Perfil({ usuarioBase }) {
       
       {mensaje && <div className="toast-exito">{mensaje}</div>}
 
+      <div className="perfil-card">
+        <h3>PIN de seguridad</h3>
+        <p className="perfil-nota">
+          Con este PIN se confirman las acciones delicadas: registrar o aprobar
+          un expediente y descargar un documento legal. Es personal: cámbielo si
+          todavía usa el que le entregaron.
+        </p>
+
+        <div className="perfil-grid">
+          <div className="campo">
+            <label>PIN actual *</label>
+            <EntradaDigitos
+              value={pines.actual}
+              maxLength={6}
+              onChange={(v) => setPines((p) => ({ ...p, actual: v }))}
+              className={errorPin ? "error" : ""}
+              placeholder="••••"
+            />
+          </div>
+
+          <div className="campo">
+            <label>PIN nuevo *</label>
+            <EntradaDigitos
+              value={pines.nuevo}
+              maxLength={6}
+              onChange={(v) => setPines((p) => ({ ...p, nuevo: v }))}
+              className={errorPin ? "error" : ""}
+              placeholder="4 a 6 dígitos"
+            />
+          </div>
+
+          <div className="campo">
+            <label>Repetir PIN nuevo *</label>
+            <EntradaDigitos
+              value={pines.repetir}
+              maxLength={6}
+              onChange={(v) => setPines((p) => ({ ...p, repetir: v }))}
+              className={errorPin ? "error" : ""}
+            />
+          </div>
+        </div>
+
+        {errorPin && <small className="campo-error">{errorPin}</small>}
+
+        <div className="perfil-actions-top">
+          <button className="btn-primary" onClick={cambiarPin} disabled={cambiandoPin}>
+            {cambiandoPin ? "Cambiando..." : "Cambiar PIN"}
+          </button>
+        </div>
+      </div>
+
       
       <div className="perfil-card">
 
@@ -133,10 +218,9 @@ export default function Perfil({ usuarioBase }) {
 
           <div className="campo">
             <label>Teléfono *</label>
-            <input
-              name="phone"
+            <EntradaTelefono
               value={perfil.phone}
-              onChange={manejarCambio}
+              onChange={(valor) => manejarCambio({ target: { name: "phone", value: valor } })}
               className={errores.phone ? "error" : ""}
             />
           </div>
