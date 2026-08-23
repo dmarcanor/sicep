@@ -3,10 +3,9 @@ import jsPDF from "jspdf";
 import { ajuste } from "../src/institucion";
 import { LOGO, membretePDF, pieDePaginaPDF } from "../src/exportar";
 import { api } from "../src/api";
+import { formatearFecha, hoyISO } from "../src/formato";
 import "./css/Plantillas.css";
 import { usePinAction } from "../src/hooks/usePinAction";
-
-const STORAGE_EXPEDIENTE = "urd:expediente-activo";
 
 const CATALOGO_PLANTILLAS = [
   {
@@ -81,44 +80,164 @@ const CATALOGO_PLANTILLAS = [
   },
 ];
 
-function safeParseJSON(value, fallback) {
-  try {
-    return value ? JSON.parse(value) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function leerExpedienteActivo() {
-  if (typeof window === "undefined") return null;
-  return safeParseJSON(window.localStorage.getItem(STORAGE_EXPEDIENTE), null);
-}
-
-function formatearFecha(fechaISO) {
-  if (!fechaISO) return "";
-  const fecha = new Date(fechaISO);
-  if (Number.isNaN(fecha.getTime())) return fechaISO;
-  return fecha.toLocaleDateString("es-VE");
-}
-
 function limpiar(valor) {
   return String(valor || "").replace(/\s+/g, " ").trim();
 }
 
-function fechaPorDefecto() {
-  return new Date().toISOString().slice(0, 10);
+// El día de quien redacta, no el de UTC: de noche en Venezuela no coinciden.
+const fechaPorDefecto = hoyISO;
+
+/*
+ * Se compara por componentes de la cadena, sin construir un Date: "2018-03-14"
+ * se interpreta como medianoche UTC, y en Venezuela eso cae en el día anterior,
+ * con lo que la edad bailaba un día alrededor del cumpleaños.
+ */
+function edadEnAnios(fechaNacimiento) {
+  const [anio, mes, dia] = String(fechaNacimiento || "").slice(0, 10).split("-").map(Number);
+  if (!anio || !mes || !dia) return "";
+
+  const [hoyAnio, hoyMes, hoyDia] = fechaPorDefecto().split("-").map(Number);
+
+  let edad = hoyAnio - anio;
+  if (hoyMes < mes || (hoyMes === mes && hoyDia < dia)) edad -= 1;
+
+  return edad >= 0 ? String(edad) : "";
+}
+
+const UNIDADES = [
+  "", "uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez",
+  "once", "doce", "trece", "catorce", "quince", "dieciséis", "diecisiete", "dieciocho",
+  "diecinueve", "veinte", "veintiuno", "veintidós", "veintitrés", "veinticuatro",
+  "veinticinco", "veintiséis", "veintisiete", "veintiocho", "veintinueve", "treinta",
+  "treinta y uno",
+];
+
+/** Día del mes en letras, que es como lo piden las actas y constancias. */
+function diaEnLetras(dia) {
+  return UNIDADES[Number(dia)] || "";
+}
+
+/** Año en letras para el siglo en curso: "dos mil veintiséis". */
+function anioEnLetras(anio) {
+  const n = Number(anio);
+  if (!Number.isInteger(n) || n < 2000 || n > 2099) return "";
+  const resto = n - 2000;
+  return resto === 0 ? "dos mil" : `dos mil ${UNIDADES[resto] || ""}`.trim();
+}
+
+const nombreCompleto = (p) => limpiar([p?.nombres, p?.apellidos].filter(Boolean).join(" "));
+
+const nacionalidadDe = (documento) => {
+  const inicial = String(documento || "").trim().charAt(0).toUpperCase();
+  if (inicial === "V") return "Venezolana";
+  if (inicial === "E") return "Extranjera";
+  return "";
+};
+
+/**
+ * Rellena el formulario con todo lo que el expediente ya sabe.
+ *
+ * Estas plantillas repiten los mismos datos —el NNA, su representante, el
+ * código del caso— en decenas de casillas, y transcribirlos a mano en cada
+ * documento es donde aparecen los errores. Lo que el expediente no contiene
+ * (folios, lapsos, acuerdos, la narrativa de cada acto) se deja en blanco a
+ * propósito: inventarlo sería peor que dejarlo vacío.
+ */
+function semillaDeExpediente(expediente, usuario) {
+  if (!expediente) return {};
+
+  const nna = expediente.nna || {};
+  const rep = expediente.representante || {};
+  const nombreNna = nombreCompleto(nna) || limpiar(expediente.nna_nombre);
+  const nombreRep = nombreCompleto(rep) || limpiar(expediente.representante_nombre);
+
+  const entrada = String(expediente.fecha || "").slice(0, 10).split("-");
+  const hoy = fechaPorDefecto().split("-");
+  const [hoyAnio, hoyMes, hoyDia] = hoy;
+
+  const funcionario = limpiar(usuario?.display_name || usuario?.name);
+  const nacimiento = [nna.lugar_nacimiento, formatearFecha(nna.fecha_nacimiento)]
+    .filter(Boolean)
+    .join(", ");
+
+  return {
+    codigoURD: limpiar(expediente.codigo),
+    expedienteCertificacion: limpiar(expediente.codigo),
+    sector: limpiar(expediente.sector),
+    lugar: ajuste("direccion_institucion"),
+    hora: String(expediente.hora_registro || "").slice(0, 5),
+
+    nna: nombreNna,
+    nnaGeneral: nombreNna,
+    nnaProtegido: nombreNna,
+    constanciaNna: nombreNna,
+    ciNna: limpiar(nna.documento_identidad),
+    sexo: limpiar(nna.sexo),
+    edad: edadEnAnios(nna.fecha_nacimiento),
+    lugarNacimiento: nacimiento,
+
+    representante: nombreRep,
+    requerido: nombreRep,
+    solicitante: nombreRep,
+    comparecientes: nombreRep,
+    nombreCiudadano: nombreRep,
+    ciudadanoCitacion: nombreRep,
+    notificadoA: nombreRep,
+    constanciaCiudadano: nombreRep,
+    cedulaRepresentante: limpiar(rep.cedula),
+    ciComparecientes: limpiar(rep.cedula),
+    ciCiudadano: limpiar(rep.cedula),
+    constanciaCI: limpiar(rep.cedula),
+    nacionalidad: nacionalidadDe(rep.cedula),
+    telefono: limpiar(rep.telefono),
+    domicilio: limpiar(rep.direccion),
+    direccionHabitacion: limpiar(rep.direccion),
+    direccionRepresentante: limpiar(rep.direccion),
+    profesion: limpiar(rep.profesion),
+    lugarTrabajo: limpiar(rep.lugar_trabajo),
+    condicionNotificado: nombreRep ? "Representante" : "",
+
+    motivo: limpiar(expediente.tipificacion),
+    resumenCaso: limpiar(expediente.causa),
+    relato: limpiar(expediente.causa),
+    observaciones: limpiar(expediente.observaciones),
+    fechaEntradaDia: entrada[2] || "",
+    fechaEntradaMes: entrada[1] || "",
+    fechaEntradaAnio: entrada[0] || "",
+    autoFecha: formatearFecha(expediente.fecha),
+    terminadoEnFecha: formatearFecha(expediente.cerrado_en),
+
+    // Fecha del acto que se está redactando: hoy, no la de entrada del caso.
+    fechaDocumento: fechaPorDefecto(),
+    fechaDia: hoyDia,
+    fechaMes: hoyMes,
+    fechaAnio: hoyAnio,
+    fechaActa: hoyDia,
+    mesActa: hoyMes,
+    anioActa: hoyAnio,
+    diaMedida: hoyDia,
+    mesMedida: hoyMes,
+    anioMedida: hoyAnio,
+    diaCertificacion: hoyDia,
+    mesCertificacion: hoyMes,
+    anioCertificacion: hoyAnio,
+    diaConstancia: hoyDia,
+    mesConstancia: hoyMes,
+    anioConstancia: hoyAnio,
+    diaLiteralConstancia: diaEnLetras(hoyDia),
+    anioLiteralConstancia: anioEnLetras(hoyAnio),
+    ciudadConstancia: ajuste("municipio"),
+    lugarNotificacion: ajuste("direccion_institucion"),
+
+    consejero: funcionario,
+    suscribenMedida: funcionario,
+    suscribenCertificacion: funcionario,
+  };
 }
 
 function construirDocumento(tipo, form, expedienteActivo) {
   const codigo = limpiar(form.codigoURD || expedienteActivo?.codigo || "URD-2026-XXXX");
   const nna = limpiar(form.nna || expedienteActivo?.nna_nombre || "________________");
-  const representante = limpiar(
-    form.representante || expedienteActivo?.representante_nombre || "________________"
-  );
-  const cedulaRepresentante = limpiar(
-    form.cedulaRepresentante || expedienteActivo?.cedulaRepresentante || "________________"
-  );
-  const sector = limpiar(form.sector || expedienteActivo?.sector || "________________");
   const fecha = form.fechaDocumento || fechaPorDefecto();
   const lugar = limpiar(form.lugar || ajuste("direccion_institucion"));
   const hora = limpiar(form.hora || "________");
@@ -702,6 +821,7 @@ function Field({
 export default function Plantillas() {
   const [plantillaActiva, setPlantillaActiva] = useState("registro_general");
   const [expedienteActivo, setExpedienteActivo] = useState(null);
+  const [usuario, setUsuario] = useState(null);
   const [borradores, setBorradores] = useState([]);
   const [vista, setVista] = useState("editor");
   const { executeWithPin, PinModalWrapper } = usePinAction();
@@ -817,28 +937,31 @@ export default function Plantillas() {
 
   useEffect(() => {
     api.getExpedientes().then(setExpedientes).catch(console.error);
+    api.getMe().then(setUsuario).catch(console.error);
     recargarBorradores();
-
-    // Si otro módulo dejó un expediente abierto se respeta, pero ya no es la
-    // única vía: el selector permite elegir cualquiera.
-    setExpedienteActivo(leerExpedienteActivo());
   }, []);
 
-  useEffect(() => {
-    if (!expedienteActivo) return;
+  /*
+   * El llenado ocurre al elegir el expediente, no en un efecto sobre él: al
+   * abrir un borrador guardado también se fija el expediente, y un efecto
+   * habría machacado con la semilla los datos que el borrador traía escritos.
+   */
+  const elegirExpediente = (id) => {
+    const elegido = expedientes.find((x) => String(x.id) === String(id)) ?? null;
+    setExpedienteActivo(elegido);
+    if (!elegido) return;
 
-    setFormulario((prev) => ({
-      ...prev,
-      codigoURD: expedienteActivo.codigo || prev.codigoURD,
-      nna: expedienteActivo.nna_nombre || prev.nna,
-      nnaGeneral: expedienteActivo.nna_nombre || prev.nnaGeneral,
-      solicitante: expedienteActivo.solicitante || prev.solicitante,
-      requerido: expedienteActivo.representante_nombre || prev.requerido,
-      cedulaRepresentante: expedienteActivo.cedulaRepresentante || prev.cedulaRepresentante,
-      representante: expedienteActivo.representante_nombre || prev.representante,
-      sector: expedienteActivo.sector || prev.sector,
-    }));
-  }, [expedienteActivo]);
+    const semilla = semillaDeExpediente(elegido, usuario);
+    setFormulario((prev) => {
+      const siguiente = { ...prev };
+      // Sólo se escribe lo que el expediente sabe: una casilla sin origen en
+      // los datos conserva lo que el usuario haya puesto.
+      for (const [campo, valor] of Object.entries(semilla)) {
+        if (valor) siguiente[campo] = valor;
+      }
+      return siguiente;
+    });
+  };
 
   const documento = useMemo(
     () => construirDocumento(plantillaActiva, formulario, expedienteActivo),
@@ -1247,10 +1370,7 @@ export default function Plantillas() {
             Expediente
             <select
               value={expedienteActivo?.id ?? ""}
-              onChange={(e) => {
-                const elegido = expedientes.find((x) => String(x.id) === e.target.value);
-                setExpedienteActivo(elegido ?? null);
-              }}
+              onChange={(e) => elegirExpediente(e.target.value)}
             >
               <option value="">Sin expediente</option>
               {expedientes.map((e) => (
