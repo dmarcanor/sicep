@@ -381,6 +381,49 @@ export const api = {
   },
 
 
+  async getDocumentos(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetch(`${API_BASE}/documentos?${queryString}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  async guardarDocumento(data, pin = null, id = null) {
+    const response = await fetch(`${API_BASE}/documentos${id ? `/${id}` : ''}`, {
+      method: id ? 'PUT' : 'POST',
+      headers: getHeaders(pin),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  async emitirDocumento(id, pin = null) {
+    const response = await fetch(`${API_BASE}/documentos/${id}/emitir`, {
+      method: 'POST',
+      headers: getHeaders(pin),
+    });
+    return handleResponse(response);
+  },
+
+  // Cada salida del PDF queda en el historial, como exige el requisito.
+  async registrarDescarga(id, medio, pin = null) {
+    const response = await fetch(`${API_BASE}/documentos/${id}/descarga`, {
+      method: 'POST',
+      headers: getHeaders(pin),
+      body: JSON.stringify({ medio }),
+    });
+    return handleResponse(response);
+  },
+
+  async descartarBorrador(id, pin = null) {
+    const response = await fetch(`${API_BASE}/documentos/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(pin),
+    });
+    return handleResponse(response);
+  },
+
   async getSolicitudes(params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const response = await fetch(`${API_BASE}/solicitudes?${queryString}`, {

@@ -295,3 +295,25 @@
       flex-wrap:wrap;
     }
   }
+.plantillas-acciones-cabecera {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.plantillas-selector {
+  display: grid;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.plantillas-selector select {
+  min-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+}

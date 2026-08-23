@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import jsPDF from "jspdf";
 import { ajuste } from "../src/institucion";
+import { LOGO, membretePDF, pieDePaginaPDF } from "../src/exportar";
+import { api } from "../src/api";
 import "./css/Plantillas.css";
 import { usePinAction } from "../src/hooks/usePinAction";
 
 const STORAGE_EXPEDIENTE = "urd:expediente-activo";
-const STORAGE_BORRADORES = "urd:plantillas:borradores";
 
 const CATALOGO_PLANTILLAS = [
   {
@@ -86,16 +87,6 @@ function safeParseJSON(value, fallback) {
   } catch {
     return fallback;
   }
-}
-
-function leerBorradores() {
-  if (typeof window === "undefined") return [];
-  return safeParseJSON(window.localStorage.getItem(STORAGE_BORRADORES), []);
-}
-
-function guardarBorradores(lista) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_BORRADORES, JSON.stringify(lista));
 }
 
 function leerExpedienteActivo() {
@@ -498,37 +489,10 @@ function escribirPDFPorBloques(doc, texto, startX, startY, maxWidth, lineHeight)
 function generarPDFDocumento({ titulo, subtitulo, cuerpo, expediente, plantillaId }) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
 
-  doc.setFillColor(24, 48, 78);
-  doc.rect(0, 0, 210, 18, "F");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(255, 255, 255);
-  doc.text(ajuste("membrete_subtitulo").toUpperCase(), 14, 9);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.text(`Municipio ${ajuste("municipio")} - Estado ${ajuste("estado")}`, 14, 14);
-
-  doc.setTextColor(31, 41, 55);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
-  doc.text(titulo || "PLANTILLA", 14, 28);
-
-  if (subtitulo) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(75, 85, 99);
-    const sub = doc.splitTextToSize(subtitulo, 182);
-    doc.text(sub, 14, 35);
-  }
+  const trasMembrete = membretePDF(doc, titulo || "PLANTILLA", subtitulo);
 
   doc.setDrawColor(220, 228, 238);
-  doc.line(14, 41, 196, 41);
-
-  doc.setTextColor(31, 41, 55);
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
+  doc.line(14, trasMembrete, 196, trasMembrete);
 
   const encabezado = [
     `Expediente: ${expediente?.id || "URD-2026-XXXX"}`,
@@ -539,13 +503,13 @@ function generarPDFDocumento({ titulo, subtitulo, cuerpo, expediente, plantillaI
   doc.setFont("helvetica", "italic");
   doc.setFontSize(9);
   doc.setTextColor(90, 106, 127);
-  doc.text(encabezado, 14, 47);
+  doc.text(encabezado, 14, trasMembrete + 6);
 
   doc.setTextColor(31, 41, 55);
   doc.setFont("times", "normal");
   doc.setFontSize(11);
 
-  const yFinal = escribirPDFPorBloques(doc, cuerpo || "", 14, 58, 182, 5.9);
+  const yFinal = escribirPDFPorBloques(doc, cuerpo || "", 14, trasMembrete + 17, 182, 5.9);
 
   const firmaY = Math.min(yFinal + 10, 260);
   doc.setDrawColor(24, 48, 78);
@@ -556,8 +520,9 @@ function generarPDFDocumento({ titulo, subtitulo, cuerpo, expediente, plantillaI
   doc.text("Funcionario responsable", 14, firmaY + 5);
 
   doc.setFontSize(8);
-  doc.text("Documento generado automáticamente por el sistema institucional.", 14, 286);
+  doc.text("Documento generado automáticamente por el sistema institucional.", 14, 280);
 
+  pieDePaginaPDF(doc);
   doc.save(`${plantillaId || "plantilla"}-${expediente?.id || "expediente"}.pdf`);
 }
 
@@ -591,6 +556,13 @@ function abrirVistaImpresion({ titulo, subtitulo, cuerpo, expediente, plantillaI
             color: white;
             padding: 14px 18px 12px;
             margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+          }
+          .header img {
+            height: 46px;
+            width: auto;
           }
           .header .line1 {
             font-size: 12px;
@@ -645,8 +617,11 @@ function abrirVistaImpresion({ titulo, subtitulo, cuerpo, expediente, plantillaI
       </head>
       <body>
         <div class="header">
-          <div class="line1">${ajuste("membrete_titulo")}</div>
-          <div class="line2">${ajuste("membrete_subtitulo")} · ${ajuste("membrete_tercero")}</div>
+          <img src="${LOGO}" alt="" />
+          <div>
+            <div class="line1">${ajuste("membrete_titulo")}</div>
+            <div class="line2">${ajuste("membrete_subtitulo")} · ${ajuste("membrete_tercero")}</div>
+          </div>
         </div>
 
         <h1>${titulo || "PLANTILLA"}</h1>
@@ -833,8 +808,19 @@ export default function Plantillas() {
     direccionRepresentante: "",
   });
 
+  const [expedientes, setExpedientes] = useState([]);
+  const [documentoId, setDocumentoId] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+
+  const recargarBorradores = () =>
+    api.getDocumentos({ estado: "Borrador" }).then(setBorradores).catch(console.error);
+
   useEffect(() => {
-    setBorradores(leerBorradores());
+    api.getExpedientes().then(setExpedientes).catch(console.error);
+    recargarBorradores();
+
+    // Si otro módulo dejó un expediente abierto se respeta, pero ya no es la
+    // única vía: el selector permite elegir cualquiera.
     setExpedienteActivo(leerExpedienteActivo());
   }, []);
 
@@ -865,30 +851,6 @@ export default function Plantillas() {
       ...prev,
       [name]: value,
     }));
-  };
-
-  const cargarExpedienteActivo = () => {
-    const exp = leerExpedienteActivo();
-
-    if (!exp) {
-      alert("No hay expediente activo guardado.");
-      return;
-    }
-
-    setExpedienteActivo(exp);
-    setFormulario((prev) => ({
-      ...prev,
-      codigoURD: exp.codigo || "",
-      nna: exp.nna_nombre || "",
-      nnaGeneral: exp.nna_nombre || "",
-      solicitante: exp.solicitante || "",
-      requerido: exp.representante_nombre || "",
-      cedulaRepresentante: exp.cedulaRepresentante || "",
-      representante: exp.representante_nombre || "",
-      sector: exp.sector || "",
-    }));
-
-    alert("Expediente activo cargado en Plantillas.");
   };
 
   const validar = () => {
@@ -984,33 +946,66 @@ export default function Plantillas() {
     return true;
   };
 
-  const guardarBorradorLocal = () => {
+  const cuerpoDelDocumento = () => ({
+    expediente_id: expedienteActivo?.id ?? null,
+    plantilla: plantillaActiva,
+    titulo: documento.titulo,
+    datos: formulario,
+  });
+
+  const guardarBorrador = async () => {
     if (!validar()) return;
 
-    const nuevo = {
-      id: `${plantillaActiva}-${Date.now()}`,
-      plantilla: plantillaActiva,
-      titulo: documento.titulo,
-      subtitulo: documento.subtitulo || "",
-      fechaCreacion: new Date().toISOString(),
-      expediente: {
-        codigoURD: formulario.codigoURD,
-        nna: formulario.nna,
-        representante: formulario.representante,
-        cedulaRepresentante: formulario.cedulaRepresentante,
-        sector: formulario.sector,
-      },
-      contenido: documento.cuerpo,
-    };
-
-    const lista = [nuevo, ...borradores];
-    setBorradores(lista);
-    guardarBorradores(lista);
-    alert("Borrador guardado localmente.");
+    setGuardando(true);
+    try {
+      const guardado = await executeWithPin(
+        (pin) => api.guardarDocumento(cuerpoDelDocumento(), pin, documentoId),
+        documentoId ? "Actualizar borrador" : "Guardar borrador",
+      );
+      setDocumentoId(guardado.id);
+      await recargarBorradores();
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        alert(error.message || "No se pudo guardar el borrador.");
+      }
+    } finally {
+      setGuardando(false);
+    }
   };
 
-  const descargarPDF = () => {
+  /**
+   * Un PDF legal sale del despacho: se confirma con PIN y queda registrado.
+   * Si aún no se había guardado, se guarda y se emite en el mismo paso.
+   */
+  const emitirYRegistrar = async (medio) => {
+    const guardado = await executeWithPin(async (pin) => {
+      let doc = documentoId
+        ? await api.guardarDocumento(cuerpoDelDocumento(), pin, documentoId)
+        : await api.guardarDocumento(cuerpoDelDocumento(), pin);
+
+      if (doc.estado !== "Emitido") {
+        doc = await api.emitirDocumento(doc.id, pin);
+      }
+
+      await api.registrarDescarga(doc.id, medio, pin);
+      return doc;
+    }, medio === "impresion" ? "Imprimir documento" : "Descargar documento en PDF");
+
+    setDocumentoId(guardado.id);
+    await recargarBorradores();
+    return guardado;
+  };
+
+  const descargarPDF = async () => {
     if (!validar()) return;
+
+    try {
+      await emitirYRegistrar("pdf");
+    } catch (error) {
+      if (error.message === "Acción cancelada") return;
+      alert(error.message || "No se pudo registrar la emisión del documento.");
+      return;
+    }
 
     generarPDFDocumento({
       titulo: documento.titulo,
@@ -1021,8 +1016,16 @@ export default function Plantillas() {
     });
   };
 
-  const imprimir = () => {
+  const imprimir = async () => {
     if (!validar()) return;
+
+    try {
+      await emitirYRegistrar("impresion");
+    } catch (error) {
+      if (error.message === "Acción cancelada") return;
+      alert(error.message || "No se pudo registrar la impresión.");
+      return;
+    }
 
     abrirVistaImpresion({
       titulo: documento.titulo,
@@ -1035,26 +1038,24 @@ export default function Plantillas() {
 
   const cargarBorrador = (item) => {
     setPlantillaActiva(item.plantilla);
-    setFormulario((prev) => ({
-      ...prev,
-      codigoURD: item.expediente?.codigoURD || prev.codigoURD,
-      nna: item.expediente?.nna || prev.nna,
-      nnaGeneral: item.expediente?.nna || prev.nnaGeneral,
-      solicitante: item.expediente?.solicitante || prev.solicitante,
-      requerido: item.expediente?.representante_nombre || prev.requerido,
-      cedulaRepresentante: item.expediente?.cedulaRepresentante || prev.cedulaRepresentante,
-      representante: item.expediente?.representante_nombre || prev.representante,
-      sector: item.expediente?.sector || prev.sector,
-    }));
+    setFormulario((prev) => ({ ...prev, ...(item.datos || {}) }));
+    setDocumentoId(item.estado === "Emitido" ? null : item.id);
+    if (item.expediente) setExpedienteActivo(item.expediente);
     setVista("editor");
-    alert("Borrador cargado.");
   };
 
-  const eliminarBorrador = (id) => {
-    const lista = borradores.filter((item) => item.id !== id);
-    setBorradores(lista);
-    guardarBorradores(lista);
-    alert("Borrador eliminado.");
+  const eliminarBorrador = async (id) => {
+    if (!confirm("¿Descartar este borrador?")) return;
+
+    try {
+      await executeWithPin((pin) => api.descartarBorrador(id, pin), "Descartar borrador");
+      if (documentoId === id) setDocumentoId(null);
+      await recargarBorradores();
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        alert(error.message || "No se pudo descartar el borrador.");
+      }
+    }
   };
 
   const referenciaActual =
@@ -1234,18 +1235,36 @@ export default function Plantillas() {
     <div className="modulo plantillas-modulo">
       <div className="cabeceraModulo">
         <div>
-{/*           <span className="plantillas-etiqueta">Automatización administrativa</span>
- */}
+          <span className="plantillas-etiqueta">Automatización administrativa</span>
+          <h2>Plantillas</h2>
+          <p>Elija el expediente y el formato: los datos del caso y el membrete se cargan solos.</p>
         </div>
 
-{/*         <div className="plantillas-acciones-cabecera">
-          <button className="botonSecundario" onClick={cargarExpedienteActivo}>
-            Cargar expediente activo
+        <div className="plantillas-acciones-cabecera">
+          {/* Elegir el expediente es lo que dispara el auto-llenado. Antes
+              dependía de que otro módulo lo hubiera dejado en el navegador. */}
+          <label className="plantillas-selector">
+            Expediente
+            <select
+              value={expedienteActivo?.id ?? ""}
+              onChange={(e) => {
+                const elegido = expedientes.find((x) => String(x.id) === e.target.value);
+                setExpedienteActivo(elegido ?? null);
+              }}
+            >
+              <option value="">Sin expediente</option>
+              {expedientes.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.codigo} — {e.nna_nombre || "Sin NNA"}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button className="botonPrincipal chico" onClick={guardarBorrador} disabled={guardando}>
+            {guardando ? "Guardando..." : documentoId ? "Actualizar borrador" : "Guardar borrador"}
           </button>
-          <button className="botonPrincipal chico" onClick={guardarBorradorLocal}>
-            Guardar borrador
-          </button>
-        </div> */}
+        </div>
       </div>
 
       <div className="plantillas-layout">
@@ -1302,7 +1321,10 @@ export default function Plantillas() {
                   <div key={item.id} className="draft-item">
                     <div>
                       <strong>{item.titulo}</strong>
-                      <span>{item.expediente?.codigoURD || ""}</span>
+                      <span>
+                        {item.expediente?.codigo || "Sin expediente"}
+                        {item.creado_por?.display_name ? ` · ${item.creado_por.display_name}` : ""}
+                      </span>
                     </div>
 
                     <div className="draft-actions">

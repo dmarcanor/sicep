@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BitacoraController;
 use App\Http\Controllers\Api\CasoController;
 use App\Http\Controllers\Api\ConfiguracionController;
+use App\Http\Controllers\Api\DocumentoController;
 use App\Http\Controllers\Api\ExpedienteController;
 use App\Http\Controllers\Api\HistorialController;
 use App\Http\Controllers\Api\NnaController;
@@ -111,9 +112,18 @@ Route::middleware(['auth:sanctum', 'role:administrador,supervisor,consejero'])->
         Route::get('/plantillas', [PlantillaController::class, 'index']);
         Route::get('/plantillas/{plantilla}', [PlantillaController::class, 'show']);
 
+        // Borradores y documentos emitidos desde el catálogo de formatos.
+        Route::get('/documentos', [DocumentoController::class, 'index']);
+
         Route::middleware('verify.pin')->group(function () {
             Route::post('/plantillas', [PlantillaController::class, 'store']);
             Route::put('/plantillas/{plantilla}', [PlantillaController::class, 'update']);
+
+            Route::post('/documentos', [DocumentoController::class, 'store']);
+            Route::put('/documentos/{documento}', [DocumentoController::class, 'update']);
+            Route::delete('/documentos/{documento}', [DocumentoController::class, 'destroy']);
+            Route::post('/documentos/{documento}/emitir', [DocumentoController::class, 'emitir']);
+            Route::post('/documentos/{documento}/descarga', [DocumentoController::class, 'registrarDescarga']);
         });
     });
 
