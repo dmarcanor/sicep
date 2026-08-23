@@ -154,3 +154,18 @@
   color: var(--muted);
   font-size: 0.72rem;
 }
+
+.reporte-alcance {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2457a6;
+}
+
+.reporte-periodo label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}

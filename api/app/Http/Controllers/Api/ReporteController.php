@@ -22,7 +22,12 @@ class ReporteController extends Controller
         $request->validate([
             'desde' => 'nullable|date',
             'hasta' => 'nullable|date|after_or_equal:desde',
+            'tipificacion' => 'nullable|string|max:120',
+            'sector' => 'nullable|string|max:120',
         ]);
+
+        $tipificacion = $request->filled('tipificacion') ? $request->tipificacion : null;
+        $sector = $request->filled('sector') ? $request->sector : null;
 
         $hasta = $request->filled('hasta')
             ? Carbon::parse($request->hasta)->endOfDay()
@@ -41,11 +46,31 @@ class ReporteController extends Controller
                 'hasta' => $hasta->toDateString(),
                 'dias' => $dias,
             ],
-            'expedientes' => $this->expedientes($desde, $hasta),
-            'resolucion' => $this->resolucion($desde, $hasta),
-            'casos' => $this->agrupado(Caso::query(), 'casos', $desde, $hasta),
-            'solicitudes' => $this->agrupado(SolicitudArchivo::query(), 'solicitudes', $desde, $hasta),
+            'filtros' => [
+                'tipificacion' => $tipificacion,
+                'sector' => $sector,
+                'tipificaciones' => Expediente::query()->whereNotNull('tipificacion')
+                    ->distinct()->orderBy('tipificacion')->pluck('tipificacion'),
+                'sectores' => Expediente::query()->whereNotNull('sector')
+                    ->distinct()->orderBy('sector')->pluck('sector'),
+            ],
+            'expedientes' => $this->expedientes($desde, $hasta, $tipificacion, $sector),
+            'resolucion' => $this->resolucion($desde, $hasta, $tipificacion, $sector),
+            'casos' => $this->agrupado(Caso::query(), $desde, $hasta, $tipificacion, $sector),
+            'solicitudes' => $this->agrupado(SolicitudArchivo::query(), $desde, $hasta, $tipificacion, $sector),
         ]);
+    }
+
+    /**
+     * Recorta la consulta al motivo o al sector elegido. Sin esto el módulo
+     * sólo sabía hablar en general, y lo que se necesita es poder mirar una
+     * vulneración concreta.
+     */
+    private function acotar($query, ?string $tipificacion, ?string $sector)
+    {
+        return $query
+            ->when($tipificacion, fn ($q) => $q->where('tipificacion', $tipificacion))
+            ->when($sector, fn ($q) => $q->where('sector', $sector));
     }
 
     private function enPeriodo($query, Carbon $desde, Carbon $hasta)
@@ -53,9 +78,9 @@ class ReporteController extends Controller
         return $query->whereBetween('fecha', [$desde->toDateString(), $hasta->toDateString()]);
     }
 
-    private function expedientes(Carbon $desde, Carbon $hasta): array
+    private function expedientes(Carbon $desde, Carbon $hasta, ?string $tipificacion, ?string $sector): array
     {
-        $base = fn () => $this->enPeriodo(Expediente::query(), $desde, $hasta);
+        $base = fn () => $this->acotar($this->enPeriodo(Expediente::query(), $desde, $hasta), $tipificacion, $sector);
 
         return [
             'total' => $base()->count(),
@@ -72,11 +97,15 @@ class ReporteController extends Controller
      * Tiempo medio entre la fecha del expediente y su cierre efectivo. Se dice
      * cuántos entran en la media: sin esa cifra el número no es interpretable.
      */
-    private function resolucion(Carbon $desde, Carbon $hasta): array
+    private function resolucion(Carbon $desde, Carbon $hasta, ?string $tipificacion, ?string $sector): array
     {
-        $cerrados = Expediente::query()
-            ->whereNotNull('cerrado_en')
-            ->whereBetween('cerrado_en', [$desde, $hasta]);
+        $cerrados = $this->acotar(
+            Expediente::query()
+                ->whereNotNull('cerrado_en')
+                ->whereBetween('cerrado_en', [$desde, $hasta]),
+            $tipificacion,
+            $sector,
+        );
 
         $promedio = (clone $cerrados)->selectRaw('AVG(DATEDIFF(cerrado_en, fecha)) as dias')->value('dias');
 
@@ -86,9 +115,14 @@ class ReporteController extends Controller
         ];
     }
 
-    private function agrupado($query, string $tabla, Carbon $desde, Carbon $hasta): array
+    private function agrupado($query, Carbon $desde, Carbon $hasta, ?string $tipificacion, ?string $sector): array
     {
-        $base = fn () => (clone $query)->whereBetween('created_at', [$desde, $hasta]);
+        $base = fn () => (clone $query)
+            ->whereBetween('created_at', [$desde, $hasta])
+            ->when(
+                $tipificacion || $sector,
+                fn ($q) => $q->whereHas('expediente', fn ($e) => $this->acotar($e, $tipificacion, $sector)),
+            );
 
         return [
             'total' => $base()->count(),

@@ -17,6 +17,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./css/Reportes.css";
 import { api } from "../src/api";
+import { membretePDF, pieDePaginaPDF, hojaConMembrete } from "../src/exportar";
 import { formatearFecha, hoyISO } from "../src/formato";
 
 // Una por tipificación: con tres se repetían y dos motivos distintos salían
@@ -28,8 +29,29 @@ const COLORS = [
 
 const primerDiaDelMes = () => `${hoyISO().slice(0, 7)}-01`;
 
+// Se cuenta en UTC a partir del día local ya resuelto por hoyISO: restar sobre
+// una fecha local y volver a serializar corre el día en husos al este.
+const restarDias = (n) => {
+  const d = new Date(`${hoyISO()}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().slice(0, 10);
+};
+
+/**
+ * Atajos de período. El consejo no razona en fechas sueltas sino en cortes
+ * ("lo del día", "la quincena"), así que se ofrecen hechos y el rango libre
+ * queda para lo que no encaje en ninguno.
+ */
+const PRESETS = {
+  diario: { etiqueta: "Diario", rango: () => [hoyISO(), hoyISO()] },
+  semanal: { etiqueta: "Semanal", rango: () => [restarDias(6), hoyISO()] },
+  quincenal: { etiqueta: "Quincenal", rango: () => [restarDias(14), hoyISO()] },
+  mensual: { etiqueta: "Mensual", rango: () => [primerDiaDelMes(), hoyISO()] },
+};
+
 const VACIO = {
   periodo: { desde: "", hasta: "", dias: 0 },
+  filtros: { tipificacion: null, sector: null, tipificaciones: [], sectores: [] },
   expedientes: { total: 0, total_cerrados: 0, por_tipificacion: [], por_estatus: [], por_prioridad: [], por_sector: [] },
   resolucion: { expedientes_cerrados: 0, dias_promedio: null },
   casos: { total: 0, por_estatus: [] },
@@ -39,25 +61,48 @@ const VACIO = {
 export default function Reportes() {
   const [desde, setDesde] = useState(primerDiaDelMes);
   const [hasta, setHasta] = useState(hoyISO);
+  const [preset, setPreset] = useState("mensual");
+  const [tipificacion, setTipificacion] = useState("");
+  const [sector, setSector] = useState("");
   const [datos, setDatos] = useState(VACIO);
   const [cargando, setCargando] = useState(true);
 
   const cargar = useCallback(async () => {
     try {
       setCargando(true);
-      setDatos(await api.getReportes({ desde, hasta }));
+      setDatos(await api.getReportes({ desde, hasta, tipificacion, sector }));
     } catch (error) {
       console.error("Error cargando reportes:", error);
     } finally {
       setCargando(false);
     }
-  }, [desde, hasta]);
+  }, [desde, hasta, tipificacion, sector]);
 
   useEffect(() => {
     cargar();
   }, [cargar]);
 
-  const { expedientes, resolucion, periodo, casos, solicitudes } = datos;
+  const aplicarPreset = (clave) => {
+    setPreset(clave);
+    if (PRESETS[clave]) {
+      const [d, h] = PRESETS[clave].rango();
+      setDesde(d);
+      setHasta(h);
+    }
+  };
+
+  // Mover una fecha a mano deja de ser un atajo: el selector lo refleja.
+  const fijarFecha = (setter) => (valor) => {
+    setter(valor);
+    setPreset("personalizado");
+  };
+
+  const { expedientes, resolucion, periodo, casos, solicitudes, filtros } = datos;
+
+  const alcance = [
+    tipificacion ? `Vulneración: ${tipificacion}` : null,
+    sector ? `Sector: ${sector}` : null,
+  ].filter(Boolean).join(" · ") || "Todas las vulneraciones y sectores";
 
   const vulneraciones = (expedientes.por_tipificacion || []).map((i) => ({
     motivo: i.tipificacion,
@@ -75,18 +120,19 @@ export default function Reportes() {
   const exportarExcel = () => {
     const libro = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet([{
+    XLSX.utils.book_append_sheet(libro, hojaConMembrete([{
       "Desde": periodo.desde,
       "Hasta": periodo.hasta,
+      "Alcance": alcance,
       "Expedientes del período": expedientes.total,
       "Cerrados en el período": expedientes.total_cerrados,
       "Tiempo promedio de resolución": textoPromedio,
       "Expedientes en la media": resolucion.expedientes_cerrados,
-    }]), "Resumen");
+    }], "REPORTE DE GESTIÓN"), "Resumen");
 
-    XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(vulneraciones), "Vulneraciones");
-    XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(
-      sectores.map((s) => ({ Sector: s.sector, Casos: s.total })),
+    XLSX.utils.book_append_sheet(libro, hojaConMembrete(vulneraciones, "VULNERACIONES POR MOTIVO"), "Vulneraciones");
+    XLSX.utils.book_append_sheet(libro, hojaConMembrete(
+      sectores.map((s) => ({ Sector: s.sector, Casos: s.total })), "EXPEDIENTES POR SECTOR",
     ), "Sectores");
 
     XLSX.writeFile(libro, `reportes-${periodo.desde}_${periodo.hasta}.xlsx`);
@@ -95,13 +141,14 @@ export default function Reportes() {
   const exportarPDF = () => {
     const doc = new jsPDF();
 
-    doc.setFontSize(14);
-    doc.text("REPORTE DE GESTIÓN", 14, 14);
-    doc.setFontSize(10);
-    doc.text(`Período: ${formatearFecha(periodo.desde)} a ${formatearFecha(periodo.hasta)}`, 14, 20);
+    const inicioY = membretePDF(
+      doc,
+      "REPORTE DE GESTIÓN",
+      `Período: ${formatearFecha(periodo.desde)} a ${formatearFecha(periodo.hasta)} · ${alcance}`,
+    );
 
     autoTable(doc, {
-      startY: 28,
+      startY: inicioY,
       head: [["Indicador", "Valor"]],
       body: [
         ["Expedientes del período", String(expedientes.total)],
@@ -127,6 +174,7 @@ export default function Reportes() {
       styles: { fontSize: 9 },
     });
 
+    pieDePaginaPDF(doc);
     doc.save(`reportes-${periodo.desde}_${periodo.hasta}.pdf`);
   };
 
@@ -136,7 +184,8 @@ export default function Reportes() {
         <div>
           <span className="reporte-etiqueta">Inteligencia territorial</span>
           <h2>Reportes</h2>
-          <p>Indicadores calculados sobre el período seleccionado.</p>
+          <p>Indicadores calculados sobre el período y el alcance seleccionados.</p>
+          <p className="reporte-alcance">{alcance}</p>
         </div>
 
         <div className="accionesReportes">
@@ -147,15 +196,49 @@ export default function Reportes() {
 
       <div className="datatable-toolbar reporte-periodo">
         <label>
+          Período
+          <select className="datatable-select" value={preset}
+                  onChange={(e) => aplicarPreset(e.target.value)}>
+            {Object.entries(PRESETS).map(([clave, p]) => (
+              <option key={clave} value={clave}>{p.etiqueta}</option>
+            ))}
+            <option value="personalizado">Personalizado</option>
+          </select>
+        </label>
+
+        <label>
           Desde
           <input type="date" className="datatable-input" value={desde} max={hasta}
-                 onChange={(e) => setDesde(e.target.value)} />
+                 onChange={(e) => fijarFecha(setDesde)(e.target.value)} />
         </label>
         <label>
           Hasta
           <input type="date" className="datatable-input" value={hasta} min={desde} max={hoyISO()}
-                 onChange={(e) => setHasta(e.target.value)} />
+                 onChange={(e) => fijarFecha(setHasta)(e.target.value)} />
         </label>
+
+        <label>
+          Vulneración
+          <select className="datatable-select" value={tipificacion}
+                  onChange={(e) => setTipificacion(e.target.value)}>
+            <option value="">Todas</option>
+            {(filtros.tipificaciones || []).map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Sector
+          <select className="datatable-select" value={sector}
+                  onChange={(e) => setSector(e.target.value)}>
+            <option value="">Todos</option>
+            {(filtros.sectores || []).map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </label>
+
         <span className="datatable-info">
           {periodo.dias} día(s){cargando ? " · cargando…" : ""}
         </span>
