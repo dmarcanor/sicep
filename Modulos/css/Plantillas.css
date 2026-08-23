@@ -317,3 +317,14 @@
   background: #fff;
   font: inherit;
 }
+
+.plantillas-aviso {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #BFE3C8;
+  background: #EDF9F0;
+  color: #1E6B37;
+  font-size: 13px;
+  font-weight: 600;
+}

@@ -818,15 +818,10 @@ function Field({
   );
 }
 
-export default function Plantillas() {
-  const [plantillaActiva, setPlantillaActiva] = useState("registro_general");
-  const [expedienteActivo, setExpedienteActivo] = useState(null);
-  const [usuario, setUsuario] = useState(null);
-  const [borradores, setBorradores] = useState([]);
-  const [vista, setVista] = useState("editor");
-  const { executeWithPin, PinModalWrapper } = usePinAction();
-
-  const [formulario, setFormulario] = useState({
+/** Formulario en blanco. Se reconstruye en cada llamada para que la fecha
+ *  del documento sea la de hoy y no la del arranque de la sesión. */
+function formularioVacio() {
+  return {
     codigoURD: "",
     fechaDocumento: fechaPorDefecto(),
     lugar: "",
@@ -926,11 +921,28 @@ export default function Plantillas() {
     edadRepresentante: "",
     instituto: "",
     direccionRepresentante: "",
-  });
+  };
+}
+
+export default function Plantillas() {
+  const [plantillaActiva, setPlantillaActiva] = useState("registro_general");
+  const [expedienteActivo, setExpedienteActivo] = useState(null);
+  const [usuario, setUsuario] = useState(null);
+  const [borradores, setBorradores] = useState([]);
+  const [vista, setVista] = useState("editor");
+  const { executeWithPin, PinModalWrapper } = usePinAction();
+
+  const [formulario, setFormulario] = useState(formularioVacio);
 
   const [expedientes, setExpedientes] = useState([]);
   const [documentoId, setDocumentoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [aviso, setAviso] = useState("");
+
+  const avisar = (texto) => {
+    setAviso(texto);
+    setTimeout(() => setAviso(""), 5000);
+  };
 
   const recargarBorradores = () =>
     api.getDocumentos({ estado: "Borrador" }).then(setBorradores).catch(console.error);
@@ -1085,8 +1097,17 @@ export default function Plantillas() {
         (pin) => api.guardarDocumento(cuerpoDelDocumento(), pin, documentoId),
         documentoId ? "Actualizar borrador" : "Guardar borrador",
       );
-      setDocumentoId(guardado.id);
       await recargarBorradores();
+
+      /*
+       * Se suelta también el documentoId. Vaciar el formulario dejando el
+       * módulo atado al borrador recién guardado haría que el siguiente
+       * "Guardar" lo sobrescribiera con las casillas en blanco.
+       */
+      setFormulario(formularioVacio());
+      setExpedienteActivo(null);
+      setDocumentoId(null);
+      avisar(`Borrador guardado. Queda en la pestaña Borradores (${guardado.titulo}).`);
     } catch (error) {
       if (error.message !== "Acción cancelada") {
         alert(error.message || "No se pudo guardar el borrador.");
@@ -1386,6 +1407,8 @@ export default function Plantillas() {
           </button>
         </div>
       </div>
+
+      {aviso ? <div className="plantillas-aviso">{aviso}</div> : null}
 
       <div className="plantillas-layout">
         <section className="panel plantillas-catalogo">
