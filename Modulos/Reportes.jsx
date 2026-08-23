@@ -70,7 +70,9 @@ export default function Reportes() {
   const cargar = useCallback(async () => {
     try {
       setCargando(true);
-      setDatos(await api.getReportes({ desde, hasta, tipificacion, sector }));
+      // Sobre la forma vacía, no en su lugar: si la API contesta sin alguna
+      // sección, el módulo debe salir incompleto, no en blanco.
+      setDatos({ ...VACIO, ...(await api.getReportes({ desde, hasta, tipificacion, sector })) });
     } catch (error) {
       console.error("Error cargando reportes:", error);
     } finally {
