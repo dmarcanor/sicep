@@ -87,9 +87,12 @@ export default function AsignacionCasosConsejeros() {
         api.getExpedientes(),
       ]);
 
+      // Sólo consejeros: el reparto y la carga se miden por consejería, y una
+      // lista rotulada "consejeros" que incluía supervisores hacía ilegible
+      // tanto el filtro como la distribución.
       setConsejeros(
         usuariosData
-          .filter((u) => (u.role === "consejero" || u.role === "supervisor") && u.active)
+          .filter((u) => u.role === "consejero" && u.active)
           .map((u) => ({
             id: u.id,
             nombre: u.display_name || u.name,
@@ -287,7 +290,12 @@ export default function AsignacionCasosConsejeros() {
         <div>
           <span className="expedientes-badge">Gestión operativa</span>
           <h2>Asignación de Casos a Consejeros</h2>
-          <p>Los expedientes ya registrados se reparten entre los consejeros activos.</p>
+          <p>
+            Aquí se decide <strong>qué consejero atiende cada expediente</strong>. El módulo no
+            crea expedientes: reparte los que ya existen y deja ver cómo queda la carga de cada
+            consejería. Use <em>Asignar expediente</em> para los que aún no tienen responsable, o
+            <em> Reasignar</em> para cambiar el de un caso ya repartido.
+          </p>
         </div>
 
         <button className="btn-primary" onClick={() => setModalNuevo(true)}>
@@ -398,7 +406,12 @@ export default function AsignacionCasosConsejeros() {
             </thead>
             <tbody>
               {casosFiltrados.map((caso) => (
-                <tr key={caso.id}>
+                <tr
+                  key={caso.id}
+                  className="fila-clicable"
+                  onClick={() => abrirDetalle(caso)}
+                  title="Ver el detalle del caso"
+                >
                   <td className="mono">{caso.codigo}</td>
                   <td className="mono">{caso.expedienteCodigo}</td>
                   <td>{caso.nombres}</td>
@@ -415,7 +428,7 @@ export default function AsignacionCasosConsejeros() {
                   <td>{caso.asignadoA}</td>
                   <td>{fechaBonita(caso.fecha)}</td>
                   <td>
-                    <div className="row-actions">
+                    <div className="row-actions" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => abrirDetalle(caso)}>Ver</button>
                       <button onClick={() => abrirManual(caso)}>Reasignar</button>
                     </div>
