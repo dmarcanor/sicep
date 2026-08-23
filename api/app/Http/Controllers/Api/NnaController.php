@@ -33,8 +33,8 @@ class NnaController extends Controller
     {
         $datos = $request->validate([
             'documento_identidad' => 'required|string|unique:nna',
-            'nombres' => 'required|string|max:255',
-            'apellidos' => 'required|string|max:255',
+            'nombres' => 'required|string|max:25',
+            'apellidos' => 'required|string|max:25',
             'fecha_nacimiento' => 'required|date|before_or_equal:today',
             'sexo' => 'required|in:Masculino,Femenino',
             'lugar_nacimiento' => 'nullable|string|max:255',
@@ -67,8 +67,8 @@ class NnaController extends Controller
     {
         $datos = $request->validate([
             'documento_identidad' => 'sometimes|string|unique:nna,documento_identidad,' . $nna->id,
-            'nombres' => 'sometimes|string|max:255',
-            'apellidos' => 'sometimes|string|max:255',
+            'nombres' => 'sometimes|string|max:25',
+            'apellidos' => 'sometimes|string|max:25',
             'fecha_nacimiento' => 'sometimes|date|before_or_equal:today',
             'sexo' => 'sometimes|in:Masculino,Femenino',
             'lugar_nacimiento' => 'sometimes|nullable|string|max:255',

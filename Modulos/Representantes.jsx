@@ -4,11 +4,13 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { api } from "../src/api";
+import { membretePDF, pieDePaginaPDF, hojaConMembrete } from "../src/exportar";
 import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha } from "../src/formato";
 import { estilosTabla } from "../src/tablaEstilos";
 import Campo from "../componentes/Campo";
+import { EntradaDocumento, EntradaTelefono, LIMITES } from "../componentes/entradas";
 import { AYUDAS_REPRESENTANTE } from "../src/ayudas";
 import "./css/Expedientes.css";
 import "./css/Representantes.css";
@@ -108,7 +110,7 @@ export default function Representantes() {
     }));
 
   const exportarExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(filasExportables());
+    const ws = hojaConMembrete(filasExportables(), "REGISTRO DE REPRESENTANTES");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Representantes");
     XLSX.writeFile(wb, "representantes.xlsx");
@@ -117,11 +119,10 @@ export default function Representantes() {
   const exportarPDF = () => {
     const doc = new jsPDF();
 
-    doc.setFontSize(14);
-    doc.text("REGISTRO DE REPRESENTANTES LEGALES", 14, 14);
+    const inicioY = membretePDF(doc, "REGISTRO DE REPRESENTANTES");
 
     autoTable(doc, {
-      startY: 22,
+      startY: inicioY,
       head: [["Cédula", "Nombres", "Apellidos", "Teléfono", "Email", "Expedientes"]],
       body: filasExportables().map((r) => [
         r.Cedula,
@@ -134,6 +135,8 @@ export default function Representantes() {
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [24, 48, 78] },
     });
+
+    pieDePaginaPDF(doc);
 
     doc.save("representantes.pdf");
   };
@@ -297,14 +300,12 @@ export default function Representantes() {
                 ayuda={AYUDAS_REPRESENTANTE.cedula}
                 error={errores.cedula}
               >
-                <input
-                  type="text"
+                <EntradaDocumento
                   value={form.cedula}
-                  onChange={(e) => {
-                    setForm({ ...form, cedula: e.target.value });
+                  onChange={(valor) => {
+                    setForm({ ...form, cedula: valor });
                     setErrores({ ...errores, cedula: "" });
                   }}
-                  placeholder="V-12345678"
                   className={errores.cedula ? "error" : ""}
                 />
               </Campo>
@@ -317,6 +318,7 @@ export default function Representantes() {
                 <input
                   type="text"
                   value={form.nombres}
+                  maxLength={LIMITES.nombres}
                   onChange={(e) => {
                     setForm({ ...form, nombres: e.target.value });
                     setErrores({ ...errores, nombres: "" });
@@ -333,6 +335,7 @@ export default function Representantes() {
                 <input
                   type="text"
                   value={form.apellidos}
+                  maxLength={LIMITES.apellidos}
                   onChange={(e) => {
                     setForm({ ...form, apellidos: e.target.value });
                     setErrores({ ...errores, apellidos: "" });
@@ -346,10 +349,9 @@ export default function Representantes() {
                 ayuda={AYUDAS_REPRESENTANTE.telefono}
                 error={errores.telefono}
               >
-                <input
-                  type="text"
+                <EntradaTelefono
                   value={form.telefono}
-                  onChange={(e) => setForm({ ...form, telefono: e.target.value })}
+                  onChange={(valor) => setForm({ ...form, telefono: valor })}
                   placeholder="0414-1234567"
                 />
               </Campo>

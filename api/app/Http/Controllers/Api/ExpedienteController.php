@@ -59,7 +59,7 @@ class ExpedienteController extends Controller
         $datos = $request->validate([
             'nna_id' => 'required|exists:nna,id',
             'representante_id' => 'required|exists:representantes,id',
-            'sector' => 'required|string|max:255',
+            'sector' => 'required|string|max:60',
             'fecha' => 'required|date|before_or_equal:today',
             'hora_registro' => 'nullable|date_format:H:i',
             'prioridad' => 'required|in:Alta,Media,Baja',
@@ -104,7 +104,7 @@ class ExpedienteController extends Controller
             // 'fecha' es asignable: sin esta regla se podía cambiar a cualquier
             // valor desde la edición.
             'fecha' => 'sometimes|date|before_or_equal:today',
-            'sector' => 'sometimes|string|max:255',
+            'sector' => 'sometimes|string|max:60',
             'estatus' => 'sometimes|in:Registrado,En revisión,Aprobado,Observado,Cerrado',
             'estatus_fisico' => 'sometimes|in:Pendiente,En Despacho,En Archivo Central',
             'prioridad' => 'sometimes|in:Alta,Media,Baja',

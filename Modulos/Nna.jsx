@@ -4,11 +4,13 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { api } from "../src/api";
+import { membretePDF, pieDePaginaPDF, hojaConMembrete } from "../src/exportar";
 import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha, fechaParaInput } from "../src/formato";
 import { estilosTabla } from "../src/tablaEstilos";
 import Campo from "../componentes/Campo";
+import { EntradaDocumento, EntradaFecha, LIMITES } from "../componentes/entradas";
 import { AYUDAS_NNA } from "../src/ayudas";
 import "./css/Expedientes.css";
 
@@ -186,7 +188,7 @@ export default function Nna() {
     }));
 
   const exportarExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(filasExportables());
+    const ws = hojaConMembrete(filasExportables(), "REGISTRO DE NIÑOS, NIÑAS Y ADOLESCENTES");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "NNA");
     XLSX.writeFile(wb, "nna.xlsx");
@@ -195,11 +197,10 @@ export default function Nna() {
   const exportarPDF = () => {
     const doc = new jsPDF();
 
-    doc.setFontSize(14);
-    doc.text("REGISTRO DE NIÑOS, NIÑAS Y ADOLESCENTES", 14, 14);
+    const inicioY = membretePDF(doc, "REGISTRO DE NIÑOS, NIÑAS Y ADOLESCENTES");
 
     autoTable(doc, {
-      startY: 22,
+      startY: inicioY,
       head: [["Documento", "Nombres", "Apellidos", "F. nacimiento", "Sexo", "Expedientes"]],
       body: filasExportables().map((n) => [
         n.Documento,
@@ -212,6 +213,8 @@ export default function Nna() {
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [24, 48, 78] },
     });
+
+    pieDePaginaPDF(doc);
 
     doc.save("nna.pdf");
   };
@@ -307,14 +310,12 @@ export default function Nna() {
                 ayuda={AYUDAS_NNA.documento_identidad}
                 error={errores.documento_identidad}
               >
-                <input
-                  type="text"
+                <EntradaDocumento
                   value={form.documento_identidad}
-                  onChange={(e) => {
-                    setForm({ ...form, documento_identidad: e.target.value });
+                  onChange={(valor) => {
+                    setForm({ ...form, documento_identidad: valor });
                     setErrores({ ...errores, documento_identidad: "" });
                   }}
-                  placeholder="V-12345678"
                   className={errores.documento_identidad ? "error" : ""}
                 />
               </Campo>
@@ -327,6 +328,7 @@ export default function Nna() {
                 <input
                   type="text"
                   value={form.nombres}
+                  maxLength={LIMITES.nombres}
                   onChange={(e) => {
                     setForm({ ...form, nombres: e.target.value });
                     setErrores({ ...errores, nombres: "" });
@@ -343,6 +345,7 @@ export default function Nna() {
                 <input
                   type="text"
                   value={form.apellidos}
+                  maxLength={LIMITES.apellidos}
                   onChange={(e) => {
                     setForm({ ...form, apellidos: e.target.value });
                     setErrores({ ...errores, apellidos: "" });
@@ -356,14 +359,12 @@ export default function Nna() {
                 ayuda={AYUDAS_NNA.fecha_nacimiento}
                 error={errores.fecha_nacimiento}
               >
-                <input
-                  type="date"
+                <EntradaFecha
                   value={form.fecha_nacimiento}
-                  onChange={(e) => {
-                    setForm({ ...form, fecha_nacimiento: e.target.value });
+                  onChange={(valor) => {
+                    setForm({ ...form, fecha_nacimiento: valor });
                     setErrores({ ...errores, fecha_nacimiento: "" });
                   }}
-                  max={new Date().toISOString().split('T')[0]}
                   className={errores.fecha_nacimiento ? "error" : ""}
                 />
               </Campo>

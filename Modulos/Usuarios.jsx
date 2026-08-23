@@ -3,6 +3,7 @@ import "./css/Usuarios.css";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import Campo from "../componentes/Campo";
+import { EntradaDigitos, EntradaTelefono } from "../componentes/entradas";
 import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
 
 const formVacio = {
@@ -373,15 +374,12 @@ export default function Usuarios() {
                   </Campo>
 
                   <Campo label="PIN de Seguridad *" ayuda={AYUDAS.pin} error={errores.pin}>
-                    <input
-                      name="pin"
-                      type="password"
-                      maxLength={6}
-                      inputMode="numeric"
+                    <EntradaDigitos
                       value={form.pin}
-                      onChange={actualizarForm}
-                      placeholder="4-6 dígitos numéricos"
+                      maxLength={6}
+                      onChange={(valor) => setForm({ ...form, pin: valor })}
                       className={errores.pin ? "error" : ""}
+                      placeholder="4 a 6 dígitos"
                     />
                   </Campo>
                 </>
@@ -401,13 +399,12 @@ export default function Usuarios() {
               </Campo>
 
               <Campo label="Teléfono" ayuda={AYUDAS.phone} error={errores.phone}>
-                <input
-                  name="phone"
-                  value={form.phone}
-                  onChange={actualizarForm}
-                  placeholder="0414-1234567"
-                  className={errores.phone ? "error" : ""}
-                />
+                <EntradaTelefono
+                    value={form.phone}
+                    onChange={(valor) => setForm({ ...form, phone: valor })}
+                    className={errores.phone ? "error" : ""}
+                    placeholder="0414-1234567"
+                  />
               </Campo>
 
               <Campo label="Cargo" ayuda={AYUDAS.position} error={errores.position}>

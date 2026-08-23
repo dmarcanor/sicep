@@ -12,3 +12,26 @@
 .campo-error {
   color: #c0392b;
 }
+
+/* Nacionalidad + número: se leen como un solo control. */
+.entrada-compuesta {
+  display: flex;
+  gap: 0;
+}
+
+.entrada-compuesta select {
+  width: 62px;
+  flex: 0 0 auto;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+  background: #F1F5F9;
+  font-weight: 600;
+}
+
+.entrada-compuesta input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}

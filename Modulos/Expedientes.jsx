@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./css/Expedientes.css";
 import { api } from "../src/api";
+import { membretePDF, pieDePaginaPDF, hojaConMembrete } from "../src/exportar";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { formatearFecha, hoyISO } from "../src/formato";
 import { alertaLapso, useInstitucion } from "../src/institucion";
@@ -153,7 +154,7 @@ export default function Expedientes() {
     }));
 
   const exportarExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(filasExportables());
+    const ws = hojaConMembrete(filasExportables(), "REPORTE DE EXPEDIENTES URD");
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Expedientes");
     XLSX.writeFile(wb, "expedientes-urd.xlsx");
@@ -162,11 +163,10 @@ export default function Expedientes() {
   const exportarPDF = () => {
     const doc = new jsPDF();
 
-    doc.setFontSize(14);
-    doc.text("REPORTE DE EXPEDIENTES URD", 14, 14);
+    const inicioY = membretePDF(doc, "REPORTE DE EXPEDIENTES URD");
 
     autoTable(doc, {
-      startY: 22,
+      startY: inicioY,
       head: [["Expediente", "Fecha", "NNA", "Representante", "Sector", "Estado", "Prioridad"]],
       body: filasExportables().map((e) => [
         e.Expediente,
@@ -185,6 +185,8 @@ export default function Expedientes() {
         fillColor: [24, 48, 78],
       },
     });
+
+    pieDePaginaPDF(doc);
 
     doc.save("expedientes-urd.pdf");
   };
@@ -365,20 +367,18 @@ export default function Expedientes() {
 
     const doc = new jsPDF();
 
-    doc.setFontSize(14);
-    doc.text(`PLANTILLA DE ${tipo.toUpperCase()}`, 14, 14);
+    const inicioY = membretePDF(doc, `PLANTILLA DE ${tipo.toUpperCase()}`, `Expediente ${ficha.codigo}`);
 
     doc.setFontSize(10);
-    doc.text(`Expediente: ${ficha.codigo}`, 14, 24);
-    doc.text(`NNA: ${ficha.nna_nombre}`, 14, 30);
-    doc.text(`Representante: ${ficha.representante_nombre}`, 14, 36);
-    doc.text(`Sector: ${ficha.sector}`, 14, 42);
-    doc.text(`Estado actual: ${ficha.estatus}`, 14, 48);
-    doc.text(`Espejo digital: ${estatusActual}`, 14, 54);
-    doc.text(`PDF resumen: ${pdfActual}`, 14, 60);
+    doc.text(`NNA: ${ficha.nna_nombre}`, 14, inicioY + 2);
+    doc.text(`Representante: ${ficha.representante_nombre}`, 14, inicioY + 8);
+    doc.text(`Sector: ${ficha.sector}`, 14, inicioY + 14);
+    doc.text(`Estado actual: ${ficha.estatus}`, 14, inicioY + 20);
+    doc.text(`Espejo digital: ${estatusActual}`, 14, inicioY + 26);
+    doc.text(`PDF resumen: ${pdfActual}`, 14, inicioY + 32);
 
     autoTable(doc, {
-      startY: 70,
+      startY: inicioY + 40,
       head: [["Fecha", "Actuación"]],
       body: bitacoraActual.length
         ? bitacoraActual.map((b) => [b.fecha, b.nota])
@@ -392,6 +392,7 @@ export default function Expedientes() {
       },
     });
 
+    pieDePaginaPDF(doc);
     doc.save(`${tipo.toLowerCase()}-${ficha.codigo}.pdf`);
     alert(`Documento "${tipo}" generado correctamente.`);
   };
@@ -534,6 +535,7 @@ export default function Expedientes() {
           <div className="bitacora-form">
             <input
               type="date"
+              max={hoyISO()}
               value={bitacoraForm.fecha}
               onChange={(e) =>
                 setBitacoraForm((prev) => ({ ...prev, fecha: e.target.value }))
@@ -870,6 +872,7 @@ export default function Expedientes() {
                   name="sector"
                   value={nuevoExpediente.sector}
                   onChange={actualizarNuevo}
+                  maxLength={60}
                   className={erroresNuevo.sector ? "error" : ""}
                   placeholder="Ej. Centro, Guariquén..."
                 />

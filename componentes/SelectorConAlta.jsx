@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./css/Campo.css";
 import "./css/SelectorConAlta.css";
+import { EntradaDigitos, EntradaDocumento, EntradaFecha, EntradaTelefono, LIMITES } from "./entradas";
 
 // Sin acentos y en minúsculas: quien busca "perez" debe encontrar "Pérez".
 const normalizar = (texto) =>
@@ -12,19 +13,19 @@ const normalizar = (texto) =>
 const MAX_VISIBLES = 50;
 
 export const CAMPOS_NNA = [
-  { name: "documento_identidad", label: "Documento", required: true, placeholder: "V-31234567" },
-  { name: "nombres", label: "Nombres", required: true },
-  { name: "apellidos", label: "Apellidos", required: true },
-  { name: "fecha_nacimiento", label: "Fecha de nacimiento", type: "date", required: true },
+  { name: "documento_identidad", label: "Documento", required: true, tipo: "documento" },
+  { name: "nombres", label: "Nombres", required: true, maxLength: LIMITES.nombres },
+  { name: "apellidos", label: "Apellidos", required: true, maxLength: LIMITES.apellidos },
+  { name: "fecha_nacimiento", label: "Fecha de nacimiento", tipo: "fecha", required: true },
   { name: "sexo", label: "Sexo", type: "select", required: true, options: ["Masculino", "Femenino"] },
   { name: "lugar_nacimiento", label: "Lugar de nacimiento" },
 ];
 
 export const CAMPOS_REPRESENTANTE = [
-  { name: "cedula", label: "Cédula", required: true, placeholder: "V-12345678" },
-  { name: "nombres", label: "Nombres", required: true },
-  { name: "apellidos", label: "Apellidos", required: true },
-  { name: "telefono", label: "Teléfono", placeholder: "0414-1234567" },
+  { name: "cedula", label: "Cédula", required: true, tipo: "documento" },
+  { name: "nombres", label: "Nombres", required: true, maxLength: LIMITES.nombres },
+  { name: "apellidos", label: "Apellidos", required: true, maxLength: LIMITES.apellidos },
+  { name: "telefono", label: "Teléfono", tipo: "telefono", placeholder: "0414-1234567" },
   { name: "direccion", label: "Dirección" },
 ];
 
@@ -148,10 +149,18 @@ export default function SelectorConAlta({
     setFaltantes((prev) => ({ ...prev, [name]: false }));
   };
 
-  const cerrarAlta = () => {
+  // Tras crear el registro sí se limpia: el formulario ya cumplió su función.
+  const cerrarAltaYLimpiar = () => {
     setAbierto(false);
     setDatos(vacio(camposAlta));
     setFaltantes({});
+    setErrorAlta("");
+  };
+
+  // Al replegar el panel se conserva lo escrito: cerrarlo por error no debe
+  // costar volver a teclear todos los datos.
+  const replegarAlta = () => {
+    setAbierto(false);
     setErrorAlta("");
   };
 
@@ -178,12 +187,14 @@ export default function SelectorConAlta({
       // para que el usuario no tenga que reescribirlos.
       if (creado?.id) {
         onChange(creado.id);
-        cerrarAlta();
+        cerrarAltaYLimpiar();
       } else {
         setErrorAlta("No se recibió el registro creado.");
       }
     } catch (err) {
-      setErrorAlta(err?.message || "No se pudo crear el registro.");
+      if (err?.message !== "Acción cancelada") {
+        setErrorAlta(err?.message || "No se pudo crear el registro.");
+      }
     } finally {
       setGuardando(false);
     }
@@ -273,10 +284,10 @@ export default function SelectorConAlta({
         <button
           type="button"
           className="btn-secondary"
-          onClick={() => (abierto ? cerrarAlta() : setAbierto(true))}
+          onClick={() => (abierto ? replegarAlta() : setAbierto(true))}
           style={{ whiteSpace: "nowrap" }}
         >
-          {abierto ? "Cancelar" : textoAlta}
+          {abierto ? "Cerrar" : textoAlta}
         </button>
       </div>
 
@@ -320,6 +331,26 @@ export default function SelectorConAlta({
                     </option>
                   ))}
                 </select>
+              ) : campo.tipo ? (
+                (() => {
+                  const Control = {
+                    documento: EntradaDocumento,
+                    telefono: EntradaTelefono,
+                    fecha: EntradaFecha,
+                    digitos: EntradaDigitos,
+                  }[campo.tipo];
+
+                  return (
+                    <Control
+                      value={datos[campo.name] ?? ""}
+                      onChange={(valor) =>
+                        actualizar({ target: { name: campo.name, value: valor } })
+                      }
+                      placeholder={campo.placeholder || ""}
+                      className={faltantes[campo.name] ? "error" : ""}
+                    />
+                  );
+                })()
               ) : (
                 <input
                   name={campo.name}
@@ -327,6 +358,7 @@ export default function SelectorConAlta({
                   value={datos[campo.name] ?? ""}
                   onChange={actualizar}
                   placeholder={campo.placeholder || ""}
+                  maxLength={campo.maxLength}
                   className={faltantes[campo.name] ? "error" : ""}
                 />
               )}

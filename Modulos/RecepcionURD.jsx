@@ -307,6 +307,7 @@ export default function RecepcionURD() {
                 name="sector"
                 value={formulario.sector}
                 onChange={actualizar}
+                maxLength={60}
                 className={errores.sector ? "error" : ""}
                 placeholder="Ej. Centro, Guariquén..."
               />

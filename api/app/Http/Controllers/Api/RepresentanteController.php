@@ -31,9 +31,9 @@ class RepresentanteController extends Controller
     {
         $datos = $request->validate([
             'cedula' => 'required|string|unique:representantes',
-            'nombres' => 'required|string|max:255',
-            'apellidos' => 'required|string|max:255',
-            'telefono' => 'nullable|string|max:20',
+            'nombres' => 'required|string|max:25',
+            'apellidos' => 'required|string|max:25',
+            'telefono' => 'nullable|string|max:15',
             'direccion' => 'nullable|string',
             'email' => 'nullable|email|max:255',
             'profesion' => 'nullable|string|max:255',
@@ -64,9 +64,9 @@ class RepresentanteController extends Controller
     {
         $datos = $request->validate([
             'cedula' => 'sometimes|string|unique:representantes,cedula,' . $representante->id,
-            'nombres' => 'sometimes|string|max:255',
-            'apellidos' => 'sometimes|string|max:255',
-            'telefono' => 'sometimes|nullable|string|max:20',
+            'nombres' => 'sometimes|string|max:25',
+            'apellidos' => 'sometimes|string|max:25',
+            'telefono' => 'sometimes|nullable|string|max:15',
             'direccion' => 'sometimes|nullable|string',
             'email' => 'sometimes|nullable|email|max:255',
             'profesion' => 'sometimes|nullable|string|max:255',
