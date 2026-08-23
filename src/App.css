@@ -1,3 +1,13 @@
+/* Capas de apilamiento. Estaban repartidas en valores arbitrarios (20, 1000,
+   9999, 999999, 9999999) y la cabecera había escalado por encima de los
+   modales, que aparecían recortados por ella. */
+:root {
+  --capa-barra: 20;
+  --capa-cabecera: 30;
+  --capa-modal: 100;
+  --capa-pin: 110;
+}
+
 *{
   margin:0;
   padding:0;
@@ -33,7 +43,7 @@ button{
   overflow:hidden;
   transition:.3s ease;
   box-shadow:4px 0 20px rgba(0,0,0,.06);
-  z-index:20;
+  z-index: var(--capa-barra);
 }
 
 .sidebar.collapsed{
@@ -188,7 +198,7 @@ button{
 
 .user-menu-wrap{
   position:relative;
-  z-index:99998;
+  z-index: var(--capa-cabecera);
 }
 
 .page{
@@ -566,7 +576,7 @@ select:focus{
   border-radius:14px;
   box-shadow:var(--shadow);
   overflow:hidden;
-  z-index:20;
+  z-index: var(--capa-barra);
 }
 
 .menuUsuario button{
@@ -1581,7 +1591,7 @@ table {
 
 .user-menu-wrap{
   position:relative;
-  z-index:999999;
+  z-index: var(--capa-cabecera);
 }
 
 .user-menu{
@@ -1594,7 +1604,7 @@ table {
   border-radius:14px;
   box-shadow:0 20px 50px rgba(0,0,0,.25);
   overflow:hidden;
-  z-index:9999999;
+  z-index: 2;
 }
 .user-menu button{
   width:100%;
@@ -1612,7 +1622,7 @@ table {
 
 .header{
   position:relative;
-  z-index:999999;
+  z-index: var(--capa-cabecera);
 }
 
 
@@ -1679,12 +1689,12 @@ Prueba  login */
 
 .header{
   position:relative;
-  z-index:1000;
+  z-index: var(--capa-cabecera);
 }
 
 .user-menu-wrap{
   position:relative;
-  z-index:1001;
+  z-index: 2;
 }
 
 .user-menu{
@@ -1694,7 +1704,7 @@ Prueba  login */
   position:absolute;
   top:46px;
   right:0;
-  z-index:9999;
+  z-index: 2;
   overflow: visible !important;
 
 }
@@ -1711,7 +1721,7 @@ Prueba  login */
   border:1px solid var(--line-2);
   border-radius:14px;
   box-shadow:0 20px 50px rgba(0,0,0,.25);
-  z-index:9999999;
+  z-index: 2;
 }
 
 .user-menu button{
@@ -1766,3 +1776,6 @@ Prueba  login */
   flex:none;
   white-space:nowrap;
 }
+/* Fila de tabla que abre su detalle al pulsarla. */
+.fila-clicable { cursor: pointer; }
+.fila-clicable:hover { background: #f4f7fb; }

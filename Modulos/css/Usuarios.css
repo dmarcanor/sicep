@@ -151,15 +151,6 @@
     }
   }
 
-  /* Modales más compactos */
-
-.modal,
-.modal-content,
-.modal-dialog,
-[role="dialog"] {
-  max-width: 750px !important;
-  width: calc(100% - 200px) !important;
-  margin-left: 100px !important;
-  margin-top: 25px !important;
-  margin-right: auto !important;
-}
+  /* Los modales los centra .modal-overlay con flex. Aquí había un
+     margin-left: 100px !important que, por ser global y llevar !important,
+     descentraba TODOS los modales del sistema, no sólo los de Usuarios. */
