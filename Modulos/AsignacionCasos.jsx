@@ -259,6 +259,9 @@ export default function AsignacionCasosConsejeros() {
   const abrirManual = (caso) => {
     setCasoSeleccionado(caso);
     setConsejeroManual(caso.consejeroId ? String(caso.consejeroId) : "");
+    // Se llega aquí también desde el detalle, y dos modales abiertos a la vez
+    // se tapan entre sí: manda el orden del DOM, no el de apertura.
+    setModalDetalle(false);
     setModalManual(true);
   };
 
