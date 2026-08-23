@@ -127,6 +127,43 @@ function anioEnLetras(anio) {
 
 const nombreCompleto = (p) => limpiar([p?.nombres, p?.apellidos].filter(Boolean).join(" "));
 
+const dosDigitos = (n) => String(n).padStart(2, "0");
+
+const horaLocal = (fecha) => `${dosDigitos(fecha.getHours())}:${dosDigitos(fecha.getMinutes())}`;
+
+/**
+ * Hora en que se recibió el caso.
+ *
+ * Vale la que anotó quien atendió. Si no la hay sirve la de creación del
+ * registro —en UTC, hay que leerla en local o se desplaza cuatro horas—, pero
+ * sólo cuando el registro se creó el mismo día del expediente: si el caso se
+ * tecleó semanas después, esa hora no describe la recepción y es preferible
+ * dejar la casilla vacía a fechar el acta con una hora ajena.
+ */
+function horaDelExpediente(expediente) {
+  const anotada = String(expediente?.hora_registro || "").slice(0, 5);
+  if (anotada) return anotada;
+
+  if (!expediente?.created_at) return "";
+  const creado = new Date(expediente.created_at);
+  if (Number.isNaN(creado.getTime())) return "";
+
+  const diaCreacion = `${creado.getFullYear()}-${dosDigitos(creado.getMonth() + 1)}-${dosDigitos(creado.getDate())}`;
+  return diaCreacion === String(expediente.fecha || "").slice(0, 10) ? horaLocal(creado) : "";
+}
+
+/** El acta dice "siendo las 11:21 de la mañana": el turno sale de la propia hora. */
+function turnoDeHora(hora) {
+  const texto = String(hora || "").trim();
+  if (!texto) return "";
+
+  const h = Number(texto.slice(0, 2));
+  if (!Number.isInteger(h)) return "";
+  if (h < 12) return "mañana";
+  if (h < 19) return "tarde";
+  return "noche";
+}
+
 const nacionalidadDe = (documento) => {
   const inicial = String(documento || "").trim().charAt(0).toUpperCase();
   if (inicial === "V") return "Venezolana";
@@ -152,8 +189,8 @@ function semillaDeExpediente(expediente, usuario) {
   const nombreRep = nombreCompleto(rep) || limpiar(expediente.representante_nombre);
 
   const entrada = String(expediente.fecha || "").slice(0, 10).split("-");
-  const hoy = fechaPorDefecto().split("-");
-  const [hoyAnio, hoyMes, hoyDia] = hoy;
+  const [hoyAnio, hoyMes, hoyDia] = fechaPorDefecto().split("-");
+  const horaRecepcion = horaDelExpediente(expediente);
 
   const funcionario = limpiar(usuario?.display_name || usuario?.name);
   const nacimiento = [nna.lugar_nacimiento, formatearFecha(nna.fecha_nacimiento)]
@@ -165,7 +202,8 @@ function semillaDeExpediente(expediente, usuario) {
     expedienteCertificacion: limpiar(expediente.codigo),
     sector: limpiar(expediente.sector),
     lugar: ajuste("direccion_institucion"),
-    hora: String(expediente.hora_registro || "").slice(0, 5),
+    hora: horaRecepcion,
+    turno: turnoDeHora(horaRecepcion),
 
     nna: nombreNna,
     nnaGeneral: nombreNna,
@@ -207,11 +245,18 @@ function semillaDeExpediente(expediente, usuario) {
     autoFecha: formatearFecha(expediente.fecha),
     terminadoEnFecha: formatearFecha(expediente.cerrado_en),
 
-    // Fecha del acto que se está redactando: hoy, no la de entrada del caso.
     fechaDocumento: fechaPorDefecto(),
-    fechaDia: hoyDia,
-    fechaMes: hoyMes,
-    fechaAnio: hoyAnio,
+
+    /*
+     * El acta de comparecencia dice "En esta fecha D/M/A, siendo las HH:MM":
+     * las dos mitades describen el mismo momento, la recepción del caso, así
+     * que la fecha va emparejada con `hora`. Ponerle hoy dejaría el acta
+     * fechada un día y con la hora de otro.
+     */
+    fechaDia: entrada[2] || hoyDia,
+    fechaMes: entrada[1] || hoyMes,
+    fechaAnio: entrada[0] || hoyAnio,
+    horaActa: horaLocal(new Date()),
     fechaActa: hoyDia,
     mesActa: hoyMes,
     anioActa: hoyAnio,
@@ -401,7 +446,7 @@ function construirDocumento(tipo, form, expedienteActivo) {
         "",
         `En el día de hoy ${limpiar(form.fechaActa || "__")}/${limpiar(
           form.mesActa || "__"
-        )}/${limpiar(form.anioActa || "____")}; siendo las ${hora}, en el Despacho de ${ajuste('nombre_institucion')} del Municipio ${ajuste('municipio')}, Estado ${ajuste('estado')}, estando presentes los suscritos ciudadanos(as): ${limpiar(
+        )}/${limpiar(form.anioActa || "____")}; siendo las ${limpiar(form.horaActa || hora)}, en el Despacho de ${ajuste('nombre_institucion')} del Municipio ${ajuste('municipio')}, Estado ${ajuste('estado')}, estando presentes los suscritos ciudadanos(as): ${limpiar(
           form.comparecientes || "________________"
         )}, titulares de la cédula de identidad N° ${limpiar(
           form.ciComparecientes || "________________"
@@ -853,6 +898,7 @@ function formularioVacio() {
     fechaMes: "",
     fechaAnio: "",
     turno: "",
+    horaActa: "",
     edad: "",
     sexo: "",
     ciNna: "",
@@ -1296,6 +1342,7 @@ export default function Plantillas() {
       return [
         ...base,
         { name: "fechaActa", label: "Día", type: "text" },
+        { name: "horaActa", label: "Hora del acto", type: "text" },
         { name: "mesActa", label: "Mes", type: "text" },
         { name: "anioActa", label: "Año", type: "text" },
         { name: "comparecientes", label: "Comparecientes", type: "text", ancho: true },
