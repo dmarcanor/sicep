@@ -1781,6 +1781,10 @@ Prueba  login */
 .fila-clicable:hover { background: #f4f7fb; }
 
 /* Móvil: la barra lateral es un cajón que se abre con ☰ y no ocupa la pantalla. */
+.sidebar-backdrop{
+  display:none;
+}
+
 @media (max-width: 900px){
   .sidebar,
   .sidebar.collapsed{
@@ -1792,6 +1796,22 @@ Prueba  login */
 
   .sidebar.collapsed{
     transform:translateX(-100%);
+  }
+
+  .sidebar-backdrop{
+    display:block;
+    position:fixed;
+    inset:0;
+    background:rgba(15,23,42,.45);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease;
+    z-index:35;
+  }
+
+  .sidebar-backdrop.visible{
+    opacity:1;
+    pointer-events:auto;
   }
 
   .contenidoPrincipal,
