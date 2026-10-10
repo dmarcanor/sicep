@@ -517,6 +517,11 @@ export default function SistemaInstitucional() {
         modulos={modulos}
       />
 
+      <div
+        className={`sidebar-backdrop ${panelLateralAbierto ? "visible" : ""}`}
+        onClick={() => setPanelLateralAbierto(false)}
+      />
+
       <main
         className={`contenidoPrincipal ${
           panelLateralAbierto ? "" : "contraido"
