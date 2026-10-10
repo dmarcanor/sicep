@@ -174,8 +174,10 @@ function EncabezadoSuperior({
   );
 }
 
+const esMovil = () => window.matchMedia("(max-width: 900px)").matches;
+
 export default function SistemaInstitucional() {
-  const [panelLateralAbierto, setPanelLateralAbierto] = useState(true);
+  const [panelLateralAbierto, setPanelLateralAbierto] = useState(() => !esMovil());
   const [menuUsuarioAbierto, setMenuUsuarioAbierto] = useState(false);
   const [moduloActivo, setModuloActivo] = useState("principal");
   const [verPerfil, setVerPerfil] = useState(false);
@@ -255,6 +257,7 @@ export default function SistemaInstitucional() {
     setModuloActivo(nuevoModulo);
     setVerPerfil(false);
     setMenuUsuarioAbierto(false);
+    if (esMovil()) setPanelLateralAbierto(false);
   };
 
   const abrirPerfil = () => {
