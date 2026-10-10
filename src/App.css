@@ -1779,3 +1779,24 @@ Prueba  login */
 /* Fila de tabla que abre su detalle al pulsarla. */
 .fila-clicable { cursor: pointer; }
 .fila-clicable:hover { background: #f4f7fb; }
+
+/* Móvil: la barra lateral es un cajón que se abre con ☰ y no ocupa la pantalla. */
+@media (max-width: 900px){
+  .sidebar,
+  .sidebar.collapsed{
+    width:min(258px, 82vw);
+    transform:translateX(0);
+    z-index:40;
+    transition:transform .25s ease;
+  }
+
+  .sidebar.collapsed{
+    transform:translateX(-100%);
+  }
+
+  .contenidoPrincipal,
+  .contenidoPrincipal.contraido{
+    margin-left:0 !important;
+    padding:10px;
+  }
+}
