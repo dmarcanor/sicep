@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Documento;
-use App\Models\Historial;
+use App\Support\Auditoria;
+use App\Support\Jurisdiccion;
 use Illuminate\Http\Request;
 
 class DocumentoController extends Controller
@@ -33,14 +34,33 @@ class DocumentoController extends Controller
             'estado' => 'Borrador',
         ]);
 
+        Auditoria::registrar(
+            $request,
+            'Creación de documento',
+            'plantillas',
+            "Borrador '{$documento->titulo}' creado",
+            $documento,
+            Auditoria::creacion($documento),
+        );
+
         return response()->json($documento->load(self::RELACIONES), 201);
     }
 
     public function update(Request $request, Documento $documento)
     {
         $this->rechazarSiEmitido($documento);
+        $this->exigirModificacion($request, $documento);
 
-        $documento->update($this->validar($request));
+        $cambios = Auditoria::actualizar($documento, $this->validar($request));
+
+        Auditoria::registrar(
+            $request,
+            'Actualización de documento',
+            'plantillas',
+            "Borrador '{$documento->titulo}' actualizado",
+            $documento,
+            $cambios,
+        );
 
         return response()->json($documento->load(self::RELACIONES));
     }
@@ -52,14 +72,22 @@ class DocumentoController extends Controller
      */
     public function emitir(Request $request, Documento $documento)
     {
-        $documento->update([
+        $this->exigirModificacion($request, $documento);
+
+        $cambios = Auditoria::actualizar($documento, [
             'estado' => 'Emitido',
             'emitido_en' => now(),
         ]);
 
-        $this->registrar($request, $documento, 'Emisión de documento',
+        Auditoria::registrar(
+            $request,
+            'Emisión de documento',
+            'plantillas',
             "Documento '{$documento->titulo}' emitido" .
-            ($documento->expediente ? " para el expediente {$documento->expediente->codigo}" : ''));
+            ($documento->expediente ? " para el expediente {$documento->expediente->codigo}" : ''),
+            $documento,
+            $cambios,
+        );
 
         return response()->json($documento->load(self::RELACIONES));
     }
@@ -74,9 +102,14 @@ class DocumentoController extends Controller
 
         $medio = $request->input('medio', 'pdf') === 'impresion' ? 'Impresión' : 'Descarga PDF';
 
-        $this->registrar($request, $documento, "{$medio} de documento",
+        Auditoria::registrar(
+            $request,
+            "{$medio} de documento",
+            'plantillas',
             "{$medio} de '{$documento->titulo}'" .
-            ($documento->expediente ? " del expediente {$documento->expediente->codigo}" : ''));
+            ($documento->expediente ? " del expediente {$documento->expediente->codigo}" : ''),
+            $documento,
+        );
 
         return response()->json(['message' => 'Registrado']);
     }
@@ -85,11 +118,24 @@ class DocumentoController extends Controller
     {
         $this->rechazarSiEmitido($documento);
 
+        abort_unless(
+            Jurisdiccion::puedeDescartarDocumento($request->user(), $documento),
+            403,
+            'Sólo quien redactó el borrador o el administrador pueden descartarlo.',
+        );
+
         $titulo = $documento->titulo;
+        $cambios = Auditoria::eliminacion($documento);
         $documento->delete();
 
-        $this->registrar($request, $documento, 'Descarte de borrador',
-            "Borrador '{$titulo}' descartado");
+        Auditoria::registrar(
+            $request,
+            'Descarte de borrador',
+            'plantillas',
+            "Borrador '{$titulo}' descartado",
+            $documento,
+            $cambios,
+        );
 
         return response()->json(['message' => 'Borrador descartado']);
     }
@@ -104,6 +150,15 @@ class DocumentoController extends Controller
         ]);
     }
 
+    private function exigirModificacion(Request $request, Documento $documento): void
+    {
+        abort_unless(
+            Jurisdiccion::puedeModificarDocumento($request->user(), $documento),
+            403,
+            'Sólo quien redactó el documento o el consejero asignado al expediente pueden modificarlo.',
+        );
+    }
+
     private function rechazarSiEmitido(Documento $documento): void
     {
         abort_if(
@@ -111,18 +166,5 @@ class DocumentoController extends Controller
             422,
             'El documento ya fue emitido y no puede modificarse ni retirarse.',
         );
-    }
-
-    private function registrar(Request $request, Documento $documento, string $accion, string $detalles): void
-    {
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => $accion,
-            'modulo' => 'plantillas',
-            'registro_tipo' => 'Documento',
-            'registro_id' => $documento->id,
-            'detalles' => $detalles,
-            'ip_address' => $request->ip(),
-        ]);
     }
 }
