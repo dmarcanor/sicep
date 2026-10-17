@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Caso;
-use App\Models\Historial;
+use App\Models\User;
+use App\Support\Auditoria;
 use App\Support\Correlativo;
+use App\Support\Jurisdiccion;
 use Illuminate\Http\Request;
 
 class CasoController extends Controller
@@ -47,8 +49,29 @@ class CasoController extends Controller
         return response()->json($query->orderByDesc('id')->get());
     }
 
+    /**
+     * Lista de consejeros para asignar casos. Sale del módulo de asignación y
+     * no del de usuarios, así que la secretaría puede repartir sin ver correos
+     * ni gestionar cuentas.
+     */
+    public function consejeros()
+    {
+        return response()->json(
+            User::where('role', 'consejero')
+                ->where('active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'display_name', 'position'])
+        );
+    }
+
     public function store(Request $request)
     {
+        abort_unless(
+            Jurisdiccion::puedeReasignarCasos($request->user()),
+            403,
+            'Sólo la secretaría o el administrador pueden asignar casos.',
+        );
+
         $datos = $request->validate([
             'expediente_id' => 'required|exists:expedientes,id',
             'asignado_a' => 'required|exists:users,id',
@@ -60,17 +83,15 @@ class CasoController extends Controller
         $datos['estatus'] = 'Pendiente';
 
         $caso = Correlativo::crear(Caso::class, 'CASO-', $datos);
-        $codigo = $caso->codigo;
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Asignación de caso',
-            'modulo' => 'asignacionCasos',
-            'registro_tipo' => 'Caso',
-            'registro_id' => $caso->id,
-            'detalles' => "Caso {$codigo} asignado",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Asignación de caso',
+            'asignacionCasos',
+            "Caso {$caso->codigo} asignado",
+            $caso,
+            Auditoria::creacion($caso),
+        );
 
         return response()->json($caso->load(['expediente.nna', 'expediente.representante', 'asignadoA', 'asignadoPor']), 201);
     }
@@ -89,17 +110,24 @@ class CasoController extends Controller
             'tipo_asignacion' => 'sometimes|in:Rotativa,Manual',
         ]);
 
-        $caso->update($datos);
+        if (array_key_exists('asignado_a', $datos) || array_key_exists('tipo_asignacion', $datos)) {
+            abort_unless(
+                Jurisdiccion::puedeReasignarCasos($request->user()),
+                403,
+                'Sólo la secretaría o el administrador pueden reasignar casos.',
+            );
+        }
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Actualización de caso',
-            'modulo' => 'asignacionCasos',
-            'registro_tipo' => 'Caso',
-            'registro_id' => $caso->id,
-            'detalles' => "Caso {$caso->codigo} actualizado",
-            'ip_address' => $request->ip(),
-        ]);
+        $cambios = Auditoria::actualizar($caso, $datos);
+
+        Auditoria::registrar(
+            $request,
+            'Actualización de caso',
+            'asignacionCasos',
+            "Caso {$caso->codigo} actualizado",
+            $caso,
+            $cambios,
+        );
 
         return response()->json($caso->load(['expediente.nna', 'expediente.representante', 'asignadoA', 'asignadoPor']));
     }
