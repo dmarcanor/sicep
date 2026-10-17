@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Expediente;
-use App\Models\Historial;
+use App\Support\Auditoria;
 use App\Support\Correlativo;
+use App\Support\Jurisdiccion;
 use Illuminate\Http\Request;
 
 class ExpedienteController extends Controller
@@ -76,15 +77,14 @@ class ExpedienteController extends Controller
 
         $expediente = Correlativo::crear(Expediente::class, 'SICEP-URD-', $datos);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Creación de expediente',
-            'modulo' => 'expedientes',
-            'registro_tipo' => 'Expediente',
-            'registro_id' => $expediente->id,
-            'detalles' => "Expediente {$expediente->codigo} creado",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Creación de expediente',
+            'expedientes',
+            "Expediente {$expediente->codigo} creado",
+            $expediente,
+            Auditoria::creacion($expediente),
+        );
 
         return response()->json($expediente->load(self::RELACIONES), 201);
     }
@@ -115,6 +115,15 @@ class ExpedienteController extends Controller
             'fecha.before_or_equal' => 'La fecha del expediente no puede ser futura.',
         ]);
 
+        $soloArchivoFisico = array_keys($datos) === ['estatus_fisico']
+            && Jurisdiccion::puedeGestionarArchivoFisico($request->user(), $expediente);
+
+        abort_unless(
+            $soloArchivoFisico || Jurisdiccion::puedeEditarExpediente($request->user(), $expediente),
+            403,
+            'Sólo el consejero asignado al caso puede modificar este expediente.',
+        );
+
         $estatusPrevio = $expediente->estatus;
 
         if (array_key_exists('estatus', $datos) && $datos['estatus'] !== $estatusPrevio) {
@@ -123,22 +132,21 @@ class ExpedienteController extends Controller
 
         // Sólo los campos validados: $request->all() dejaba entrar codigo y
         // registrado_por, que son asignables en el modelo.
-        $expediente->update($datos);
+        $cambios = Auditoria::actualizar($expediente, $datos);
 
         $detalle = "Expediente {$expediente->codigo} actualizado";
         if (array_key_exists('estatus', $datos) && $datos['estatus'] !== $estatusPrevio) {
             $detalle .= ": estatus {$estatusPrevio} → {$expediente->estatus}";
         }
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Actualización de expediente',
-            'modulo' => 'expedientes',
-            'registro_tipo' => 'Expediente',
-            'registro_id' => $expediente->id,
-            'detalles' => $detalle,
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Actualización de expediente',
+            'expedientes',
+            $detalle,
+            $expediente,
+            $cambios,
+        );
 
         return response()->json($expediente->load(self::RELACIONES));
     }

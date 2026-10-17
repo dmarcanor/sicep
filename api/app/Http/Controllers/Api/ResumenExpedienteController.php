@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Expediente;
-use App\Models\Historial;
+use App\Support\Auditoria;
+use App\Support\Jurisdiccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,6 +20,8 @@ class ResumenExpedienteController extends Controller
 
     public function store(Request $request, Expediente $expediente)
     {
+        $this->exigirEdicion($request, $expediente);
+
         $request->validate([
             'resumen' => 'required|file|mimetypes:application/pdf|max:10240',
         ], [
@@ -32,13 +35,14 @@ class ResumenExpedienteController extends Controller
         $archivo = $request->file('resumen');
         $ruta = $archivo->store("expedientes/{$expediente->id}", self::DISCO);
 
-        $expediente->update([
+        $cambios = Auditoria::actualizar($expediente, [
             'resumen_pdf_ruta' => $ruta,
             'resumen_pdf_nombre' => $archivo->getClientOriginalName(),
         ]);
 
         $this->registrar($request, $expediente, 'Carga de resumen PDF',
-            "Resumen '{$archivo->getClientOriginalName()}' cargado en el expediente {$expediente->codigo}");
+            "Resumen '{$archivo->getClientOriginalName()}' cargado en el expediente {$expediente->codigo}",
+            $cambios);
 
         return response()->json($expediente->fresh());
     }
@@ -62,15 +66,29 @@ class ResumenExpedienteController extends Controller
      */
     public function destroy(Request $request, Expediente $expediente)
     {
+        $this->exigirEdicion($request, $expediente);
+
         $nombre = $expediente->resumen_pdf_nombre;
         $this->borrarArchivo($expediente);
 
-        $expediente->update(['resumen_pdf_ruta' => null, 'resumen_pdf_nombre' => null]);
+        $cambios = Auditoria::actualizar($expediente, [
+            'resumen_pdf_ruta' => null,
+            'resumen_pdf_nombre' => null,
+        ]);
 
         $this->registrar($request, $expediente, 'Retiro de resumen PDF',
-            "Resumen '{$nombre}' retirado del expediente {$expediente->codigo}");
+            "Resumen '{$nombre}' retirado del expediente {$expediente->codigo}", $cambios);
 
         return response()->json($expediente->fresh());
+    }
+
+    private function exigirEdicion(Request $request, Expediente $expediente): void
+    {
+        abort_unless(
+            Jurisdiccion::puedeGestionarArchivoFisico($request->user(), $expediente),
+            403,
+            'No tiene permiso para modificar el resumen de este expediente.',
+        );
     }
 
     private function borrarArchivo(Expediente $expediente): void
@@ -80,16 +98,8 @@ class ResumenExpedienteController extends Controller
         }
     }
 
-    private function registrar(Request $request, Expediente $expediente, string $accion, string $detalles): void
+    private function registrar(Request $request, Expediente $expediente, string $accion, string $detalles, array $cambios = []): void
     {
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => $accion,
-            'modulo' => 'expedientes',
-            'registro_tipo' => 'Expediente',
-            'registro_id' => $expediente->id,
-            'detalles' => $detalles,
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar($request, $accion, 'expedientes', $detalles, $expediente, $cambios);
     }
 }

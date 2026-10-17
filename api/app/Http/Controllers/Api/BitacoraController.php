@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Bitacora;
 use App\Models\Expediente;
-use App\Models\Historial;
+use App\Support\Auditoria;
+use App\Support\Jurisdiccion;
 use Illuminate\Http\Request;
 
 class BitacoraController extends Controller
@@ -19,6 +20,12 @@ class BitacoraController extends Controller
 
     public function store(Request $request, Expediente $expediente)
     {
+        abort_unless(
+            Jurisdiccion::puedeRegistrarActuacion($request->user(), $expediente),
+            403,
+            'Sólo el consejero asignado al caso puede registrar actuaciones.',
+        );
+
         $datos = $request->validate([
             'fecha' => 'required|date|before_or_equal:today',
             'nota' => 'required|string|max:2000',
@@ -30,15 +37,14 @@ class BitacoraController extends Controller
             'usuario_id' => $request->user()->id,
         ]);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Actuación en bitácora',
-            'modulo' => 'expedientes',
-            'registro_tipo' => 'Expediente',
-            'registro_id' => $expediente->id,
-            'detalles' => "Actuación registrada en el expediente {$expediente->codigo}",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Actuación en bitácora',
+            'expedientes',
+            "Actuación registrada en el expediente {$expediente->codigo}",
+            $entrada,
+            Auditoria::creacion($entrada),
+        );
 
         return response()->json($entrada->load('usuario'), 201);
     }
