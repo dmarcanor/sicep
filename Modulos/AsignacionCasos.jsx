@@ -79,31 +79,47 @@ export default function AsignacionCasosConsejeros() {
   const [guardando, setGuardando] = useState(false);
   const { executeWithPin, PinModalWrapper } = usePinAction();
 
+  // Cada fuente se carga por separado: si una falla, las demás siguen
+  // mostrándose en lugar de dejar la pantalla en blanco.
   const cargarDatos = async (search = "") => {
-    try {
-      const [casosData, usuariosData, expedientesData] = await Promise.all([
-        api.getCasos(search.trim() ? { search: search.trim() } : {}),
-        api.getUsuarios(),
-        api.getExpedientes(),
-      ]);
+    const [casosRes, consejerosRes, expedientesRes] = await Promise.allSettled([
+      api.getCasos(search.trim() ? { search: search.trim() } : {}),
+      api.getConsejeros(),
+      api.getExpedientes(),
+    ]);
 
-      // Sólo consejeros: el reparto y la carga se miden por consejería, y una
-      // lista rotulada "consejeros" que incluía supervisores hacía ilegible
-      // tanto el filtro como la distribución.
+    const fallos = [];
+
+    if (casosRes.status === "fulfilled") {
+      setCasos(casosRes.value.map(normalizarCaso));
+    } else {
+      fallos.push("los casos");
+      console.error("Error cargando casos:", casosRes.reason);
+    }
+
+    if (consejerosRes.status === "fulfilled") {
+      // Sólo consejeros: el reparto y la carga se miden por consejería.
       setConsejeros(
-        usuariosData
-          .filter((u) => u.role === "consejero" && u.active)
-          .map((u) => ({
-            id: u.id,
-            nombre: u.display_name || u.name,
-            despacho: u.position || "Consejería",
-          })),
+        consejerosRes.value.map((u) => ({
+          id: u.id,
+          nombre: u.display_name || u.name,
+          despacho: u.position || "Consejería",
+        })),
       );
+    } else {
+      fallos.push("la lista de consejeros");
+      console.error("Error cargando consejeros:", consejerosRes.reason);
+    }
 
-      setCasos(casosData.map(normalizarCaso));
-      setExpedientes(expedientesData);
-    } catch (error) {
-      console.error("Error cargando datos:", error);
+    if (expedientesRes.status === "fulfilled") {
+      setExpedientes(expedientesRes.value);
+    } else {
+      fallos.push("los expedientes");
+      console.error("Error cargando expedientes:", expedientesRes.reason);
+    }
+
+    if (fallos.length) {
+      mostrarToast(`No se pudieron cargar ${fallos.join(", ")}. Recargue la página.`);
     }
   };
 
