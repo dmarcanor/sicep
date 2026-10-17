@@ -135,6 +135,15 @@ export const api = {
     return handleResponse(response);
   },
 
+  async changePassword(passwordActual, passwordNueva, pin = null) {
+    const response = await fetch(`${API_BASE}/me/password`, {
+      method: 'POST',
+      headers: getHeaders(pin),
+      body: JSON.stringify({ password_actual: passwordActual, password_nuevo: passwordNueva }),
+    });
+    return handleResponse(response);
+  },
+
   async changePin(pinActual, pinNuevo) {
     const response = await fetch(`${API_BASE}/pin/change`, {
       method: 'POST',
@@ -329,6 +338,29 @@ export const api = {
     return handleResponse(response);
   },
 
+  async getObservaciones(expedienteId) {
+    const response = await fetch(`${API_BASE}/expedientes/${expedienteId}/observaciones`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  async createObservacion(expedienteId, texto, pin = null) {
+    const response = await fetch(`${API_BASE}/expedientes/${expedienteId}/observaciones`, {
+      method: 'POST',
+      headers: getHeaders(pin),
+      body: JSON.stringify({ texto }),
+    });
+    return handleResponse(response);
+  },
+
+  async getConsejeros() {
+    const response = await fetch(`${API_BASE}/casos/consejeros`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  },
+
   async getCasos(params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const response = await fetch(`${API_BASE}/casos?${queryString}`, {
@@ -483,6 +515,26 @@ export const api = {
       headers: getHeaders(),
     });
     return handleResponse(response);
+  },
+
+  async getHistorialRegistro(tipo, id) {
+    const response = await fetch(`${API_BASE}/historial/registro/${tipo}/${id}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  async exportarHistorial(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetch(`${API_BASE}/historial/exportar?${queryString}`, {
+      headers: getHeaders(),
+    });
+
+    if (!response.ok) {
+      await handleResponse(response);
+    }
+
+    return response.blob();
   },
 
   async getReportes(params = {}) {
