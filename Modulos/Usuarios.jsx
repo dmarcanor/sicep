@@ -78,7 +78,7 @@ export default function Usuarios() {
   };
 
   const abrirEdicion = (usuario) => {
-    setForm(usuario);
+    setForm({ ...usuario, password: "", pin: "" });
     setErrores({});
     setMostrarModal(true);
   };
@@ -112,7 +112,11 @@ export default function Usuarios() {
       err.email = "El correo no es válido. Ej. usuario@dominio.com";
     }
 
-    if (!form.id) {
+    if (form.id) {
+      if (form.password && form.password.length < 8) {
+        err.password = `La contraseña debe tener al menos 8 caracteres (tiene ${form.password.length}).`;
+      }
+    } else {
       if (!form.password.trim()) {
         err.password = "Indique una contraseña.";
       } else if (form.password.length < 8) {
@@ -151,8 +155,13 @@ export default function Usuarios() {
 
     try {
       if (form.id) {
+        // Sin contraseña nueva no se envía el campo: el backend no cambia nada.
+        const datos = { ...form };
+        if (!datos.password) delete datos.password;
+        delete datos.pin;
+
         await executeWithPin(async (pin) => {
-          await api.updateUsuario(form.id, form, pin);
+          await api.updateUsuario(form.id, datos, pin);
         }, "Actualizar Usuario");
         setMensaje("Usuario actualizado correctamente");
       } else {
@@ -357,22 +366,22 @@ export default function Usuarios() {
                 />
               </Campo>
 
+              <Campo
+                label={form.id ? "Nueva contraseña" : "Contraseña *"}
+                ayuda={form.id ? "Déjela vacía para no cambiarla. Mínimo 8 caracteres, con letras y números." : AYUDAS.password}
+                error={errores.password}
+              >
+                <input
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  onChange={actualizarForm}
+                  className={errores.password ? "error" : ""}
+                />
+              </Campo>
+
               {!form.id && (
                 <>
-                  <Campo
-                    label="Contraseña *"
-                    ayuda={AYUDAS.password}
-                    error={errores.password}
-                  >
-                    <input
-                      name="password"
-                      type="password"
-                      value={form.password}
-                      onChange={actualizarForm}
-                      className={errores.password ? "error" : ""}
-                    />
-                  </Campo>
-
                   <Campo label="PIN de Seguridad *" ayuda={AYUDAS.pin} error={errores.pin}>
                     <EntradaDigitos
                       value={form.pin}

@@ -21,6 +21,48 @@ export default function Perfil({ usuarioBase }) {
   const [errorPin, setErrorPin] = useState("");
   const [cambiandoPin, setCambiandoPin] = useState(false);
 
+  const [claves, setClaves] = useState({ actual: "", nueva: "", repetir: "" });
+  const [errorClave, setErrorClave] = useState("");
+  const [cambiandoClave, setCambiandoClave] = useState(false);
+
+  const cambiarContrasena = async () => {
+    if (!claves.actual) {
+      setErrorClave("Indique su contraseña actual.");
+      return;
+    }
+    if (claves.nueva.length < 8) {
+      setErrorClave(`La contraseña nueva debe tener al menos 8 caracteres (tiene ${claves.nueva.length}).`);
+      return;
+    }
+    if (!/[A-Za-z]/.test(claves.nueva) || !/[0-9]/.test(claves.nueva)) {
+      setErrorClave("La contraseña nueva debe combinar letras y números.");
+      return;
+    }
+    if (claves.nueva !== claves.repetir) {
+      setErrorClave("La contraseña nueva y su repetición no coinciden.");
+      return;
+    }
+
+    setErrorClave("");
+    setCambiandoClave(true);
+
+    try {
+      await executeWithPin(
+        (pin) => api.changePassword(claves.actual, claves.nueva, pin),
+        "Cambiar contraseña",
+      );
+      setClaves({ actual: "", nueva: "", repetir: "" });
+      setMensaje("Contraseña actualizada correctamente");
+      setTimeout(() => setMensaje(""), 4000);
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        setErrorClave(error.message || "No se pudo cambiar la contraseña.");
+      }
+    } finally {
+      setCambiandoClave(false);
+    }
+  };
+
   const cambiarPin = async () => {
     if (pines.nuevo.length < 4 || pines.nuevo.length > 6) {
       setErrorPin("El PIN nuevo debe tener entre 4 y 6 dígitos.");
@@ -139,6 +181,54 @@ export default function Perfil({ usuarioBase }) {
 
       
       {mensaje && <div className="toast-exito">{mensaje}</div>}
+
+      <div className="perfil-card">
+        <h3>Contraseña</h3>
+        <p className="perfil-nota">
+          Es la que usa para entrar al sistema. Debe tener al menos 8 caracteres,
+          combinar letras y números, y no contener su nombre de usuario.
+        </p>
+
+        <div className="perfil-grid">
+          <div className="campo">
+            <label>Contraseña actual *</label>
+            <input
+              type="password"
+              value={claves.actual}
+              onChange={(e) => setClaves((c) => ({ ...c, actual: e.target.value }))}
+              className={errorClave ? "error" : ""}
+            />
+          </div>
+
+          <div className="campo">
+            <label>Contraseña nueva *</label>
+            <input
+              type="password"
+              value={claves.nueva}
+              onChange={(e) => setClaves((c) => ({ ...c, nueva: e.target.value }))}
+              className={errorClave ? "error" : ""}
+            />
+          </div>
+
+          <div className="campo">
+            <label>Repetir contraseña nueva *</label>
+            <input
+              type="password"
+              value={claves.repetir}
+              onChange={(e) => setClaves((c) => ({ ...c, repetir: e.target.value }))}
+              className={errorClave ? "error" : ""}
+            />
+          </div>
+        </div>
+
+        {errorClave && <small className="campo-error">{errorClave}</small>}
+
+        <div className="perfil-actions-top">
+          <button className="btn-primary" onClick={cambiarContrasena} disabled={cambiandoClave}>
+            {cambiandoClave ? "Cambiando..." : "Cambiar contraseña"}
+          </button>
+        </div>
+      </div>
 
       <div className="perfil-card">
         <h3>PIN de seguridad</h3>
