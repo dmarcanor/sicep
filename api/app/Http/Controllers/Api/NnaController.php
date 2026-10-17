@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Historial;
+use App\Support\Auditoria;
 use App\Models\Nna;
 use Illuminate\Http\Request;
 
@@ -45,15 +45,14 @@ class NnaController extends Controller
 
         $nna = Nna::create($datos);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Registro de NNA',
-            'modulo' => 'nna',
-            'registro_tipo' => 'Nna',
-            'registro_id' => $nna->id,
-            'detalles' => "NNA {$nna->nombres} {$nna->apellidos} registrado",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Registro de NNA',
+            'nna',
+            "NNA {$nna->nombres} {$nna->apellidos} registrado",
+            $nna,
+            Auditoria::creacion($nna),
+        );
 
         return response()->json($nna, 201);
     }
@@ -77,17 +76,16 @@ class NnaController extends Controller
             'fecha_nacimiento.before_or_equal' => 'La fecha de nacimiento no puede ser futura.',
         ]);
 
-        $nna->update($datos);
+        $cambios = Auditoria::actualizar($nna, $datos);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Actualización de NNA',
-            'modulo' => 'nna',
-            'registro_tipo' => 'Nna',
-            'registro_id' => $nna->id,
-            'detalles' => "NNA {$nna->nombres} {$nna->apellidos} actualizado",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Actualización de NNA',
+            'nna',
+            "NNA {$nna->nombres} {$nna->apellidos} actualizado",
+            $nna,
+            $cambios,
+        );
 
         return response()->json($nna);
     }

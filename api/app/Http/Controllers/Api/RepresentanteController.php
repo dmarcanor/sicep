@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Representante;
-use App\Models\Historial;
+use App\Support\Auditoria;
 use Illuminate\Http\Request;
 
 class RepresentanteController extends Controller
@@ -42,15 +42,14 @@ class RepresentanteController extends Controller
 
         $representante = Representante::create($datos);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Registro de representante',
-            'modulo' => 'representantes',
-            'registro_tipo' => 'Representante',
-            'registro_id' => $representante->id,
-            'detalles' => "Representante {$representante->nombres} {$representante->apellidos} registrado",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Registro de representante',
+            'representantes',
+            "Representante {$representante->nombres} {$representante->apellidos} registrado",
+            $representante,
+            Auditoria::creacion($representante),
+        );
 
         return response()->json($representante, 201);
     }
@@ -73,17 +72,16 @@ class RepresentanteController extends Controller
             'lugar_trabajo' => 'sometimes|nullable|string|max:255',
         ]);
 
-        $representante->update($datos);
+        $cambios = Auditoria::actualizar($representante, $datos);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Actualización de representante',
-            'modulo' => 'representantes',
-            'registro_tipo' => 'Representante',
-            'registro_id' => $representante->id,
-            'detalles' => "Representante {$representante->nombres} {$representante->apellidos} actualizado",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Actualización de representante',
+            'representantes',
+            "Representante {$representante->nombres} {$representante->apellidos} actualizado",
+            $representante,
+            $cambios,
+        );
 
         return response()->json($representante);
     }

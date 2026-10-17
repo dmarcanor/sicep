@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plantilla;
-use App\Models\Historial;
+use App\Support\Auditoria;
 use Illuminate\Http\Request;
 
 class PlantillaController extends Controller
@@ -30,15 +30,14 @@ class PlantillaController extends Controller
             'activa' => true,
         ]);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Creación de plantilla',
-            'modulo' => 'plantillas',
-            'registro_tipo' => 'Plantilla',
-            'registro_id' => $plantilla->id,
-            'detalles' => "Plantilla '{$plantilla->nombre}' creada",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Creación de plantilla',
+            'plantillas',
+            "Plantilla '{$plantilla->nombre}' creada",
+            $plantilla,
+            Auditoria::creacion($plantilla),
+        );
 
         return response()->json($plantilla->load('creadoPor'), 201);
     }
@@ -57,17 +56,16 @@ class PlantillaController extends Controller
             'activa' => 'sometimes|boolean',
         ]);
 
-        $plantilla->update($datos);
+        $cambios = Auditoria::actualizar($plantilla, $datos);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Actualización de plantilla',
-            'modulo' => 'plantillas',
-            'registro_tipo' => 'Plantilla',
-            'registro_id' => $plantilla->id,
-            'detalles' => "Plantilla '{$plantilla->nombre}' actualizada",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Actualización de plantilla',
+            'plantillas',
+            "Plantilla '{$plantilla->nombre}' actualizada",
+            $plantilla,
+            $cambios,
+        );
 
         return response()->json($plantilla->load('creadoPor'));
     }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Configuracion;
-use App\Models\Historial;
+use App\Support\Auditoria;
 use App\Support\Institucion;
 use Illuminate\Http\Request;
 
@@ -45,17 +45,16 @@ class ConfiguracionController extends Controller
             return response()->json(['message' => 'Configuración no encontrada'], 404);
         }
 
-        $config->update(['valor' => $request->valor]);
+        $cambios = Auditoria::actualizar($config, ['valor' => $request->valor]);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Actualización de configuración',
-            'modulo' => 'configuracion',
-            'registro_tipo' => 'Configuracion',
-            'registro_id' => $config->id,
-            'detalles' => "Configuración '{$clave}' actualizada",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Actualización de configuración',
+            'configuracion',
+            "Configuración '{$clave}' actualizada",
+            $config,
+            $cambios,
+        );
 
         return response()->json($config);
     }
@@ -74,20 +73,20 @@ class ConfiguracionController extends Controller
             $actualizada = Configuracion::where('clave', $config['clave'])->first();
             
             if ($actualizada) {
-                $actualizada->update(['valor' => $config['valor']]);
+                $cambios = Auditoria::actualizar($actualizada, ['valor' => $config['valor']]);
+
+                Auditoria::registrar(
+                    $request,
+                    'Actualización múltiple de configuración',
+                    'configuracion',
+                    "Configuración '{$actualizada->clave}' actualizada",
+                    $actualizada,
+                    $cambios,
+                );
+
                 $actualizadas[] = $actualizada;
             }
         }
-
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Actualización múltiple de configuración',
-            'modulo' => 'configuracion',
-            'registro_tipo' => 'Configuracion',
-            'registro_id' => null,
-            'detalles' => count($actualizadas) . ' configuraciones actualizadas',
-            'ip_address' => $request->ip(),
-        ]);
 
         return response()->json($actualizadas);
     }

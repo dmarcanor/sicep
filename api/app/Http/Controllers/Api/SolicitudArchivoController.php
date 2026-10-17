@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\SolicitudArchivo;
-use App\Models\Historial;
+use App\Support\Auditoria;
 use App\Support\Correlativo;
 use Illuminate\Http\Request;
 
@@ -77,15 +77,14 @@ class SolicitudArchivoController extends Controller
 
         $solicitud = Correlativo::crear(SolicitudArchivo::class, 'SOL-', $datos);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Solicitud de archivo',
-            'modulo' => 'solicitudArchivos',
-            'registro_tipo' => 'SolicitudArchivo',
-            'registro_id' => $solicitud->id,
-            'detalles' => "Solicitud {$solicitud->codigo} creada",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Solicitud de archivo',
+            'solicitudArchivos',
+            "Solicitud {$solicitud->codigo} creada",
+            $solicitud,
+            Auditoria::creacion($solicitud),
+        );
 
         return response()->json($solicitud->load(['expediente.nna', 'expediente.representante', 'solicitante']), 201);
     }
@@ -112,17 +111,16 @@ class SolicitudArchivoController extends Controller
             'ubicacion_caja' => 'sometimes|nullable|string|max:255',
         ]);
 
-        $solicitud->update($datos);
+        $cambios = Auditoria::actualizar($solicitud, $datos);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Actualización de solicitud',
-            'modulo' => 'solicitudArchivos',
-            'registro_tipo' => 'SolicitudArchivo',
-            'registro_id' => $solicitud->id,
-            'detalles' => "Solicitud {$solicitud->codigo} actualizada",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Actualización de solicitud',
+            'solicitudArchivos',
+            "Solicitud {$solicitud->codigo} actualizada",
+            $solicitud,
+            $cambios,
+        );
 
         return response()->json($solicitud->load(['expediente.nna', 'expediente.representante', 'solicitante']));
     }
