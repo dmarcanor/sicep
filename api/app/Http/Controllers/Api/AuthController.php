@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Historial;
 use App\Models\User;
+use App\Rules\PasswordAlfanumerica;
+use App\Support\Auditoria;
 use App\Support\IntentosPin;
 use App\Support\Permisos;
 use Illuminate\Http\Request;
@@ -111,9 +112,9 @@ class AuthController extends Controller
             'position' => 'sometimes|nullable|string|max:255',
         ]);
 
-        $user->update($datos);
+        $cambios = Auditoria::actualizar($user, $datos);
 
-        $this->registrar($user->id, 'Actualización de perfil', $request, 'Exitoso', 'perfil');
+        $this->registrar($user->id, 'Actualización de perfil', $request, 'Exitoso', 'perfil', $cambios);
 
         return response()->json(['message' => 'Perfil actualizado']);
     }
@@ -126,12 +127,12 @@ class AuthController extends Controller
 
         $user = $request->user();
 
-        $user->update([
+        Auditoria::actualizar($user, [
             'pin' => Hash::make($request->pin),
             'pin_configurado' => true,
         ]);
 
-        $this->registrar($user->id, 'Configuración de PIN', $request);
+        $this->registrar($user->id, 'Configuración de PIN', $request, 'Exitoso', 'auth', ['pin' => [null, 'configurado']]);
 
         return response()->json(['message' => 'PIN configurado correctamente']);
     }
@@ -172,6 +173,33 @@ class AuthController extends Controller
         ]);
     }
 
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'password_actual' => 'required|string',
+            'password_nuevo' => ['required', 'string', 'min:8', new PasswordAlfanumerica($user->username)],
+        ]);
+
+        if (!Hash::check($request->password_actual, $user->password)) {
+            $this->registrar($user->id, 'Cambio de contraseña fallido', $request, 'Error');
+
+            return response()->json([
+                'message' => 'La contraseña actual es incorrecta',
+                'password_invalida' => true,
+            ], 422);
+        }
+
+        Auditoria::actualizar($user, [
+            'password' => Hash::make($request->password_nuevo),
+        ]);
+
+        $this->registrar($user->id, 'Cambio de contraseña', $request, 'Exitoso', 'auth', ['password' => [null, 'cambiada']]);
+
+        return response()->json(['message' => 'Contraseña actualizada correctamente']);
+    }
+
     public function changePin(Request $request)
     {
         $request->validate([
@@ -190,12 +218,12 @@ class AuthController extends Controller
             ], 401);
         }
 
-        $user->update([
+        Auditoria::actualizar($user, [
             'pin' => Hash::make($request->pin_nuevo),
             'pin_configurado' => true,
         ]);
 
-        $this->registrar($user->id, 'Cambio de PIN', $request);
+        $this->registrar($user->id, 'Cambio de PIN', $request, 'Exitoso', 'auth', ['pin' => [null, 'cambiado']]);
 
         return response()->json(['message' => 'PIN cambiado correctamente']);
     }
@@ -222,13 +250,8 @@ class AuthController extends Controller
         Request $request,
         string $estado = 'Exitoso',
         string $modulo = 'auth',
+        array $cambios = [],
     ): void {
-        Historial::create([
-            'usuario_id' => $usuarioId,
-            'accion' => $accion,
-            'modulo' => $modulo,
-            'estado' => $estado,
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar($request, $accion, $modulo, null, null, $cambios, $estado, $usuarioId);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Historial;
+use App\Support\Auditoria;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -43,14 +43,16 @@ class VerifyPin
         if (!Hash::check($pin, $user->pin)) {
             IntentosPin::registrarFallo($user->id);
 
-            Historial::create([
-                'usuario_id' => $user->id,
-                'accion' => 'PIN de seguridad incorrecto',
-                'modulo' => $request->segment(2) ?? 'auth',
-                'estado' => 'Error',
-                'detalles' => 'Acción rechazada: ' . $request->method() . ' ' . $request->path(),
-                'ip_address' => $request->ip(),
-            ]);
+            Auditoria::registrar(
+                $request,
+                'PIN de seguridad incorrecto',
+                $request->segment(2) ?? 'auth',
+                'Acción rechazada: ' . $request->method() . ' ' . $request->path(),
+                null,
+                [],
+                'Error',
+                $user->id,
+            );
 
             return response()->json([
                 'message' => 'PIN de seguridad incorrecto',
