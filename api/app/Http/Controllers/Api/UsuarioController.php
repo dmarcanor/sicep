@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Historial;
 use App\Models\User;
+use App\Rules\PasswordAlfanumerica;
+use App\Support\Auditoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -38,7 +39,7 @@ class UsuarioController extends Controller
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users',
             'email' => 'required|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => ['required', 'string', 'min:8', new PasswordAlfanumerica($request->username)],
             'pin' => 'required|string|min:4|max:6|regex:/^[0-9]+$/',
             'role' => 'required|in:administrador,supervisor,consejero',
             'display_name' => 'nullable|string|max:255',
@@ -60,15 +61,14 @@ class UsuarioController extends Controller
             'active' => true,
         ]);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Creación de usuario',
-            'modulo' => 'usuarios',
-            'registro_tipo' => 'User',
-            'registro_id' => $user->id,
-            'detalles' => "Usuario '{$user->username}' creado",
-            'ip_address' => $request->ip(),
-        ]);
+        Auditoria::registrar(
+            $request,
+            'Creación de usuario',
+            'usuarios',
+            "Usuario '{$user->username}' creado",
+            $user,
+            Auditoria::creacion($user),
+        );
 
         return response()->json($user, 201);
     }
@@ -87,7 +87,7 @@ class UsuarioController extends Controller
             'name' => 'sometimes|string|max:255',
             'username' => 'sometimes|string|max:255|unique:users,username,' . $user->id,
             'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'sometimes|string|min:8',
+            'password' => ['sometimes', 'string', 'min:8', new PasswordAlfanumerica($request->input('username', $user->username))],
             'role' => 'sometimes|in:administrador,supervisor,consejero',
             'display_name' => 'sometimes|nullable|string|max:255',
             'phone' => 'sometimes|nullable|string|max:20',
@@ -105,17 +105,25 @@ class UsuarioController extends Controller
             $datos['pin_configurado'] = true;
         }
 
-        $user->update($datos);
+        $cambios = Auditoria::actualizar($user, $datos);
 
-        Historial::create([
-            'usuario_id' => $request->user()->id,
-            'accion' => 'Actualización de usuario',
-            'modulo' => 'usuarios',
-            'registro_tipo' => 'User',
-            'registro_id' => $user->id,
-            'detalles' => "Usuario '{$user->username}' actualizado",
-            'ip_address' => $request->ip(),
-        ]);
+        // Los valores nunca se guardan en el historial: sólo consta que cambiaron.
+        if (array_key_exists('password', $datos)) {
+            $cambios['password'] = [null, 'cambiada'];
+        }
+
+        if (array_key_exists('pin', $datos)) {
+            $cambios['pin'] = [null, 'cambiado'];
+        }
+
+        Auditoria::registrar(
+            $request,
+            'Actualización de usuario',
+            'usuarios',
+            "Usuario '{$user->username}' actualizado",
+            $user,
+            $cambios,
+        );
 
         return response()->json($user);
     }

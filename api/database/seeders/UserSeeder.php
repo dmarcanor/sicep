@@ -13,9 +13,9 @@ class UserSeeder extends Seeder
         // firstOrCreate por username: el contenedor ejecuta los seeders en cada
         // arranque, y volver a crearlos reventaría por el correo único.
         $usuarios = [
-            ['username' => 'admin', 'role' => 'administrador', 'nombre' => 'Administrador', 'phone' => '0000000000'],
-            ['username' => 'supervisor', 'role' => 'supervisor', 'nombre' => 'Supervisor', 'phone' => '0000000001'],
-            ['username' => 'consejero', 'role' => 'consejero', 'nombre' => 'Consejero', 'phone' => '0000000002'],
+            ['username' => 'admin', 'role' => 'administrador', 'nombre' => 'Administrador', 'phone' => '0000000000', 'password' => '12345678adm'],
+            ['username' => 'supervisor', 'role' => 'supervisor', 'nombre' => 'Supervisor', 'phone' => '0000000001', 'password' => '12345678sup'],
+            ['username' => 'consejero', 'role' => 'consejero', 'nombre' => 'Consejero', 'phone' => '0000000002', 'password' => '12345678con'],
         ];
 
         foreach ($usuarios as $usuario) {
@@ -24,7 +24,7 @@ class UserSeeder extends Seeder
                 [
                     'name' => $usuario['nombre'],
                     'email' => "{$usuario['username']}@sicep.com",
-                    'password' => Hash::make('12345678'),
+                    'password' => Hash::make($usuario['password']),
                     'role' => $usuario['role'],
                     'display_name' => $usuario['nombre'],
                     'phone' => $usuario['phone'],
