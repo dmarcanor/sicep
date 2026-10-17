@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DocumentoController;
 use App\Http\Controllers\Api\ExpedienteController;
 use App\Http\Controllers\Api\HistorialController;
 use App\Http\Controllers\Api\NnaController;
+use App\Http\Controllers\Api\ObservacionExpedienteController;
 use App\Http\Controllers\Api\PanelController;
 use App\Http\Controllers\Api\PlantillaController;
 use App\Http\Controllers\Api\RepresentanteController;
@@ -47,6 +48,7 @@ Route::middleware(['auth:sanctum', 'role:administrador,supervisor,consejero'])->
     Route::post('/pin/change', [AuthController::class, 'changePin']);
 
     Route::middleware('verify.pin')->put('/profile', [AuthController::class, 'updateProfile']);
+    Route::middleware('verify.pin')->post('/me/password', [AuthController::class, 'changePassword']);
 
     Route::middleware('permiso:principal')->get('/panel', [PanelController::class, 'index']);
 
@@ -78,11 +80,13 @@ Route::middleware(['auth:sanctum', 'role:administrador,supervisor,consejero'])->
         Route::get('/expedientes/{expediente}', [ExpedienteController::class, 'show']);
         Route::get('/expedientes/{expediente}/bitacora', [BitacoraController::class, 'index']);
         Route::get('/expedientes/{expediente}/resumen', [ResumenExpedienteController::class, 'show']);
+        Route::get('/expedientes/{expediente}/observaciones', [ObservacionExpedienteController::class, 'index']);
 
         Route::middleware('verify.pin')->group(function () {
             Route::post('/expedientes', [ExpedienteController::class, 'store']);
             Route::put('/expedientes/{expediente}', [ExpedienteController::class, 'update']);
             Route::post('/expedientes/{expediente}/bitacora', [BitacoraController::class, 'store']);
+            Route::post('/expedientes/{expediente}/observaciones', [ObservacionExpedienteController::class, 'store']);
             Route::post('/expedientes/{expediente}/resumen', [ResumenExpedienteController::class, 'store']);
             Route::delete('/expedientes/{expediente}/resumen', [ResumenExpedienteController::class, 'destroy']);
         });
@@ -100,6 +104,7 @@ Route::middleware(['auth:sanctum', 'role:administrador,supervisor,consejero'])->
 
     Route::middleware('permiso:asignacionCasos')->group(function () {
         Route::get('/casos', [CasoController::class, 'index']);
+        Route::get('/casos/consejeros', [CasoController::class, 'consejeros']);
         Route::get('/casos/{caso}', [CasoController::class, 'show']);
 
         Route::middleware('verify.pin')->group(function () {
@@ -127,7 +132,11 @@ Route::middleware(['auth:sanctum', 'role:administrador,supervisor,consejero'])->
         });
     });
 
-    Route::middleware('permiso:historial')->get('/historial', [HistorialController::class, 'index']);
+    Route::middleware('permiso:historial')->group(function () {
+        Route::get('/historial', [HistorialController::class, 'index']);
+        Route::get('/historial/exportar', [HistorialController::class, 'exportar']);
+        Route::get('/historial/registro/{tipo}/{id}', [HistorialController::class, 'porRegistro']);
+    });
     Route::middleware('permiso:reportes')->get('/reportes', [ReporteController::class, 'index']);
 
     Route::middleware('permiso:usuarios')->group(function () {
