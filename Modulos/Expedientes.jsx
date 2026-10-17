@@ -30,6 +30,13 @@ export default function Expedientes() {
   const [detalleVista, setDetalleVista] = useState("resumen");
 
   const [bitacoras, setBitacoras] = useState({});
+  const [observaciones, setObservaciones] = useState({});
+  const [observacionTexto, setObservacionTexto] = useState("");
+  const [perfil, setPerfil] = useState(null);
+
+  // La secretaría (supervisor) observa y da formato, pero no modifica el
+  // contenido del expediente. El backend lo impone; aquí sólo se oculta.
+  const esSecretaria = perfil?.rol === "supervisor";
 
   const [bitacoraForm, setBitacoraForm] = useState({
     fecha: new Date().toISOString().slice(0, 10),
@@ -122,9 +129,20 @@ export default function Expedientes() {
       .then((entradas) => setBitacoras((prev) => ({ ...prev, [expedienteId]: entradas })))
       .catch(console.error);
 
+  const cargarObservaciones = (expedienteId) =>
+    api.getObservaciones(expedienteId)
+      .then((entradas) => setObservaciones((prev) => ({ ...prev, [expedienteId]: entradas })))
+      .catch(console.error);
+
+  useEffect(() => {
+    api.getMe().then(setPerfil).catch(console.error);
+  }, []);
+
   const abrirDetalle = (row) => {
     setFicha(row);
     cargarBitacora(row.id);
+    cargarObservaciones(row.id);
+    setObservacionTexto("");
     setDetalleVista("resumen");
     setBitacoraForm({
       fecha: new Date().toISOString().slice(0, 10),
@@ -275,6 +293,31 @@ export default function Expedientes() {
     } catch (error) {
       if (error.message !== "Acción cancelada") {
         alert(error.message || "No se pudo registrar la actuación.");
+      }
+    }
+  };
+
+  const guardarObservacion = async () => {
+    if (!ficha) return;
+
+    const texto = observacionTexto.trim();
+
+    if (!texto) {
+      alert("Escriba la observación antes de guardar.");
+      return;
+    }
+
+    try {
+      await executeWithPin(
+        (pin) => api.createObservacion(ficha.id, texto, pin),
+        "Registrar observación del expediente",
+      );
+
+      await Promise.all([cargarObservaciones(ficha.id), cargarBitacora(ficha.id)]);
+      setObservacionTexto("");
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        alert(error.message || "No se pudo registrar la observación.");
       }
     }
   };
@@ -512,7 +555,7 @@ export default function Expedientes() {
               <span><b>Estatus:</b></span>
               <select
                 value={ficha.estatus}
-                disabled={cambiandoEstatus}
+                disabled={cambiandoEstatus || esSecretaria}
                 onChange={(e) => cambiarEstatus(e.target.value)}
               >
                 {ESTATUS_EXPEDIENTE.map((estatus) => (
@@ -532,31 +575,33 @@ export default function Expedientes() {
         <div className="detalle-card">
           <h4>Bitácora de actuaciones</h4>
 
-          <div className="bitacora-form">
-            <input
-              type="date"
-              max={hoyISO()}
-              value={bitacoraForm.fecha}
-              onChange={(e) =>
-                setBitacoraForm((prev) => ({ ...prev, fecha: e.target.value }))
-              }
-              className={detalleErrores.fecha ? "error" : ""}
-            />
+          {!esSecretaria && (
+            <div className="bitacora-form">
+              <input
+                type="date"
+                max={hoyISO()}
+                value={bitacoraForm.fecha}
+                onChange={(e) =>
+                  setBitacoraForm((prev) => ({ ...prev, fecha: e.target.value }))
+                }
+                className={detalleErrores.fecha ? "error" : ""}
+              />
 
-            <textarea
-              rows="3"
-              placeholder="Ej. 07/06/2026 - Se emitió Boleta de Citación"
-              value={bitacoraForm.nota}
-              onChange={(e) =>
-                setBitacoraForm((prev) => ({ ...prev, nota: e.target.value }))
-              }
-              className={detalleErrores.nota ? "error" : ""}
-            />
+              <textarea
+                rows="3"
+                placeholder="Ej. 07/06/2026 - Se emitió Boleta de Citación"
+                value={bitacoraForm.nota}
+                onChange={(e) =>
+                  setBitacoraForm((prev) => ({ ...prev, nota: e.target.value }))
+                }
+                className={detalleErrores.nota ? "error" : ""}
+              />
 
-            <button className="btn-primary small" onClick={guardarBitacora}>
-              Guardar actuación
-            </button>
-          </div>
+              <button className="btn-primary small" onClick={guardarBitacora}>
+                Guardar actuación
+              </button>
+            </div>
+          )}
 
           <div className="timeline">
             {(bitacoras[ficha.id] || []).length === 0 ? (
@@ -571,6 +616,52 @@ export default function Expedientes() {
                     <strong>{formatearFecha(item.fecha)}</strong>
                     <span>{item.nota}</span>
                     {/* Quién firma la actuación importa: es un registro legal. */}
+                    <small className="timeline-autor">
+                      Registrada por {item.usuario?.display_name || item.usuario?.name || "—"}
+                    </small>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (detalleVista === "observaciones") {
+      const listaObservaciones = observaciones[ficha.id] || [];
+
+      return (
+        <div className="detalle-card">
+          <h4>Observaciones</h4>
+
+          {esSecretaria || perfil?.rol === "administrador" ? (
+            <div className="bitacora-form">
+              <textarea
+                rows="3"
+                placeholder="Ej. Falta el acta de nacimiento del NNA"
+                value={observacionTexto}
+                onChange={(e) => setObservacionTexto(e.target.value)}
+              />
+
+              <button className="btn-primary small" onClick={guardarObservacion}>
+                Guardar observación
+              </button>
+            </div>
+          ) : null}
+
+          <div className="timeline">
+            {listaObservaciones.length === 0 ? (
+              <div className="timeline-empty">
+                No hay observaciones registradas.
+              </div>
+            ) : (
+              listaObservaciones.map((item) => (
+                <div key={item.id} className="timeline-item">
+                  <div className="timeline-dot" />
+                  <div className="timeline-content">
+                    <strong>{formatearFecha(item.created_at)}</strong>
+                    <span>{item.texto}</span>
                     <small className="timeline-autor">
                       Registrada por {item.usuario?.display_name || item.usuario?.name || "—"}
                     </small>
@@ -924,6 +1015,13 @@ export default function Expedientes() {
                 onClick={() => setDetalleVista("bitacora")}
               >
                 Bitácora
+              </button>
+
+              <button
+                className={`detalle-tab ${detalleVista === "observaciones" ? "active" : ""}`}
+                onClick={() => setDetalleVista("observaciones")}
+              >
+                Observaciones
               </button>
 
               <button
