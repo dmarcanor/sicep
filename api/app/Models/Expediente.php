@@ -76,6 +76,11 @@ class Expediente extends Model
         return $this->hasMany(Caso::class);
     }
 
+    public function observacionesExpediente(): HasMany
+    {
+        return $this->hasMany(ObservacionExpediente::class);
+    }
+
     public function solicitudesArchivo(): HasMany
     {
         return $this->hasMany(SolicitudArchivo::class);
