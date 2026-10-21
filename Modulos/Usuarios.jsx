@@ -92,9 +92,14 @@ export default function Usuarios() {
   const actualizarForm = (e) => {
     const { name, value, type, checked } = e.target;
 
+    // Convertir a mayúsculas los campos de nombre
+    const valorTransformado = (name === "name" || name === "display_name") 
+      ? value.toUpperCase() 
+      : value;
+
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : valorTransformado,
     }));
 
     setErrores((prev) => (prev[name] ? { ...prev, [name]: null } : prev));

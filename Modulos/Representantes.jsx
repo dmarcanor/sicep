@@ -12,6 +12,8 @@ import { estilosTabla } from "../src/tablaEstilos";
 import Campo from "../componentes/Campo";
 import { EntradaDocumento, EntradaTelefono, LIMITES } from "../componentes/entradas";
 import { AYUDAS_REPRESENTANTE } from "../src/ayudas";
+import ConfirmarModal from "../componentes/ConfirmarModal";
+import Toast from "../componentes/Toast";
 import "./css/Expedientes.css";
 import "./css/Representantes.css";
 
@@ -24,6 +26,8 @@ export default function Representantes() {
   const [cargando, setCargando] = useState(true);
   const [errores, setErrores] = useState({});
   const { executeWithPin, PinModalWrapper } = usePinAction();
+  const [toast, setToast] = useState({ mensaje: "", tipo: "success", visible: false });
+  const [confirmarModal, setConfirmarModal] = useState({ abierto: false, titulo: "", mensaje: "", tipo: "info", action: null });
 
   const [form, setForm] = useState({
     cedula: "",
@@ -189,23 +193,46 @@ export default function Representantes() {
   const guardar = async () => {
     if (!validar()) return;
 
-    try {
-      if (representanteSeleccionado) {
-        await executeWithPin(async (pin) => {
-          await api.updateRepresentante(representanteSeleccionado.id, form, pin);
-        }, "Editar Representante");
-      } else {
-        await executeWithPin(async (pin) => {
-          await api.createRepresentante(form, pin);
-        }, "Crear Representante");
-      }
-      await cargarRepresentantes();
-      setMostrarModal(false);
-    } catch (error) {
-      if (error.message !== "Acción cancelada") {
-        alert(error.message || "Error al guardar");
-      }
-    }
+    const titulo = representanteSeleccionado ? "Editar Representante" : "Crear Representante";
+    const mensaje = representanteSeleccionado
+      ? `¿Está seguro de que desea editar el registro de ${form.nombres} ${form.apellidos}?`
+      : `¿Está seguro de que desea registrar a ${form.nombres} ${form.apellidos}?`;
+
+    setConfirmarModal({
+      abierto: true,
+      titulo,
+      mensaje,
+      tipo: "info",
+      action: async () => {
+        try {
+          if (representanteSeleccionado) {
+            await executeWithPin(async (pin) => {
+              await api.updateRepresentante(representanteSeleccionado.id, form, pin);
+            }, "Editar Representante");
+          } else {
+            await executeWithPin(async (pin) => {
+              await api.createRepresentante(form, pin);
+            }, "Crear Representante");
+          }
+          await cargarRepresentantes();
+          setMostrarModal(false);
+          setToast({
+            mensaje: representanteSeleccionado ? "Representante editado correctamente" : "Representante registrado correctamente",
+            tipo: "success",
+            visible: true,
+          });
+        } catch (error) {
+          if (error.message !== "Acción cancelada") {
+            setToast({
+              mensaje: error.message || "Error al guardar",
+              tipo: "error",
+              visible: true,
+            });
+          }
+        }
+        setConfirmarModal({ abierto: false, action: null });
+      },
+    });
   };
 
   if (cargando) {
@@ -320,7 +347,7 @@ export default function Representantes() {
                   value={form.nombres}
                   maxLength={LIMITES.nombres}
                   onChange={(e) => {
-                    setForm({ ...form, nombres: e.target.value });
+                    setForm({ ...form, nombres: e.target.value.toUpperCase() });
                     setErrores({ ...errores, nombres: "" });
                   }}
                   className={errores.nombres ? "error" : ""}
@@ -337,7 +364,7 @@ export default function Representantes() {
                   value={form.apellidos}
                   maxLength={LIMITES.apellidos}
                   onChange={(e) => {
-                    setForm({ ...form, apellidos: e.target.value });
+                    setForm({ ...form, apellidos: e.target.value.toUpperCase() });
                     setErrores({ ...errores, apellidos: "" });
                   }}
                   className={errores.apellidos ? "error" : ""}
@@ -512,6 +539,22 @@ export default function Representantes() {
       )}
 
       <PinModalWrapper />
+      
+      <ConfirmarModal
+        isOpen={confirmarModal.abierto}
+        onClose={() => setConfirmarModal({ abierto: false, action: null })}
+        onConfirm={() => confirmarModal.action && confirmarModal.action()}
+        titulo={confirmarModal.titulo}
+        mensaje={confirmarModal.mensaje}
+        tipo={confirmarModal.tipo}
+      />
+      
+      <Toast
+        message={toast.mensaje}
+        type={toast.tipo}
+        isVisible={toast.visible}
+        onClose={() => setToast({ mensaje: "", tipo: "success", visible: false })}
+      />
     </div>
   );
 }

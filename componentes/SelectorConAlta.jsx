@@ -145,7 +145,11 @@ export default function SelectorConAlta({
 
   const actualizar = (e) => {
     const { name, value: v } = e.target;
-    setDatos((prev) => ({ ...prev, [name]: v }));
+    // Convertir a mayúsculas los campos de nombres y apellidos
+    const valorTransformado = (name === "nombres" || name === "apellidos") 
+      ? v.toUpperCase() 
+      : v;
+    setDatos((prev) => ({ ...prev, [name]: valorTransformado }));
     setFaltantes((prev) => ({ ...prev, [name]: false }));
   };
 
