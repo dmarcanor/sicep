@@ -1,0 +1,27 @@
+/* Estilos específicos para el módulo de Asignación de Casos */
+
+.asignacion-casos .expedientes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: nowrap;
+}
+
+.asignacion-casos .expedientes-header > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.asignacion-casos .btn-primary {
+  white-space: nowrap;
+  padding: 0 24px;
+  min-width: auto;
+  width: auto;
+  flex-shrink: 0;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}

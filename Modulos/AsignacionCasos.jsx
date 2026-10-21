@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { useBusquedaDiferida } from "../src/hooks/useBusquedaDiferida";
+import "./css/Expedientes.css";
+import "./css/AsignacionCasos.css";
 
 const formInicial = {
   expedienteId: "",
@@ -304,7 +306,7 @@ export default function AsignacionCasosConsejeros() {
   };
 
   return (
-    <section className="modulo expedientes">
+    <section className="modulo expedientes asignacion-casos">
       <div className="expedientes-header">
         <div>
           <span className="expedientes-badge">Gestión operativa</span>
@@ -317,7 +319,7 @@ export default function AsignacionCasosConsejeros() {
           </p>
         </div>
 
-        <button className="btn-primary" onClick={() => setModalNuevo(true)}>
+        <button className="botonPrimario" onClick={() => setModalNuevo(true)}>
           + Asignar expediente
         </button>
       </div>
