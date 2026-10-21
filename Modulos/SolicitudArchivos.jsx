@@ -41,7 +41,7 @@ const crearUbicacionTexto = (u = {}) =>
 const formInicialSolicitud = {
   expedienteId: "",
   caso: "",
-  solicitante: "",
+  solicitanteId: "",
   cargo: "",
   motivo: "",
   fechaSolicitud: new Date().toISOString().slice(0, 10),
@@ -66,6 +66,7 @@ const normalizarSolicitud = (s) => ({
   caso: s.caso || "",
   nna: s.expediente?.nna_nombre || "",
   representante: s.expediente?.representante_nombre || "",
+  solicitanteId: s.solicitante_id || "",
   solicitante: s.solicitante_nombre || s.solicitante?.display_name || s.solicitante?.name || "",
   cargo: s.cargo || "",
   motivo: s.motivo || "",
@@ -135,6 +136,7 @@ export default function SolicitudArchivos() {
 
   const [solicitudesBase, setSolicitudesBase] = useState([]);
   const [expedientes, setExpedientes] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [guardando, setGuardando] = useState(false);
 
   const cargarSolicitudes = async (search = "") => {
@@ -154,6 +156,7 @@ export default function SolicitudArchivos() {
 
   useEffect(() => {
     api.getExpedientes().then(setExpedientes).catch(console.error);
+    api.getUsuarios().then(setUsuarios).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -305,7 +308,7 @@ export default function SolicitudArchivos() {
     const errores = {};
     if (!nuevaSolicitud.expedienteId) errores.expedienteId = true;
     if (!nuevaSolicitud.caso.trim()) errores.caso = true;
-    if (!nuevaSolicitud.solicitante.trim()) errores.solicitante = true;
+    if (!nuevaSolicitud.solicitanteId) errores.solicitanteId = true;
     if (!nuevaSolicitud.fechaSolicitud) errores.fechaSolicitud = true;
     if (!nuevaSolicitud.estatus.trim()) errores.estatus = true;
 
@@ -483,7 +486,7 @@ export default function SolicitudArchivos() {
     const carga = {
       expediente_id: Number(nuevaSolicitud.expedienteId),
       caso: nuevaSolicitud.caso.trim(),
-      solicitante_nombre: nuevaSolicitud.solicitante.trim(),
+      solicitante_nombre: usuarios.find(u => u.id == nuevaSolicitud.solicitanteId)?.display_name || usuarios.find(u => u.id == nuevaSolicitud.solicitanteId)?.name || "",
       cargo: nuevaSolicitud.cargo.trim(),
       motivo: nuevaSolicitud.motivo.trim(),
       estatus: nuevaSolicitud.estatus,
@@ -875,13 +878,19 @@ export default function SolicitudArchivos() {
 
                 <div className="campo">
                   <label>Solicitante *</label>
-                  <input
-                    name="solicitante"
-                    value={nuevaSolicitud.solicitante}
+                  <select
+                    name="solicitanteId"
+                    value={nuevaSolicitud.solicitanteId}
                     onChange={actualizarNuevaSolicitud}
-                    className={erroresNuevo.solicitante ? "error" : ""}
-                    placeholder="Nombre del usuario"
-                  />
+                    className={erroresNuevo.solicitanteId ? "error" : ""}
+                  >
+                    <option value="">Seleccione un solicitante</option>
+                    {usuarios.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.display_name || u.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="campo">
