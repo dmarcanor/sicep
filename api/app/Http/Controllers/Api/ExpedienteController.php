@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Expediente;
+use App\Models\Nna;
+use App\Models\Representante;
 use App\Support\Auditoria;
 use App\Support\Correlativo;
 use App\Support\Jurisdiccion;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ExpedienteController extends Controller
 {
@@ -70,6 +73,30 @@ class ExpedienteController extends Controller
         ], [
             'fecha.before_or_equal' => 'La fecha del expediente no puede ser futura.',
         ]);
+
+        // Validar que el NNA no tenga representantes diferentes en expedientes previos
+        $nna = Nna::find($datos['nna_id']);
+        $representante = Representante::find($datos['representante_id']);
+        
+        $expedientesPrevios = Expediente::where('nna_id', $datos['nna_id'])
+            ->where('representante_id', '!=', $datos['representante_id'])
+            ->with('representante')
+            ->get();
+
+        if ($expedientesPrevios->isNotEmpty()) {
+            $expedientePrevio = $expedientesPrevios->first();
+            $representantePrevio = $expedientePrevio->representante;
+            
+            throw ValidationException::withMessages([
+                'representante_id' => [
+                    "El NNA {$nna->nombres} {$nna->apellidos} (documento: {$nna->documento_identidad}) " .
+                    "ya tiene expedientes registrados con un representante diferente. " .
+                    "Representante actual en el sistema: {$representantePrevio->nombres} {$representantePrevio->apellidos} " .
+                    "(cédula: {$representantePrevio->cedula}). " .
+                    "Por favor, utilice el mismo representante o cree un nuevo registro de NNA si corresponde."
+                ],
+            ]);
+        }
 
         $datos['hora_registro'] = $datos['hora_registro'] ?? now()->format('H:i:s');
         $datos['registrado_por'] = $request->user()->id;
