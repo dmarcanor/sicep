@@ -27,4 +27,14 @@ class Representante extends Model
     {
         return "{$this->nombres} {$this->apellidos}";
     }
+
+    public function setNombresAttribute($value)
+    {
+        $this->attributes['nombres'] = strtoupper($value);
+    }
+
+    public function setApellidosAttribute($value)
+    {
+        $this->attributes['apellidos'] = strtoupper($value);
+    }
 }

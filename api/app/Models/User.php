@@ -32,4 +32,14 @@ class User extends Authenticatable
             'pin_configurado' => 'boolean',
         ];
     }
+
+    public function setNameAttribute($value)
+    {
+        $this->attributes['name'] = strtoupper($value);
+    }
+
+    public function setDisplayNameAttribute($value)
+    {
+        $this->attributes['display_name'] = strtoupper($value);
+    }
 }

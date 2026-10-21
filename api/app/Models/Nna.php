@@ -30,4 +30,14 @@ class Nna extends Model
     {
         return $this->hasMany(Expediente::class, 'nna_id');
     }
+
+    public function setNombresAttribute($value)
+    {
+        $this->attributes['nombres'] = strtoupper($value);
+    }
+
+    public function setApellidosAttribute($value)
+    {
+        $this->attributes['apellidos'] = strtoupper($value);
+    }
 }
