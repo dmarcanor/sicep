@@ -19,6 +19,8 @@ import SelectorConAlta, {
   etiquetaNna,
   etiquetaRepresentante,
 } from "../componentes/SelectorConAlta";
+import ConfirmarModal from "../componentes/ConfirmarModal";
+import Toast from "../componentes/Toast";
 
 // Debe coincidir con el enum de la columna expedientes.estatus.
 const ESTATUS_EXPEDIENTE = ["Registrado", "En revisión", "Aprobado", "Observado", "Cerrado"];
@@ -63,6 +65,8 @@ export default function Expedientes() {
   const [representantes, setRepresentantes] = useState([]);
   const [nnas, setNnas] = useState([]);
   const { executeWithPin, PinModalWrapper } = usePinAction();
+  const [toast, setToast] = useState({ mensaje: "", tipo: "success", visible: false });
+  const [confirmarModal, setConfirmarModal] = useState({ abierto: false, titulo: "", mensaje: "", tipo: "info", action: null });
 
   // Suscribe el módulo a los ajustes: alertaLapso lee los umbrales de
   // Configuración → Sistema, y sin esto la columna seguía pintando los
@@ -91,21 +95,40 @@ export default function Expedientes() {
     setErrorEstatus("");
     setCambiandoEstatus(true);
 
-    try {
-      const actualizado = await executeWithPin(
-        (pin) => api.updateExpediente(ficha.id, { estatus }, pin),
-        "Cambiar estatus del expediente",
-      );
+    setConfirmarModal({
+      abierto: true,
+      titulo: "Cambiar Estatus",
+      mensaje: `¿Está seguro de que desea cambiar el estatus a "${estatus}"?`,
+      tipo: "info",
+      action: async () => {
+        try {
+          const actualizado = await executeWithPin(
+            (pin) => api.updateExpediente(ficha.id, { estatus }, pin),
+            "Cambiar estatus del expediente",
+          );
 
-      setFicha(actualizado);
-      await recargarExpedientes();
-    } catch (error) {
-      if (error.message !== "Acción cancelada") {
-        setErrorEstatus(error.message || "No se pudo cambiar el estatus.");
-      }
-    } finally {
-      setCambiandoEstatus(false);
-    }
+          setFicha(actualizado);
+          await recargarExpedientes();
+          setToast({
+            mensaje: `Estatus cambiado a ${estatus}`,
+            tipo: "success",
+            visible: true,
+          });
+        } catch (error) {
+          if (error.message !== "Acción cancelada") {
+            setErrorEstatus(error.message || "No se pudo cambiar el estatus.");
+            setToast({
+              mensaje: error.message || "No se pudo cambiar el estatus.",
+              tipo: "error",
+              visible: true,
+            });
+          }
+        } finally {
+          setCambiandoEstatus(false);
+        }
+        setConfirmarModal({ abierto: false, action: null });
+      },
+    });
   };
 
   useEffect(() => {
@@ -278,23 +301,41 @@ export default function Expedientes() {
       return;
     }
 
-    try {
-      await executeWithPin(
-        (pin) => api.createActuacion(
-          ficha.id,
-          { fecha: bitacoraForm.fecha, nota: bitacoraForm.nota.trim() },
-          pin,
-        ),
-        "Registrar actuación en bitácora",
-      );
+    setConfirmarModal({
+      abierto: true,
+      titulo: "Registrar Actuación",
+      mensaje: "¿Está seguro de que desea registrar esta actuación en la bitácora?",
+      tipo: "info",
+      action: async () => {
+        try {
+          await executeWithPin(
+            (pin) => api.createActuacion(
+              ficha.id,
+              { fecha: bitacoraForm.fecha, nota: bitacoraForm.nota.trim() },
+              pin,
+            ),
+            "Registrar actuación en bitácora",
+          );
 
-      await cargarBitacora(ficha.id);
-      setBitacoraForm({ fecha: hoyISO(), nota: "" });
-    } catch (error) {
-      if (error.message !== "Acción cancelada") {
-        alert(error.message || "No se pudo registrar la actuación.");
-      }
-    }
+          await cargarBitacora(ficha.id);
+          setBitacoraForm({ fecha: hoyISO(), nota: "" });
+          setToast({
+            mensaje: "Actuación registrada correctamente",
+            tipo: "success",
+            visible: true,
+          });
+        } catch (error) {
+          if (error.message !== "Acción cancelada") {
+            setToast({
+              mensaje: error.message || "No se pudo registrar la actuación.",
+              tipo: "error",
+              visible: true,
+            });
+          }
+        }
+        setConfirmarModal({ abierto: false, action: null });
+      },
+    });
   };
 
   const guardarObservacion = async () => {
@@ -307,37 +348,73 @@ export default function Expedientes() {
       return;
     }
 
-    try {
-      await executeWithPin(
-        (pin) => api.createObservacion(ficha.id, texto, pin),
-        "Registrar observación del expediente",
-      );
+    setConfirmarModal({
+      abierto: true,
+      titulo: "Registrar Observación",
+      mensaje: "¿Está seguro de que desea registrar esta observación?",
+      tipo: "info",
+      action: async () => {
+        try {
+          await executeWithPin(
+            (pin) => api.createObservacion(ficha.id, texto, pin),
+            "Registrar observación del expediente",
+          );
 
-      await Promise.all([cargarObservaciones(ficha.id), cargarBitacora(ficha.id)]);
-      setObservacionTexto("");
-    } catch (error) {
-      if (error.message !== "Acción cancelada") {
-        alert(error.message || "No se pudo registrar la observación.");
-      }
-    }
+          await Promise.all([cargarObservaciones(ficha.id), cargarBitacora(ficha.id)]);
+          setObservacionTexto("");
+          setToast({
+            mensaje: "Observación registrada correctamente",
+            tipo: "success",
+            visible: true,
+          });
+        } catch (error) {
+          if (error.message !== "Acción cancelada") {
+            setToast({
+              mensaje: error.message || "No se pudo registrar la observación.",
+              tipo: "error",
+              visible: true,
+            });
+          }
+        }
+        setConfirmarModal({ abierto: false, action: null });
+      },
+    });
   };
 
   // Guarda en el expediente dónde está la carpeta física.
   const cambiarEstatusFisico = async (nuevoEstatus) => {
     if (!ficha || nuevoEstatus === ficha.estatus_fisico) return;
 
-    try {
-      const actualizado = await executeWithPin(
-        (pin) => api.updateExpediente(ficha.id, { estatus_fisico: nuevoEstatus }, pin),
-        "Mover el expediente físico",
-      );
-      setFicha(actualizado);
-      await recargarExpedientes();
-    } catch (error) {
-      if (error.message !== "Acción cancelada") {
-        alert(error.message || "No se pudo actualizar el estatus físico.");
-      }
-    }
+    setConfirmarModal({
+      abierto: true,
+      titulo: "Cambiar Estatus Físico",
+      mensaje: `¿Está seguro de que desea cambiar el estatus físico a "${nuevoEstatus}"?`,
+      tipo: "info",
+      action: async () => {
+        try {
+          const actualizado = await executeWithPin(
+            (pin) => api.updateExpediente(ficha.id, { estatus_fisico: nuevoEstatus }, pin),
+            "Mover el expediente físico",
+          );
+          setFicha(actualizado);
+          await recargarExpedientes();
+          setToast({
+            mensaje: `Estatus físico actualizado a ${nuevoEstatus}`,
+            tipo: "success",
+            visible: true,
+          });
+        } catch (error) {
+          if (error.message !== "Acción cancelada") {
+            setToast({
+              mensaje: error.message || "No se pudo actualizar el estatus físico.",
+              tipo: "error",
+              visible: true,
+            });
+          }
+        }
+        setConfirmarModal({ abierto: false, action: null });
+      },
+    });
   };
 
   const manejarPdfResumen = async (evento) => {
@@ -503,32 +580,53 @@ export default function Expedientes() {
   const registrarNuevoExpediente = async () => {
     if (!validarNuevoExpediente()) return;
 
-    try {
-      await executeWithPin(async (pin) => {
-        const creado = await api.createExpediente(
-          {
-            fecha: nuevoExpediente.fecha,
-            hora_registro: nuevoExpediente.hora_registro || null,
-            nna_id: nuevoExpediente.nna_id,
-            representante_id: nuevoExpediente.representante_id,
-            sector: nuevoExpediente.sector.trim(),
-            prioridad: nuevoExpediente.prioridad,
-            tipificacion: nuevoExpediente.tipificacion || null,
-            causa: nuevoExpediente.causa || null,
-          },
-          pin
-        );
+    const nna = nnas.find(n => n.id === nuevoExpediente.nna_id);
+    const mensaje = nna 
+      ? `¿Está seguro de que desea crear un expediente para ${nna.nombres} ${nna.apellidos}?`
+      : `¿Está seguro de que desea crear un nuevo expediente?`;
 
-        await recargarExpedientes();
-        setMostrarModalNuevo(false);
-        setRegistroExitoso(`Expediente ${creado.codigo} registrado con éxito.`);
-        setTimeout(() => setRegistroExitoso(""), 3000);
-      }, "Crear Expediente");
-    } catch (error) {
-      if (error.message !== "Acción cancelada") {
-        alert(error.message || "Error al crear expediente");
-      }
-    }
+    setConfirmarModal({
+      abierto: true,
+      titulo: "Crear Expediente",
+      mensaje,
+      tipo: "info",
+      action: async () => {
+        try {
+          await executeWithPin(async (pin) => {
+            const creado = await api.createExpediente(
+              {
+                fecha: nuevoExpediente.fecha,
+                hora_registro: nuevoExpediente.hora_registro || null,
+                nna_id: nuevoExpediente.nna_id,
+                representante_id: nuevoExpediente.representante_id,
+                sector: nuevoExpediente.sector.trim(),
+                prioridad: nuevoExpediente.prioridad,
+                tipificacion: nuevoExpediente.tipificacion || null,
+                causa: nuevoExpediente.causa || null,
+              },
+              pin
+            );
+
+            await recargarExpedientes();
+            setMostrarModalNuevo(false);
+            setToast({
+              mensaje: `Expediente ${creado.codigo} registrado con éxito.`,
+              tipo: "success",
+              visible: true,
+            });
+          }, "Crear Expediente");
+        } catch (error) {
+          if (error.message !== "Acción cancelada") {
+            setToast({
+              mensaje: error.message || "Error al crear expediente",
+              tipo: "error",
+              visible: true,
+            });
+          }
+        }
+        setConfirmarModal({ abierto: false, action: null });
+      },
+    });
   };
 
   const renderDetalle = () => {
@@ -1051,6 +1149,22 @@ export default function Expedientes() {
       )}
 
       <PinModalWrapper />
+      
+      <ConfirmarModal
+        isOpen={confirmarModal.abierto}
+        onClose={() => setConfirmarModal({ abierto: false, action: null })}
+        onConfirm={() => confirmarModal.action && confirmarModal.action()}
+        titulo={confirmarModal.titulo}
+        mensaje={confirmarModal.mensaje}
+        tipo={confirmarModal.tipo}
+      />
+      
+      <Toast
+        message={toast.mensaje}
+        type={toast.tipo}
+        isVisible={toast.visible}
+        onClose={() => setToast({ mensaje: "", tipo: "success", visible: false })}
+      />
     </div>
   );
 }
