@@ -26,6 +26,18 @@ export const getPinConfigurado = () => {
   return localStorage.getItem('pin_configurado') === 'true';
 };
 
+export const setRol = (rol) => {
+  localStorage.setItem('rol', rol || '');
+};
+
+export const getRol = () => {
+  return localStorage.getItem('rol') || '';
+};
+
+export const esAdministrador = () => {
+  return getRol() === 'administrador';
+};
+
 const getHeaders = (pin = null, { json = true } = {}) => {
   const headers = { 'Accept': 'application/json' };
   if (json) {
@@ -86,6 +98,7 @@ export const api = {
     });
     const data = await handleResponse(response, { cerrarSesionSi401: false });
     setAuthToken(data.token);
+    setRol(data.user.rol);
     return data;
   },
 
@@ -95,6 +108,7 @@ export const api = {
       headers: getHeaders(),
     });
     setAuthToken(null);
+    setRol('');
   },
 
   async getMe() {
@@ -103,6 +117,7 @@ export const api = {
     });
     const data = await handleResponse(response);
     setPinConfigurado(data.pin_configurado);
+    setRol(data.rol);
     return data;
   },
 

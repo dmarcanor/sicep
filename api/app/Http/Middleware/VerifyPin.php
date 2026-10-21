@@ -15,6 +15,12 @@ class VerifyPin
     {
         $user = $request->user();
 
+        // Los administradores no requieren PIN: su rol ya implica responsabilidad
+        // total sobre las acciones del sistema y el historial auditoría basta.
+        if ($user->role === 'administrador') {
+            return $next($request);
+        }
+
         if (!$user->pin_configurado) {
             return response()->json([
                 'message' => 'Debe configurar su PIN de seguridad antes de realizar esta acción',

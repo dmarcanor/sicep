@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import PinModal from "../../componentes/PinModal";
 import PinSetupModal from "../../componentes/PinSetupModal";
-import { getPinConfigurado, setPinConfigurado } from "../api";
+import { getPinConfigurado, setPinConfigurado, esAdministrador } from "../api";
 
 export function usePinAction() {
   const [showPinModal, setShowPinModal] = useState(false);
@@ -10,6 +10,11 @@ export function usePinAction() {
   const [pinConfigurado, setPinConfiguradoState] = useState(getPinConfigurado());
 
   const executeWithPin = useCallback(async (action, title = "Confirmar acción") => {
+    // Los administradores no requieren PIN para ninguna acción
+    if (esAdministrador()) {
+      return action(null);
+    }
+
     const hasPin = getPinConfigurado();
     
     if (!hasPin) {
