@@ -1,0 +1,130 @@
+.confirmar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.confirmar-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.confirmar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.confirmar-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.confirmar-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.confirmar-body {
+  padding: 24px;
+}
+
+.confirmar-body p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.confirmar-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 0 0 12px 12px;
+}
+
+.confirmar-footer .btn-secondary,
+.confirmar-footer .btn-primary {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.confirmar-footer .btn-secondary {
+  background: white;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+
+.confirmar-footer .btn-secondary:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.confirmar-footer .btn-primary {
+  color: white;
+  border: none;
+}
+
+.confirmar-footer .btn-primary.warning {
+  background: #f59e0b;
+}
+
+.confirmar-footer .btn-primary.warning:hover {
+  background: #d97706;
+}
+
+.confirmar-footer .btn-primary.danger {
+  background: #ef4444;
+}
+
+.confirmar-footer .btn-primary.danger:hover {
+  background: #dc2626;
+}
+
+.confirmar-footer .btn-primary.info {
+  background: #3b82f6;
+}
+
+.confirmar-footer .btn-primary.info:hover {
+  background: #2563eb;
+}
