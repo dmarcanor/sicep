@@ -36,6 +36,10 @@ services:
       web:
         condition: service_started
 
+  phpmyadmin:
+    # Detrás de Caddy (subdominio); deja de asomarse al host.
+    ports: !override []
+
 volumes:
   caddy_data:
   caddy_config:

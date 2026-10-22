@@ -2,6 +2,12 @@
 	email {$ACME_EMAIL}
 }
 
+# phpMyAdmin bajo subdominio propio (p. ej. pma.midominio.gob.ve).
+# Requiere un registro DNS (A/AAAA) que apunte a la misma IP que el dominio principal.
+pma.{$DOMINIO} {
+	reverse_proxy phpmyadmin:80
+}
+
 {$DOMINIO} {
 	encode gzip
 
