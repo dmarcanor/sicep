@@ -1,0 +1,28 @@
+digraph UC {
+  rankdir=LR; splines=true; nodesep=0.3; ranksep=1.5;
+  label=<<B>Supervisor (secretaría) — Cuenta y acceso</B><BR/>SICEP-NNA (permisos predeterminados)>; labelloc=t; fontname="Helvetica"; fontsize=14;
+  node [fontname="Helvetica", fontsize=10];
+  edge [color="#1F3A5F", arrowhead=none];
+  "S" [label="Supervisor (secretaría)", shape=box, style="rounded,filled", fillcolor="#FFF2CC", fontname="Helvetica", fontsize=12];
+  subgraph cluster_mod { label="Cuenta y acceso"; style="rounded"; color="#8EA9DB"; fontname="Helvetica"; fontsize=11;
+    "UC01" [label="UC01  Iniciar sesión", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+    "UC02" [label="UC02  Cerrar sesión", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+    "UC03" [label="UC03  Ver panel principal", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+    "UC04" [label="UC04  Configurar PIN inicial", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+    "UC05" [label="UC05  Cambiar PIN", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+    "UC06" [label="UC06  Editar perfil propio", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC07" [label="UC07  Cambiar contraseña propia", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC08" [label="UC08  Consultar institución (membrete)", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+  }
+  "PIN" [label="Confirmar con PIN", shape=ellipse, style=dashed, fontsize=10];
+  "S" -> "UC01";
+  "S" -> "UC02";
+  "S" -> "UC03";
+  "S" -> "UC04";
+  "S" -> "UC05";
+  "S" -> "UC06";
+  "S" -> "UC07";
+  "S" -> "UC08";
+  "UC06" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+  "UC07" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+}

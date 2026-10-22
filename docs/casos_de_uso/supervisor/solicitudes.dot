@@ -1,0 +1,18 @@
+digraph UC {
+  rankdir=LR; splines=true; nodesep=0.3; ranksep=1.5;
+  label=<<B>Supervisor (secretaría) — Solicitudes de archivo</B><BR/>SICEP-NNA (permisos predeterminados)>; labelloc=t; fontname="Helvetica"; fontsize=14;
+  node [fontname="Helvetica", fontsize=10];
+  edge [color="#1F3A5F", arrowhead=none];
+  "S" [label="Supervisor (secretaría)", shape=box, style="rounded,filled", fillcolor="#FFF2CC", fontname="Helvetica", fontsize=12];
+  subgraph cluster_mod { label="Solicitudes de archivo"; style="rounded"; color="#8EA9DB"; fontname="Helvetica"; fontsize=11;
+    "UC35" [label="UC35  Crear solicitud de archivo", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC36" [label="UC36  Actualizar solicitud de archivo", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC37" [label="UC37  Consultar solicitudes de archivo", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+  }
+  "PIN" [label="Confirmar con PIN", shape=ellipse, style=dashed, fontsize=10];
+  "S" -> "UC35";
+  "S" -> "UC36";
+  "S" -> "UC37";
+  "UC35" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+  "UC36" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+}

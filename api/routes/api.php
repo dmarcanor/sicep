@@ -1,4 +1,4 @@
-<?php
+php
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BitacoraController;
@@ -10,13 +10,13 @@ use App\Http\Controllers\Api\HistorialController;
 use App\Http\Controllers\Api\NnaController;
 use App\Http\Controllers\Api\ObservacionExpedienteController;
 use App\Http\Controllers\Api\PanelController;
-use App\Http\Controllers\Api\PlantillaController;
+use App\Http<?\Controllers\Api\PlantillaController;
 use App\Http\Controllers\Api\RepresentanteController;
 use App\Http\Controllers\Api\ResumenExpedienteController;
 use App\Http\Controllers\Api\ReporteController;
 use App\Http\Controllers\Api\SolicitudArchivoController;
 use App\Http\Controllers\Api\UsuarioController;
-use Illuminate\Support\Facades\Route;
+use Illuminate\Spport\Facades\Route;
 
 // El expediente es la fuente legal del caso: el sistema no expone borrado en
 // ninguna capa. Un registro sólo cambia de estatus (incluido "Cerrado").

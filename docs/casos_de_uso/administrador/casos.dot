@@ -1,0 +1,23 @@
+digraph UC {
+  rankdir=LR; splines=true; nodesep=0.3; ranksep=1.5;
+  label=<<B>Administrador — Asignación de casos</B><BR/>SICEP-NNA (permisos predeterminados)>; labelloc=t; fontname="Helvetica"; fontsize=14;
+  node [fontname="Helvetica", fontsize=10];
+  edge [color="#1F3A5F", arrowhead=none];
+  "A" [label="Administrador", shape=box, style="rounded,filled", fillcolor="#FFF2CC", fontname="Helvetica", fontsize=12];
+  subgraph cluster_mod { label="Asignación de casos"; style="rounded"; color="#8EA9DB"; fontname="Helvetica"; fontsize=11;
+    "UC30" [label="UC30  Asignar caso a consejero", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC31" [label="UC31  Reasignar caso", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC32" [label="UC32  Actualizar estatus del caso", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC33" [label="UC33  Consultar casos", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+    "UC34" [label="UC34  Consultar lista de consejeros", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+  }
+  "PIN" [label="Confirmar con PIN", shape=ellipse, style=dashed, fontsize=10];
+  "A" -> "UC30";
+  "A" -> "UC31";
+  "A" -> "UC32";
+  "A" -> "UC33";
+  "A" -> "UC34";
+  "UC30" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+  "UC31" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+  "UC32" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+}

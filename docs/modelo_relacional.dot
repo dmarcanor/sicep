@@ -1,0 +1,204 @@
+digraph SICEP {
+  graph [splines=true, overlap=false, fontname="Helvetica", fontsize=12, labelloc=t, label=<<B>Modelo entidad-relación — SICEP-NNA (MariaDB)</B><BR/>Clave primaria: PK · clave foránea: FK · UK: único · ?: admite nulos>];
+  node [fontname="Helvetica", fontsize=10];
+  edge [color="#1F3A5F", arrowsize=0.7];
+"bitacoras" [shape=plain pos="-173,331!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>bitacoras</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="expediente_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>expediente_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="usuario_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>usuario_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="fecha">fecha</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">date</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="nota">nota</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+</TABLE>
+>];
+"casos" [shape=plain pos="209,353!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>casos</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="codigo"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">UK </FONT>codigo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="expediente_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>expediente_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="asignado_a"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>asignado_a</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="asignado_por"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>asignado_por</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="tipo_asignacion">tipo_asignacion</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">enum(&#x27;Rotativa&#x27;,&#x27;Manual&#x27;)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="motivo">motivo?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="estatus">estatus</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">enum(&#x27;Pendiente&#x27;,&#x27;En proc...</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="observaciones">observaciones?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+</TABLE>
+>];
+"configuraciones" [shape=plain pos="-634,475!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>configuraciones</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="clave"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">UK </FONT>clave</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="valor">valor?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="tipo">tipo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="categoria">categoria</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="descripcion">descripcion?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+</TABLE>
+>];
+"documentos" [shape=plain pos="-173,-331!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>documentos</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="expediente_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>expediente_id?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="creado_por"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>creado_por</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="plantilla">plantilla</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="titulo">titulo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="datos">datos</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">longtext</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="estado">estado</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">enum(&#x27;Borrador&#x27;,&#x27;Emitido&#x27;)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="emitido_en">emitido_en?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">timestamp</FONT></TD></TR>
+</TABLE>
+>];
+"expedientes" [shape=plain pos="0,0!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>expedientes</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="nna_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>nna_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="representante_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>representante_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="codigo"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">UK </FONT>codigo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="fecha">fecha</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">date</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="hora_registro">hora_registro?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">time</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="sector">sector</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="estatus">estatus</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">enum(&#x27;Registrado&#x27;,&#x27;En rev...</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="estatus_fisico">estatus_fisico</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">enum(&#x27;Pendiente&#x27;,&#x27;En Desp...</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="cerrado_en">cerrado_en?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">timestamp</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="prioridad">prioridad</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">enum(&#x27;Alta&#x27;,&#x27;Media&#x27;,&#x27;Baja&#x27;)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="tipificacion">tipificacion?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">enum(&#x27;Maltrato Físico&#x27;,&#x27;A...</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="causa">causa?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="observaciones">observaciones?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="resumen_pdf_ruta">resumen_pdf_ruta?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="resumen_pdf_nombre">resumen_pdf_nombre?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="registrado_por"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>registrado_por</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+</TABLE>
+>];
+"historial" [shape=plain pos="763,-259!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>historial</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="usuario_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>usuario_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="accion">accion</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="modulo">modulo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="registro_tipo">registro_tipo?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="registro_id">registro_id?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="detalles">detalles?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="estado">estado</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">enum(&#x27;Exitoso&#x27;,&#x27;Error&#x27;,&#x27;P...</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="ip_address">ip_address?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+</TABLE>
+>];
+"historial_cambios" [shape=plain pos="763,-590!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>historial_cambios</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="historial_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>historial_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="campo">campo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="valor_anterior">valor_anterior?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="valor_nuevo">valor_nuevo?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+</TABLE>
+>];
+"nna" [shape=plain pos="-403,230!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>nna</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="documento_identidad"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">UK </FONT>documento_identidad</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="nombres">nombres</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="apellidos">apellidos</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="fecha_nacimiento">fecha_nacimiento</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">date</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="sexo">sexo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">enum(&#x27;Masculino&#x27;,&#x27;Femenino&#x27;)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="lugar_nacimiento">lugar_nacimiento?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="observaciones">observaciones?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+</TABLE>
+>];
+"observaciones_expediente" [shape=plain pos="-173,-619!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>observaciones_expediente</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="expediente_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>expediente_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="usuario_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>usuario_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="texto">texto</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+</TABLE>
+>];
+"plantillas" [shape=plain pos="763,317!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>plantillas</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="nombre">nombre</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="tipo">tipo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="contenido">contenido</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="creado_por"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>creado_por</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="activa">activa</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">tinyint(1)</FONT></TD></TR>
+</TABLE>
+>];
+"representantes" [shape=plain pos="-403,-187!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>representantes</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="cedula"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">UK </FONT>cedula</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="nombres">nombres</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="apellidos">apellidos</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="telefono">telefono?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="direccion">direccion?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="email">email?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="profesion">profesion?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="lugar_trabajo">lugar_trabajo?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+</TABLE>
+>];
+"solicitudes_archivo" [shape=plain pos="259,-353!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>solicitudes_archivo</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="codigo"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">UK </FONT>codigo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="expediente_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>expediente_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="solicitante_id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">FK </FONT>solicitante_id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="solicitante_nombre">solicitante_nombre?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="cargo">cargo?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="caso">caso?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="motivo">motivo?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="fecha_solicitud">fecha_solicitud?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">date</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="fecha_prestamo">fecha_prestamo?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">date</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="fecha_devolucion">fecha_devolucion?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">date</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="ubicacion_archivo">ubicacion_archivo?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="ubicacion_estante">ubicacion_estante?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="ubicacion_nivel">ubicacion_nivel?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="ubicacion_caja">ubicacion_caja?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="documentos_solicitados">documentos_solicitados?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="estatus">estatus</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">enum(&#x27;Pendiente&#x27;,&#x27;En proc...</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="observaciones">observaciones?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">text</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="fecha_entrega">fecha_entrega?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">timestamp</FONT></TD></TR>
+</TABLE>
+>];
+"users" [shape=plain pos="475,0!" label=<
+<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#E8F0FB">
+<TR><TD BGCOLOR="#1F3A5F" COLSPAN="2"><FONT COLOR="white"><B>usuarios</B></FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="id"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">PK </FONT>id</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">bigint(20) unsigned</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="nombre">nombre</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="nombre_usuario"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">UK </FONT>nombre_usuario</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="rol">rol</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="nombre_visible">nombre_visible?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="correo"><FONT FACE="Helvetica-Bold" COLOR="#8B0000">UK </FONT>correo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="contrasena">contrasena</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="pin">pin?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="pin_configurado">pin_configurado</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">tinyint(1)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="telefono">telefono?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="cargo">cargo?</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">varchar(255)</FONT></TD></TR>
+<TR><TD ALIGN="LEFT" PORT="activo">activo</TD><TD ALIGN="LEFT"><FONT POINT-SIZE="9" COLOR="#444444">tinyint(1)</FONT></TD></TR>
+</TABLE>
+>];
+  "bitacoras":"expediente_id" -> "expedientes":"id";
+  "bitacoras":"usuario_id" -> "users":"id";
+  "casos":"asignado_a" -> "users":"id";
+  "casos":"expediente_id" -> "expedientes":"id";
+  "casos":"asignado_por" -> "users":"id";
+  "documentos":"expediente_id" -> "expedientes":"id";
+  "documentos":"creado_por" -> "users":"id";
+  "expedientes":"nna_id" -> "nna":"id";
+  "expedientes":"representante_id" -> "representantes":"id";
+  "expedientes":"registrado_por" -> "users":"id";
+  "historial":"usuario_id" -> "users":"id";
+  "historial_cambios":"historial_id" -> "historial":"id";
+  "observaciones_expediente":"usuario_id" -> "users":"id";
+  "observaciones_expediente":"expediente_id" -> "expedientes":"id";
+  "plantillas":"creado_por" -> "users":"id";
+  "solicitudes_archivo":"solicitante_id" -> "users":"id";
+  "solicitudes_archivo":"expediente_id" -> "expedientes":"id";
+}

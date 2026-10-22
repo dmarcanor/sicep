@@ -1,0 +1,1202 @@
+/*M!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19-11.8.8-MariaDB, for debian-linux-gnu (x86_64)
+--
+-- Host: localhost    Database: sicep
+-- ------------------------------------------------------
+-- Server version	11.8.8-MariaDB-ubu2404
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*M!100616 SET @OLD_NOTE_VERBOSITY=@@NOTE_VERBOSITY, NOTE_VERBOSITY=0 */;
+
+--
+-- Table structure for table `bitacoras`
+--
+
+DROP TABLE IF EXISTS `bitacoras`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `bitacoras` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `expediente_id` bigint(20) unsigned NOT NULL,
+  `usuario_id` bigint(20) unsigned NOT NULL,
+  `fecha` date NOT NULL,
+  `nota` text NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `bitacoras_usuario_id_foreign` (`usuario_id`),
+  KEY `bitacoras_expediente_id_fecha_index` (`expediente_id`,`fecha`),
+  CONSTRAINT `bitacoras_expediente_id_foreign` FOREIGN KEY (`expediente_id`) REFERENCES `expedientes` (`id`),
+  CONSTRAINT `bitacoras_usuario_id_foreign` FOREIGN KEY (`usuario_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `bitacoras`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `bitacoras` WRITE;
+/*!40000 ALTER TABLE `bitacoras` DISABLE KEYS */;
+/*!40000 ALTER TABLE `bitacoras` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `cache`
+--
+
+DROP TABLE IF EXISTS `cache`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cache` (
+  `key` varchar(255) NOT NULL,
+  `value` mediumtext NOT NULL,
+  `expiration` bigint(20) NOT NULL,
+  PRIMARY KEY (`key`),
+  KEY `cache_expiration_index` (`expiration`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `cache`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `cache` WRITE;
+/*!40000 ALTER TABLE `cache` DISABLE KEYS */;
+INSERT INTO `cache` VALUES
+('sicep-nna-cache-login:admin|149.22.80.112','i:1;',1792351077),
+('sicep-nna-cache-login:admin|149.22.80.112:timer','i:1792351077;',1792351077),
+('sicep-nna-cache-login:admin|186.165.99.22','i:1;',1792505274),
+('sicep-nna-cache-login:admin|186.165.99.22:timer','i:1792505274;',1792505274);
+/*!40000 ALTER TABLE `cache` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `cache_locks`
+--
+
+DROP TABLE IF EXISTS `cache_locks`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cache_locks` (
+  `key` varchar(255) NOT NULL,
+  `owner` varchar(255) NOT NULL,
+  `expiration` bigint(20) NOT NULL,
+  PRIMARY KEY (`key`),
+  KEY `cache_locks_expiration_index` (`expiration`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `cache_locks`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `cache_locks` WRITE;
+/*!40000 ALTER TABLE `cache_locks` DISABLE KEYS */;
+/*!40000 ALTER TABLE `cache_locks` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `casos`
+--
+
+DROP TABLE IF EXISTS `casos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `casos` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `codigo` varchar(255) NOT NULL,
+  `expediente_id` bigint(20) unsigned NOT NULL,
+  `asignado_a` bigint(20) unsigned NOT NULL,
+  `asignado_por` bigint(20) unsigned NOT NULL,
+  `tipo_asignacion` enum('Rotativa','Manual') NOT NULL DEFAULT 'Rotativa',
+  `motivo` text DEFAULT NULL,
+  `estatus` enum('Pendiente','En proceso','Resuelto','Cerrado') NOT NULL DEFAULT 'Pendiente',
+  `observaciones` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `casos_codigo_unique` (`codigo`),
+  KEY `casos_expediente_id_foreign` (`expediente_id`),
+  KEY `casos_asignado_a_foreign` (`asignado_a`),
+  KEY `casos_asignado_por_foreign` (`asignado_por`),
+  CONSTRAINT `casos_asignado_a_foreign` FOREIGN KEY (`asignado_a`) REFERENCES `users` (`id`),
+  CONSTRAINT `casos_asignado_por_foreign` FOREIGN KEY (`asignado_por`) REFERENCES `users` (`id`),
+  CONSTRAINT `casos_expediente_id_foreign` FOREIGN KEY (`expediente_id`) REFERENCES `expedientes` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `casos`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `casos` WRITE;
+/*!40000 ALTER TABLE `casos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `casos` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `configuraciones`
+--
+
+DROP TABLE IF EXISTS `configuraciones`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `configuraciones` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `clave` varchar(255) NOT NULL,
+  `valor` text DEFAULT NULL,
+  `tipo` varchar(255) NOT NULL DEFAULT 'texto',
+  `categoria` varchar(255) NOT NULL DEFAULT 'general',
+  `descripcion` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `configuraciones_clave_unique` (`clave`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `configuraciones`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `configuraciones` WRITE;
+/*!40000 ALTER TABLE `configuraciones` DISABLE KEYS */;
+INSERT INTO `configuraciones` VALUES
+(1,'permisos_supervisor','[\"principal\",\"urd\",\"nna\",\"representantes\",\"expedientes\",\"solicitudArchivos\",\"asignacionCasos\",\"reportes\",\"historial\"]','json','permisos','Módulos visibles para el rol supervisor','2026-08-14 02:45:49','2026-08-14 02:45:49'),
+(2,'permisos_consejero','[\"principal\",\"urd\",\"nna\",\"representantes\",\"expedientes\",\"solicitudArchivos\"]','json','permisos','Módulos visibles para el rol consejero','2026-08-14 02:45:49','2026-08-14 02:45:49'),
+(3,'nombre_institucion','Consejo de Protección de Niños, Niñas y Adolescentes','texto','general','Nombre oficial de la institución','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(4,'nombre_corto','CPNNA','texto','general','Nombre corto o acrónimo','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(5,'municipio','Benítez','texto','general','Municipio donde opera','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(6,'estado','Sucre','texto','general','Estado donde opera','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(7,'membrete_titulo','REPÚBLICA BOLIVARIANA DE VENEZUELA','texto','membrete','Título del membrete','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(8,'membrete_subtitulo','CONSEJO DE PROTECCIÓN DE NIÑOS, NIÑAS Y ADOLESCENTES','texto','membrete','Subtítulo del membrete','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(9,'membrete_tercero','MUNICIPIO BENÍTEZ - ESTADO SUCRE','texto','membrete','Tercera línea del membrete','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(10,'direccion_institucion','El Pilar, Municipio Benítez, Estado Sucre','texto','contacto','Dirección física de la institución','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(11,'telefono_institucion','(0244) 000-0000','texto','contacto','Teléfono de contacto','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(12,'email_institucion','contacto@cpnna.gob.ve','texto','contacto','Correo electrónico institucional','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(13,'dias_alerta_amarillo','21','numero','sistema','Días para marcar el expediente en amarillo (por vencer)','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(14,'dias_alerta_rojo','25','numero','sistema','Días para marcar el expediente en rojo (lapso vencido)','2026-08-14 02:45:51','2026-08-14 02:45:51');
+/*!40000 ALTER TABLE `configuraciones` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `documentos`
+--
+
+DROP TABLE IF EXISTS `documentos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `documentos` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `expediente_id` bigint(20) unsigned DEFAULT NULL,
+  `creado_por` bigint(20) unsigned NOT NULL,
+  `plantilla` varchar(255) NOT NULL,
+  `titulo` varchar(255) NOT NULL,
+  `datos` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`datos`)),
+  `estado` enum('Borrador','Emitido') NOT NULL DEFAULT 'Borrador',
+  `emitido_en` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `documentos_creado_por_foreign` (`creado_por`),
+  KEY `documentos_expediente_id_estado_index` (`expediente_id`,`estado`),
+  CONSTRAINT `documentos_creado_por_foreign` FOREIGN KEY (`creado_por`) REFERENCES `users` (`id`),
+  CONSTRAINT `documentos_expediente_id_foreign` FOREIGN KEY (`expediente_id`) REFERENCES `expedientes` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `documentos`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `documentos` WRITE;
+/*!40000 ALTER TABLE `documentos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `documentos` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `expedientes`
+--
+
+DROP TABLE IF EXISTS `expedientes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `expedientes` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `nna_id` bigint(20) unsigned NOT NULL,
+  `representante_id` bigint(20) unsigned NOT NULL,
+  `codigo` varchar(255) NOT NULL,
+  `fecha` date NOT NULL,
+  `hora_registro` time DEFAULT NULL,
+  `sector` varchar(255) NOT NULL,
+  `estatus` enum('Registrado','En revisión','Aprobado','Observado','Cerrado') NOT NULL DEFAULT 'Registrado',
+  `estatus_fisico` enum('Pendiente','En Despacho','En Archivo Central') NOT NULL DEFAULT 'Pendiente',
+  `cerrado_en` timestamp NULL DEFAULT NULL,
+  `prioridad` enum('Alta','Media','Baja') NOT NULL DEFAULT 'Media',
+  `tipificacion` enum('Maltrato Físico','Abuso Sexual','Negligencia','Acoso Escolar','Trabajo Infantil','Violencia Psicológica','Abandono','Explotación','Otro') DEFAULT NULL,
+  `causa` text DEFAULT NULL,
+  `observaciones` text DEFAULT NULL,
+  `resumen_pdf_ruta` varchar(255) DEFAULT NULL,
+  `resumen_pdf_nombre` varchar(255) DEFAULT NULL,
+  `registrado_por` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `expedientes_codigo_unique` (`codigo`),
+  KEY `expedientes_registrado_por_foreign` (`registrado_por`),
+  KEY `expedientes_nna_id_foreign` (`nna_id`),
+  KEY `expedientes_representante_id_foreign` (`representante_id`),
+  CONSTRAINT `expedientes_nna_id_foreign` FOREIGN KEY (`nna_id`) REFERENCES `nna` (`id`),
+  CONSTRAINT `expedientes_registrado_por_foreign` FOREIGN KEY (`registrado_por`) REFERENCES `users` (`id`),
+  CONSTRAINT `expedientes_representante_id_foreign` FOREIGN KEY (`representante_id`) REFERENCES `representantes` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `expedientes`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `expedientes` WRITE;
+/*!40000 ALTER TABLE `expedientes` DISABLE KEYS */;
+INSERT INTO `expedientes` VALUES
+(1,1,1,'SICEP-URD-000128','2026-06-06',NULL,'Centro','Registrado','Pendiente',NULL,'Alta',NULL,NULL,NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(2,2,2,'SICEP-URD-000127','2026-06-05',NULL,'Barrio Bolívar','En revisión','Pendiente',NULL,'Media',NULL,NULL,NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(3,3,3,'SICEP-URD-000126','2026-06-05',NULL,'Guariquén','Aprobado','Pendiente',NULL,'Baja',NULL,NULL,NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(4,4,4,'SICEP-URD-000125','2026-06-04',NULL,'El Muerto','Observado','Pendiente',NULL,'Alta',NULL,NULL,NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(5,5,5,'SICEP-URD-000124','2026-06-04',NULL,'Centro','Registrado','Pendiente',NULL,'Media',NULL,NULL,NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(6,6,6,'SICEP-URD-000129','2026-08-08',NULL,'El Pilar','Registrado','Pendiente',NULL,'Alta','Maltrato Físico','Denuncia de vecinos por castigos físicos reiterados.',NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(7,7,7,'SICEP-URD-000130','2026-08-06',NULL,'Guariquén','Registrado','Pendiente',NULL,'Media','Negligencia','Inasistencia escolar prolongada sin justificación.',NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(8,8,8,'SICEP-URD-000131','2026-08-03',NULL,'Aragua de Barcelona','En revisión','Pendiente',NULL,'Alta','Trabajo Infantil','Adolescente laborando en jornada nocturna.',NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(9,9,9,'SICEP-URD-000132','2026-07-28',NULL,'El Pilar','En revisión','Pendiente',NULL,'Media','Violencia Psicológica','Remisión del plantel por cambios conductuales.',NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(10,10,10,'SICEP-URD-000133','2026-07-21',NULL,'Barrio Bolívar','Observado','Pendiente',NULL,'Media','Acoso Escolar','Hostigamiento reiterado por compañeros de aula.',NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(11,11,11,'SICEP-URD-000134','2026-07-20',NULL,'El Muerto','En revisión','Pendiente',NULL,'Baja','Negligencia','Falta de control médico y de vacunación.',NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(12,12,12,'SICEP-URD-000135','2026-07-10',NULL,'Centro','Aprobado','Pendiente',NULL,'Alta','Abandono','Permanencia del niño con terceros sin autorización.',NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(13,13,13,'SICEP-URD-000136','2026-07-02',NULL,'Guariquén','Observado','Pendiente',NULL,'Alta','Otro','Solicitud de medida de protección por riesgo del entorno.',NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(14,14,14,'SICEP-URD-000137','2026-06-24',NULL,'El Pilar','Cerrado','Pendiente',NULL,'Baja','Negligencia','Caso conciliado entre las partes.',NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(15,15,15,'SICEP-URD-000138','2026-06-18',NULL,'Barrio Bolívar','Aprobado','Pendiente',NULL,'Media','Violencia Psicológica','Exposición a conflictos familiares reiterados.',NULL,NULL,NULL,1,'2026-08-14 02:45:51','2026-08-14 03:26:36'),
+(16,5,12,'SICEP-URD-000139','2026-10-05','10:58:00','El centro','Registrado','Pendiente',NULL,'Media','Negligencia',NULL,NULL,NULL,NULL,1,'2026-10-18 16:59:14','2026-10-18 16:59:14'),
+(17,4,13,'SICEP-URD-000140','2026-09-27','13:43:00','El muco','Registrado','Pendiente',NULL,'Media','Explotación',NULL,NULL,NULL,NULL,1,'2026-10-18 17:00:22','2026-10-18 17:00:22'),
+(18,14,10,'SICEP-URD-000141','2026-09-26','11:58:00','Guayacan','Registrado','Pendiente',NULL,'Media','Abuso Sexual',NULL,NULL,NULL,NULL,1,'2026-10-18 17:01:18','2026-10-18 17:01:18'),
+(19,15,12,'SICEP-URD-000142','2026-09-22','13:03:00','Canchunchu','Registrado','Pendiente',NULL,'Media','Abandono',NULL,NULL,NULL,NULL,1,'2026-10-18 17:03:29','2026-10-18 17:03:29'),
+(20,6,17,'SICEP-URD-000143','2026-10-20','14:34:41','centro multiple','En revisión','Pendiente',NULL,'Media','Maltrato Físico','golpes constantes',NULL,NULL,NULL,1,'2026-10-20 14:34:41','2026-10-20 14:35:54');
+/*!40000 ALTER TABLE `expedientes` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `failed_jobs`
+--
+
+DROP TABLE IF EXISTS `failed_jobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `failed_jobs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) NOT NULL,
+  `connection` varchar(255) NOT NULL,
+  `queue` varchar(255) NOT NULL,
+  `payload` longtext NOT NULL,
+  `exception` longtext NOT NULL,
+  `failed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`),
+  KEY `failed_jobs_connection_queue_failed_at_index` (`connection`,`queue`,`failed_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `failed_jobs`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `failed_jobs` WRITE;
+/*!40000 ALTER TABLE `failed_jobs` DISABLE KEYS */;
+/*!40000 ALTER TABLE `failed_jobs` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `historial`
+--
+
+DROP TABLE IF EXISTS `historial`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `historial` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `usuario_id` bigint(20) unsigned NOT NULL,
+  `accion` varchar(255) NOT NULL,
+  `modulo` varchar(255) NOT NULL,
+  `registro_tipo` varchar(255) DEFAULT NULL,
+  `registro_id` bigint(20) unsigned DEFAULT NULL,
+  `detalles` text DEFAULT NULL,
+  `estado` enum('Exitoso','Error','Pendiente') NOT NULL DEFAULT 'Exitoso',
+  `ip_address` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `historial_usuario_id_foreign` (`usuario_id`),
+  KEY `historial_created_at_index` (`created_at`),
+  KEY `historial_registro_tipo_registro_id_index` (`registro_tipo`,`registro_id`),
+  CONSTRAINT `historial_usuario_id_foreign` FOREIGN KEY (`usuario_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=78 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `historial`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `historial` WRITE;
+/*!40000 ALTER TABLE `historial` DISABLE KEYS */;
+INSERT INTO `historial` VALUES
+(1,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','159.65.235.69','2026-08-14 03:25:04','2026-08-14 03:25:04'),
+(2,1,'Carga de resumen PDF','expedientes','Expediente',15,'Resumen \'abril.pdf\' cargado en el expediente SICEP-URD-000138','Exitoso','159.65.235.69','2026-08-14 03:26:11','2026-08-14 03:26:11'),
+(3,1,'Retiro de resumen PDF','expedientes','Expediente',15,'Resumen \'abril.pdf\' retirado del expediente SICEP-URD-000138','Exitoso','159.65.235.69','2026-08-14 03:26:36','2026-08-14 03:26:36'),
+(4,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','159.65.235.69','2026-08-14 15:14:32','2026-08-14 15:14:32'),
+(5,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','159.65.235.69','2026-08-14 15:21:45','2026-08-14 15:21:45'),
+(6,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.61','2026-08-14 15:28:13','2026-08-14 15:28:13'),
+(7,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','38.190.125.23','2026-08-14 15:29:42','2026-08-14 15:29:42'),
+(8,1,'Verificación de PIN fallida','auth',NULL,NULL,NULL,'Error','38.190.125.23','2026-08-14 15:34:37','2026-08-14 15:34:37'),
+(9,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','159.65.235.69','2026-08-15 18:36:43','2026-08-15 18:36:43'),
+(10,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','159.65.235.69','2026-08-15 18:36:56','2026-08-15 18:36:56'),
+(11,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','159.65.235.69','2026-08-15 18:37:04','2026-08-15 18:37:04'),
+(12,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','159.65.235.69','2026-08-16 20:35:07','2026-08-16 20:35:07'),
+(13,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','159.65.235.69','2026-08-16 20:42:47','2026-08-16 20:42:47'),
+(14,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-08-16 21:47:20','2026-08-16 21:47:20'),
+(15,1,'Verificación de PIN fallida','auth',NULL,NULL,NULL,'Error','190.97.245.46','2026-08-16 22:34:40','2026-08-16 22:34:40'),
+(16,1,'Verificación de PIN fallida','auth',NULL,NULL,NULL,'Error','190.97.245.46','2026-08-16 22:35:00','2026-08-16 22:35:00'),
+(17,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','38.190.125.23','2026-08-17 00:56:52','2026-08-17 00:56:52'),
+(18,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','159.65.235.69','2026-08-17 12:17:11','2026-08-17 12:17:11'),
+(19,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','159.65.235.69','2026-08-23 20:08:53','2026-08-23 20:08:53'),
+(20,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','38.190.125.23','2026-08-23 20:21:14','2026-08-23 20:21:14'),
+(21,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.57','2026-08-29 19:32:53','2026-08-29 19:32:53'),
+(22,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.59','2026-10-08 22:37:34','2026-10-08 22:37:34'),
+(23,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','146.70.202.35','2026-10-09 18:35:33','2026-10-09 18:35:33'),
+(24,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.51','2026-10-11 17:31:17','2026-10-11 17:31:17'),
+(25,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','186.165.54.137','2026-10-13 14:35:44','2026-10-13 14:35:44'),
+(26,1,'Registro de NNA','nna','Nna',16,'NNA teki lope registrado','Exitoso','186.165.54.137','2026-10-13 14:45:03','2026-10-13 14:45:03'),
+(27,1,'Registro de representante','representantes','Representante',16,'Representante marines campos registrado','Exitoso','186.165.54.137','2026-10-13 14:48:29','2026-10-13 14:48:29'),
+(28,1,'Registro de NNA','nna','Nna',17,'NNA teki lopez registrado','Exitoso','186.165.54.137','2026-10-13 14:48:42','2026-10-13 14:48:42'),
+(29,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','186.167.179.149','2026-10-17 01:40:40','2026-10-17 01:40:40'),
+(30,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.49','2026-10-17 23:49:10','2026-10-17 23:49:10'),
+(31,1,'Actualización de usuario','usuarios','User',3,'Usuario \'consejero\' actualizado','Exitoso','190.97.245.46','2026-10-18 16:13:27','2026-10-18 16:13:27'),
+(32,1,'Actualización de usuario','usuarios','User',2,'Usuario \'supervisor\' actualizado','Exitoso','190.97.245.46','2026-10-18 16:13:51','2026-10-18 16:13:51'),
+(33,1,'Actualización de usuario','usuarios','User',1,'Usuario \'admin\' actualizado','Exitoso','190.97.245.46','2026-10-18 16:14:13','2026-10-18 16:14:13'),
+(34,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-10-18 16:14:17','2026-10-18 16:14:17'),
+(35,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','190.97.245.46','2026-10-18 16:14:25','2026-10-18 16:14:25'),
+(36,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-10-18 16:14:28','2026-10-18 16:14:28'),
+(37,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-10-18 16:14:30','2026-10-18 16:14:30'),
+(38,3,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','190.97.245.46','2026-10-18 16:14:37','2026-10-18 16:14:37'),
+(39,3,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-10-18 16:14:39','2026-10-18 16:14:39'),
+(40,3,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-10-18 16:14:41','2026-10-18 16:14:41'),
+(41,2,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','190.97.245.46','2026-10-18 16:14:48','2026-10-18 16:14:48'),
+(42,2,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-10-18 16:14:50','2026-10-18 16:14:50'),
+(43,2,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-10-18 16:34:58','2026-10-18 16:34:58'),
+(44,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','190.97.245.46','2026-10-18 16:35:05','2026-10-18 16:35:05'),
+(45,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','190.97.245.46','2026-10-18 16:35:11','2026-10-18 16:35:11'),
+(46,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-10-18 16:35:18','2026-10-18 16:35:18'),
+(47,1,'Creación de expediente','expedientes','Expediente',16,'Expediente SICEP-URD-000139 creado','Exitoso','190.97.245.46','2026-10-18 16:59:14','2026-10-18 16:59:14'),
+(48,1,'Creación de expediente','expedientes','Expediente',17,'Expediente SICEP-URD-000140 creado','Exitoso','190.97.245.46','2026-10-18 17:00:22','2026-10-18 17:00:22'),
+(49,1,'Creación de expediente','expedientes','Expediente',18,'Expediente SICEP-URD-000141 creado','Exitoso','190.97.245.46','2026-10-18 17:01:18','2026-10-18 17:01:18'),
+(50,1,'Creación de expediente','expedientes','Expediente',19,'Expediente SICEP-URD-000142 creado','Exitoso','190.97.245.46','2026-10-18 17:03:29','2026-10-18 17:03:29'),
+(51,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','149.22.80.112','2026-10-18 18:48:32','2026-10-18 18:48:32'),
+(52,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','149.22.80.112','2026-10-18 18:48:40','2026-10-18 18:48:40'),
+(53,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','149.22.80.112','2026-10-18 18:49:00','2026-10-18 18:49:00'),
+(54,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','149.22.80.112','2026-10-18 18:59:15','2026-10-18 18:59:15'),
+(55,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','149.22.80.112','2026-10-18 18:59:22','2026-10-18 18:59:22'),
+(56,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','149.22.80.112','2026-10-18 18:59:27','2026-10-18 18:59:27'),
+(57,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','149.22.80.112','2026-10-18 18:59:44','2026-10-18 18:59:44'),
+(58,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','149.22.80.112','2026-10-18 19:16:57','2026-10-18 19:16:57'),
+(59,1,'Registro de NNA','nna','Nna',18,'NNA celiacr cruz registrado','Exitoso','38.190.125.23','2026-10-18 20:16:47','2026-10-18 20:16:47'),
+(60,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-10-18 20:19:23','2026-10-18 20:19:23'),
+(61,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','190.97.245.46','2026-10-18 20:19:31','2026-10-18 20:19:31'),
+(62,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','138.199.50.129','2026-10-19 09:44:36','2026-10-19 09:44:36'),
+(63,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','38.190.125.23','2026-10-19 16:55:51','2026-10-19 16:55:51'),
+(64,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','190.89.29.65','2026-10-20 01:48:22','2026-10-20 01:48:22'),
+(65,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','186.165.99.22','2026-10-20 14:05:45','2026-10-20 14:05:45'),
+(66,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','186.165.99.22','2026-10-20 14:05:56','2026-10-20 14:05:56'),
+(67,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','186.165.99.22','2026-10-20 14:06:30','2026-10-20 14:06:30'),
+(68,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','186.165.99.22','2026-10-20 14:06:54','2026-10-20 14:06:54'),
+(69,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','186.165.64.126','2026-10-20 14:08:04','2026-10-20 14:08:04'),
+(70,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','186.165.64.126','2026-10-20 14:08:37','2026-10-20 14:08:37'),
+(71,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','186.165.64.126','2026-10-20 14:09:53','2026-10-20 14:09:53'),
+(72,1,'Intento de inicio de sesión fallido','auth',NULL,NULL,NULL,'Error','186.165.64.126','2026-10-20 14:12:47','2026-10-20 14:12:47'),
+(73,1,'Inicio de sesión','auth',NULL,NULL,NULL,'Exitoso','186.165.64.126','2026-10-20 14:17:18','2026-10-20 14:17:18'),
+(74,1,'Registro de representante','representantes','Representante',17,'Representante juan prrez registrado','Exitoso','186.165.64.126','2026-10-20 14:31:35','2026-10-20 14:31:35'),
+(75,1,'Creación de expediente','expedientes','Expediente',20,'Expediente SICEP-URD-000143 creado','Exitoso','186.165.64.126','2026-10-20 14:34:41','2026-10-20 14:34:41'),
+(76,1,'Actualización de expediente','expedientes','Expediente',20,'Expediente SICEP-URD-000143 actualizado: estatus Registrado → En revisión','Exitoso','186.165.64.126','2026-10-20 14:35:54','2026-10-20 14:35:54'),
+(77,1,'Cierre de sesión','auth',NULL,NULL,NULL,'Exitoso','186.165.64.126','2026-10-20 14:48:05','2026-10-20 14:48:05');
+/*!40000 ALTER TABLE `historial` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `historial_cambios`
+--
+
+DROP TABLE IF EXISTS `historial_cambios`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `historial_cambios` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `historial_id` bigint(20) unsigned NOT NULL,
+  `campo` varchar(255) NOT NULL,
+  `valor_anterior` text DEFAULT NULL,
+  `valor_nuevo` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `historial_cambios_historial_id_foreign` (`historial_id`),
+  CONSTRAINT `historial_cambios_historial_id_foreign` FOREIGN KEY (`historial_id`) REFERENCES `historial` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=70 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `historial_cambios`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `historial_cambios` WRITE;
+/*!40000 ALTER TABLE `historial_cambios` DISABLE KEYS */;
+INSERT INTO `historial_cambios` VALUES
+(1,31,'phone','0000000002','04121234567','2026-10-18 16:13:27'),
+(2,31,'password',NULL,'cambiada','2026-10-18 16:13:27'),
+(3,32,'phone','0000000001','04241234567','2026-10-18 16:13:51'),
+(4,32,'password',NULL,'cambiada','2026-10-18 16:13:51'),
+(5,33,'phone','0000000000','04161234567','2026-10-18 16:14:13'),
+(6,33,'password',NULL,'cambiada','2026-10-18 16:14:13'),
+(7,47,'nna_id',NULL,'5','2026-10-18 16:59:14'),
+(8,47,'representante_id',NULL,'12','2026-10-18 16:59:14'),
+(9,47,'sector',NULL,'El centro','2026-10-18 16:59:14'),
+(10,47,'fecha',NULL,'2026-10-05','2026-10-18 16:59:14'),
+(11,47,'hora_registro',NULL,'10:58','2026-10-18 16:59:14'),
+(12,47,'prioridad',NULL,'Media','2026-10-18 16:59:14'),
+(13,47,'tipificacion',NULL,'Negligencia','2026-10-18 16:59:14'),
+(14,47,'registrado_por',NULL,'1','2026-10-18 16:59:14'),
+(15,47,'estatus',NULL,'Registrado','2026-10-18 16:59:14'),
+(16,47,'codigo',NULL,'SICEP-URD-000139','2026-10-18 16:59:14'),
+(17,48,'nna_id',NULL,'4','2026-10-18 17:00:22'),
+(18,48,'representante_id',NULL,'13','2026-10-18 17:00:22'),
+(19,48,'sector',NULL,'El muco','2026-10-18 17:00:22'),
+(20,48,'fecha',NULL,'2026-09-27','2026-10-18 17:00:22'),
+(21,48,'hora_registro',NULL,'13:43','2026-10-18 17:00:22'),
+(22,48,'prioridad',NULL,'Media','2026-10-18 17:00:22'),
+(23,48,'tipificacion',NULL,'Explotación','2026-10-18 17:00:22'),
+(24,48,'registrado_por',NULL,'1','2026-10-18 17:00:22'),
+(25,48,'estatus',NULL,'Registrado','2026-10-18 17:00:22'),
+(26,48,'codigo',NULL,'SICEP-URD-000140','2026-10-18 17:00:22'),
+(27,49,'nna_id',NULL,'14','2026-10-18 17:01:18'),
+(28,49,'representante_id',NULL,'10','2026-10-18 17:01:18'),
+(29,49,'sector',NULL,'Guayacan','2026-10-18 17:01:18'),
+(30,49,'fecha',NULL,'2026-09-26','2026-10-18 17:01:18'),
+(31,49,'hora_registro',NULL,'11:58','2026-10-18 17:01:18'),
+(32,49,'prioridad',NULL,'Media','2026-10-18 17:01:18'),
+(33,49,'tipificacion',NULL,'Abuso Sexual','2026-10-18 17:01:18'),
+(34,49,'registrado_por',NULL,'1','2026-10-18 17:01:18'),
+(35,49,'estatus',NULL,'Registrado','2026-10-18 17:01:18'),
+(36,49,'codigo',NULL,'SICEP-URD-000141','2026-10-18 17:01:18'),
+(37,50,'nna_id',NULL,'15','2026-10-18 17:03:29'),
+(38,50,'representante_id',NULL,'12','2026-10-18 17:03:29'),
+(39,50,'sector',NULL,'Canchunchu','2026-10-18 17:03:29'),
+(40,50,'fecha',NULL,'2026-09-22','2026-10-18 17:03:29'),
+(41,50,'hora_registro',NULL,'13:03','2026-10-18 17:03:29'),
+(42,50,'prioridad',NULL,'Media','2026-10-18 17:03:29'),
+(43,50,'tipificacion',NULL,'Abandono','2026-10-18 17:03:29'),
+(44,50,'registrado_por',NULL,'1','2026-10-18 17:03:29'),
+(45,50,'estatus',NULL,'Registrado','2026-10-18 17:03:29'),
+(46,50,'codigo',NULL,'SICEP-URD-000142','2026-10-18 17:03:29'),
+(47,59,'documento_identidad',NULL,'V-13455664','2026-10-18 20:16:47'),
+(48,59,'nombres',NULL,'celiacr','2026-10-18 20:16:47'),
+(49,59,'apellidos',NULL,'cruz','2026-10-18 20:16:47'),
+(50,59,'fecha_nacimiento',NULL,'2026-10-18','2026-10-18 20:16:47'),
+(51,59,'sexo',NULL,'Masculino','2026-10-18 20:16:47'),
+(52,59,'lugar_nacimiento',NULL,'carupano','2026-10-18 20:16:47'),
+(53,74,'cedula',NULL,'V-12345688','2026-10-20 14:31:35'),
+(54,74,'nombres',NULL,'juan','2026-10-20 14:31:35'),
+(55,74,'apellidos',NULL,'prrez','2026-10-20 14:31:35'),
+(56,74,'telefono',NULL,'04141234567','2026-10-20 14:31:35'),
+(57,74,'direccion',NULL,'test address','2026-10-20 14:31:35'),
+(58,75,'nna_id',NULL,'6','2026-10-20 14:34:41'),
+(59,75,'representante_id',NULL,'17','2026-10-20 14:34:41'),
+(60,75,'sector',NULL,'centro multiple','2026-10-20 14:34:41'),
+(61,75,'fecha',NULL,'2026-10-20','2026-10-20 14:34:41'),
+(62,75,'prioridad',NULL,'Media','2026-10-20 14:34:41'),
+(63,75,'tipificacion',NULL,'Maltrato Físico','2026-10-20 14:34:41'),
+(64,75,'causa',NULL,'golpes constantes','2026-10-20 14:34:41'),
+(65,75,'hora_registro',NULL,'14:34:41','2026-10-20 14:34:41'),
+(66,75,'registrado_por',NULL,'1','2026-10-20 14:34:41'),
+(67,75,'estatus',NULL,'Registrado','2026-10-20 14:34:41'),
+(68,75,'codigo',NULL,'SICEP-URD-000143','2026-10-20 14:34:41'),
+(69,76,'estatus','Registrado','En revisión','2026-10-20 14:35:54');
+/*!40000 ALTER TABLE `historial_cambios` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `job_batches`
+--
+
+DROP TABLE IF EXISTS `job_batches`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `job_batches` (
+  `id` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `total_jobs` int(11) NOT NULL,
+  `pending_jobs` int(11) NOT NULL,
+  `failed_jobs` int(11) NOT NULL,
+  `failed_job_ids` longtext NOT NULL,
+  `options` mediumtext DEFAULT NULL,
+  `cancelled_at` int(11) DEFAULT NULL,
+  `created_at` int(11) NOT NULL,
+  `finished_at` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `job_batches`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `job_batches` WRITE;
+/*!40000 ALTER TABLE `job_batches` DISABLE KEYS */;
+/*!40000 ALTER TABLE `job_batches` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `jobs`
+--
+
+DROP TABLE IF EXISTS `jobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `jobs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `queue` varchar(255) NOT NULL,
+  `payload` longtext NOT NULL,
+  `attempts` smallint(5) unsigned NOT NULL,
+  `reserved_at` int(10) unsigned DEFAULT NULL,
+  `available_at` int(10) unsigned NOT NULL,
+  `created_at` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `jobs_queue_index` (`queue`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `jobs`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `jobs` WRITE;
+/*!40000 ALTER TABLE `jobs` DISABLE KEYS */;
+/*!40000 ALTER TABLE `jobs` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `migrations`
+--
+
+DROP TABLE IF EXISTS `migrations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `migrations` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `migration` varchar(255) NOT NULL,
+  `batch` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `migrations`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `migrations` WRITE;
+/*!40000 ALTER TABLE `migrations` DISABLE KEYS */;
+INSERT INTO `migrations` VALUES
+(1,'0001_01_01_000000_create_users_table',1),
+(2,'0001_01_01_000001_create_cache_table',1),
+(3,'0001_01_01_000002_create_jobs_table',1),
+(4,'2026_07_25_172701_create_personal_access_tokens_table',1),
+(5,'2026_07_25_172805_update_users_table_add_role_fields',1),
+(6,'2026_07_25_172810_create_expedientes_table',1),
+(7,'2026_07_25_172811_create_casos_table',1),
+(8,'2026_07_25_172812_create_plantillas_table',1),
+(9,'2026_07_25_172813_create_solicitudes_archivo_table',1),
+(10,'2026_07_25_172814_create_historial_table',1),
+(11,'2026_07_26_175350_create_nna_table',1),
+(12,'2026_07_26_175553_update_expedientes_add_nna_id',1),
+(13,'2026_07_26_175713_add_foreign_key_to_expedientes_nna_id',1),
+(14,'2026_07_26_175959_update_expedientes_add_tipificacion_causa_hora',1),
+(15,'2026_07_26_180232_add_pin_to_users_table',1),
+(16,'2026_07_27_015345_create_configuraciones_table',1),
+(17,'2026_07_27_121850_add_estado_to_historial_table',1),
+(18,'2026_07_27_143342_create_representantes_table',1),
+(19,'2026_07_27_143423_add_representante_id_to_expedientes_table',1),
+(20,'2026_08_02_180000_drop_legacy_name_columns_from_expedientes',1),
+(21,'2026_08_08_120000_convertir_permisos_a_modulos',1),
+(22,'2026_08_08_140000_add_tipo_asignacion_to_casos_table',1),
+(23,'2026_08_08_150000_expand_solicitudes_archivo_table',1),
+(24,'2026_08_08_170000_quitar_permisos_del_administrador',1),
+(25,'2026_08_08_190000_quitar_categorias_de_configuracion',1),
+(26,'2026_08_11_100000_simplificar_umbrales_de_lapso',1),
+(27,'2026_08_11_120000_create_bitacoras_table',1),
+(28,'2026_08_11_140000_quitar_asignado_a_de_expedientes',1),
+(29,'2026_08_11_160000_add_espejo_digital_to_expedientes',1),
+(30,'2026_08_12_100000_add_cerrado_en_to_expedientes',1),
+(31,'2026_08_16_100000_create_documentos_table',2),
+(32,'2026_10_15_100000_create_historial_cambios_table',3),
+(33,'2026_10_15_100100_add_indices_to_historial_table',3),
+(34,'2026_10_15_100200_create_observaciones_expediente_table',3);
+/*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `nna`
+--
+
+DROP TABLE IF EXISTS `nna`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `nna` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `documento_identidad` varchar(255) NOT NULL,
+  `nombres` varchar(255) NOT NULL,
+  `apellidos` varchar(255) NOT NULL,
+  `fecha_nacimiento` date NOT NULL,
+  `sexo` enum('Masculino','Femenino') NOT NULL,
+  `lugar_nacimiento` varchar(255) DEFAULT NULL,
+  `observaciones` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nna_documento_identidad_unique` (`documento_identidad`)
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `nna`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `nna` WRITE;
+/*!40000 ALTER TABLE `nna` DISABLE KEYS */;
+INSERT INTO `nna` VALUES
+(1,'V-31234567','María Fernanda','Pérez','2012-03-14','Femenino','Aragua de Barcelona',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(2,'V-32345678','José Luis','González','2010-07-22','Masculino','Aragua de Barcelona',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(3,'V-33456789','Valeria','Jiménez','2014-11-02','Femenino','Guariquén',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(4,'V-34567890','Samuel','Ortega','2009-01-30','Masculino','El Muerto',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(5,'V-35678901','Daniela','Rojas','2013-05-18','Femenino','Aragua de Barcelona',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(6,'V-36789012','Andrés Eduardo','Salazar Mata','2011-09-08','Masculino','El Pilar',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(7,'V-37890123','Génesis Carolina','Bermúdez Lara','2013-02-25','Femenino','Guariquén',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(8,'V-38901234','Jesús Alberto','Marcano Ruiz','2009-06-17','Masculino','Aragua de Barcelona',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(9,'V-39012345','Anyelis Victoria','Farías Guzmán','2015-12-03','Femenino','El Pilar',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(10,'V-40123456','Luis Fernando','Betancourt Silva','2010-04-11','Masculino','Barrio Bolívar',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(11,'V-41234567','Yorgelis Andreína','Cedeño Patiño','2012-08-29','Femenino','El Muerto',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(12,'V-42345678','Kevin Josué','Quijada Moreno','2016-01-19','Masculino','Centro',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(13,'V-43456789','Scarlet Nazareth','Idrogo Campos','2014-07-06','Femenino','Guariquén',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(14,'V-44567890','Ángel Gabriel','Nieves Carvajal','2017-10-22','Masculino','El Pilar',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(15,'V-45678901','Nathalia Isabel','Zabala Fuentes','2018-03-14','Femenino','Barrio Bolívar',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(16,'V-123654','teki','lope','2000-09-30','Femenino','atacuaro',NULL,'2026-10-13 14:45:03','2026-10-13 14:45:03'),
+(17,'V-31686732','teki','lopez','2000-09-20','Femenino','puerto',NULL,'2026-10-13 14:48:42','2026-10-13 14:48:42'),
+(18,'V-13455664','celiacr','cruz','2026-10-18','Masculino','carupano',NULL,'2026-10-18 20:16:47','2026-10-18 20:16:47');
+/*!40000 ALTER TABLE `nna` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `observaciones_expediente`
+--
+
+DROP TABLE IF EXISTS `observaciones_expediente`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `observaciones_expediente` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `expediente_id` bigint(20) unsigned NOT NULL,
+  `usuario_id` bigint(20) unsigned NOT NULL,
+  `texto` text NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `observaciones_expediente_usuario_id_foreign` (`usuario_id`),
+  KEY `observaciones_expediente_expediente_id_created_at_index` (`expediente_id`,`created_at`),
+  CONSTRAINT `observaciones_expediente_expediente_id_foreign` FOREIGN KEY (`expediente_id`) REFERENCES `expedientes` (`id`),
+  CONSTRAINT `observaciones_expediente_usuario_id_foreign` FOREIGN KEY (`usuario_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `observaciones_expediente`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `observaciones_expediente` WRITE;
+/*!40000 ALTER TABLE `observaciones_expediente` DISABLE KEYS */;
+/*!40000 ALTER TABLE `observaciones_expediente` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `password_reset_tokens`
+--
+
+DROP TABLE IF EXISTS `password_reset_tokens`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `password_reset_tokens` (
+  `email` varchar(255) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `password_reset_tokens`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `password_reset_tokens` WRITE;
+/*!40000 ALTER TABLE `password_reset_tokens` DISABLE KEYS */;
+/*!40000 ALTER TABLE `password_reset_tokens` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `personal_access_tokens`
+--
+
+DROP TABLE IF EXISTS `personal_access_tokens`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `personal_access_tokens` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `tokenable_type` varchar(255) NOT NULL,
+  `tokenable_id` bigint(20) unsigned NOT NULL,
+  `name` text NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `abilities` text DEFAULT NULL,
+  `last_used_at` timestamp NULL DEFAULT NULL,
+  `expires_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `personal_access_tokens_token_unique` (`token`),
+  KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`,`tokenable_id`),
+  KEY `personal_access_tokens_expires_at_index` (`expires_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `personal_access_tokens`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `personal_access_tokens` WRITE;
+/*!40000 ALTER TABLE `personal_access_tokens` DISABLE KEYS */;
+INSERT INTO `personal_access_tokens` VALUES
+(3,'App\\Models\\User',1,'auth-token','077b412742440a700cbe9eed2f56dab5fc7a1af81ebc78cdca936141f8f3ec36','[\"*\"]','2026-10-18 19:11:43',NULL,'2026-08-14 15:28:13','2026-10-18 19:11:43'),
+(7,'App\\Models\\User',1,'auth-token','1632e4d85f3bfe8405a853545a7c083a9fe01a197fcfd22f4205cc9fc0171ede','[\"*\"]','2026-10-19 15:33:06',NULL,'2026-08-16 21:47:20','2026-10-19 15:33:06'),
+(8,'App\\Models\\User',1,'auth-token','68bab1dec85a85714301a7d15a7f47c8763828b966b9128bea59356ed93cdf87','[\"*\"]','2026-09-17 17:02:12',NULL,'2026-08-23 20:08:53','2026-09-17 17:02:12'),
+(9,'App\\Models\\User',1,'auth-token','1e680988eb1ca0ba2b78aee8597ed0df1e76a06f5c8a493ed581e76cf4efe65d','[\"*\"]','2026-08-23 20:38:50',NULL,'2026-08-23 20:21:14','2026-08-23 20:38:50'),
+(12,'App\\Models\\User',1,'auth-token','ac494a336d2c74abd8e3826256e6bf595689c72b6494fe4705604fd15b1d6b43','[\"*\"]','2026-10-17 23:49:41',NULL,'2026-10-11 17:31:17','2026-10-17 23:49:42'),
+(19,'App\\Models\\User',1,'auth-token','a7610be256d0e92fe00e78b2485ffff63a507e5019e948cf32df7ef09cf735cb','[\"*\"]','2026-10-18 17:04:52',NULL,'2026-10-18 16:35:18','2026-10-18 17:04:52'),
+(20,'App\\Models\\User',1,'auth-token','33f43eacaa7157e09a6f54b06bd49dbfe5b15d084a892ccbfe7547e31a8ae10b','[\"*\"]','2026-10-18 20:27:15',NULL,'2026-10-18 20:19:31','2026-10-18 20:27:15'),
+(21,'App\\Models\\User',1,'auth-token','255f3a4144dd7a6effad73663b053189ef137ffd9a63cd1cbb77a34cf89ba0a2','[\"*\"]','2026-10-20 19:56:44',NULL,'2026-10-19 09:44:36','2026-10-20 19:56:44');
+/*!40000 ALTER TABLE `personal_access_tokens` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `plantillas`
+--
+
+DROP TABLE IF EXISTS `plantillas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `plantillas` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(255) NOT NULL,
+  `tipo` varchar(255) NOT NULL,
+  `contenido` text NOT NULL,
+  `creado_por` bigint(20) unsigned NOT NULL,
+  `activa` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `plantillas_creado_por_foreign` (`creado_por`),
+  CONSTRAINT `plantillas_creado_por_foreign` FOREIGN KEY (`creado_por`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `plantillas`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `plantillas` WRITE;
+/*!40000 ALTER TABLE `plantillas` DISABLE KEYS */;
+/*!40000 ALTER TABLE `plantillas` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `representantes`
+--
+
+DROP TABLE IF EXISTS `representantes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `representantes` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `cedula` varchar(255) NOT NULL,
+  `nombres` varchar(255) NOT NULL,
+  `apellidos` varchar(255) NOT NULL,
+  `telefono` varchar(255) DEFAULT NULL,
+  `direccion` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `profesion` varchar(255) DEFAULT NULL,
+  `lugar_trabajo` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `representantes_cedula_unique` (`cedula`)
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `representantes`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `representantes` WRITE;
+/*!40000 ALTER TABLE `representantes` DISABLE KEYS */;
+INSERT INTO `representantes` VALUES
+(1,'V-12345678','Yolanda','Rivas','0414-1234567','Calle Principal, Centro','yolanda.rivas@email.com','Docente','U.E. Benítez','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(2,'V-87654321','Carlos','González','0424-9876543','Av. Bolívar, Barrio Bolívar','carlos.gonzalez@email.com','Ingeniero','Alcaldía de Aragua de Barcelona','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(3,'V-11223344','Ana','Jiménez','0412-5556677','Calle 5, Guariquén','ana.jimenez@email.com','Enfermera','Hospital Central','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(4,'V-55667788','Marta','Ortega','0416-1122334','Sector El Muerto','marta.ortega@email.com','Ama de casa',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(5,'V-99887766','Luis','Rojas','0426-9988776','Calle 10, Centro','luis.rojas@email.com','Comerciante','Autoempleado','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(6,'V-13456789','Rosa Amelia','Salazar','0414-2233445','Calle Sucre, El Pilar','rosa.salazar@email.com','Costurera','Taller propio','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(7,'V-14567890','Pedro Ramón','Bermúdez','0424-3344556','Sector Guariquén, vía principal','pedro.bermudez@email.com','Agricultor','Finca La Esperanza','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(8,'V-15678901','Carmen Josefina','Marcano','0412-4455667','Av. Miranda, Aragua de Barcelona','carmen.marcano@email.com','Maestra','E.B. Simón Rodríguez','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(9,'V-16789012','José Gregorio','Farías','0426-5566778','Calle Bolívar, El Pilar','jose.farias@email.com','Albañil','Autoempleado','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(10,'V-17890123','Maritza Coromoto','Betancourt','0416-6677889','Barrio Bolívar, casa 45','maritza.betancourt@email.com','Ama de casa',NULL,'2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(11,'V-18901234','Douglas Antonio','Cedeño','0414-7788990','Sector El Muerto','douglas.cedeno@email.com','Pescador','Puerto de El Pilar','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(12,'V-19012345','Yubisay del Valle','Quijada','0424-8899001','Calle Comercio, Centro','yubisay.quijada@email.com','Enfermera','Ambulatorio de El Pilar','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(13,'V-20123456','Freddy Rafael','Idrogo','0412-9900112','Guariquén, calle 3','freddy.idrogo@email.com','Chofer','Línea de transporte municipal','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(14,'V-21234567','Neida Margarita','Nieves','0426-1122334','Calle La República, El Pilar','neida.nieves@email.com','Comerciante','Bodega La Fe','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(15,'V-22345678','Wilmer Alexander','Zabala','0416-2233446','Barrio Bolívar, sector alto','wilmer.zabala@email.com','Electricista','Autoempleado','2026-08-14 02:45:51','2026-08-14 02:45:51'),
+(16,'V-3276123','marines','campos','04126576','san martin',NULL,NULL,NULL,'2026-10-13 14:48:29','2026-10-13 14:48:29'),
+(17,'V-12345688','juan','prrez','04141234567','test address',NULL,NULL,NULL,'2026-10-20 14:31:35','2026-10-20 14:31:35');
+/*!40000 ALTER TABLE `representantes` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `sessions`
+--
+
+DROP TABLE IF EXISTS `sessions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sessions` (
+  `id` varchar(255) NOT NULL,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  `payload` longtext NOT NULL,
+  `last_activity` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sessions_user_id_index` (`user_id`),
+  KEY `sessions_last_activity_index` (`last_activity`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `sessions`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `sessions` WRITE;
+/*!40000 ALTER TABLE `sessions` DISABLE KEYS */;
+INSERT INTO `sessions` VALUES
+('0NhQzUfRoOxTtFPJZNrubXgg6Bsvd5zyRME0gVoz',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; de) Opera 9.50','eyJfdG9rZW4iOiJGazQyQVMya3c0ZE5sNjhUN0tXTkZFVnd1RWlVbUVnQ1RHbENvRG1oIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788741413),
+('0qefYIXmiygmgDOFJzyUJp84l81Jsa3cyp23o1vr',NULL,'134.185.94.184','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36','eyJfdG9rZW4iOiJYM05rV1RUUFFnZ0Vob0h3MFZ3bVNFcFVNcFRzM0l5TFdQalR1MXE5IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpLWRvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1789015363),
+('0tDjBs2VqxhcWNlAknYww63uZoasbSVTAFHrVd3V',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; InfoPath.2; MS-RTC S; MS-RTC LM 8; .NET CLR 1.1.4322; .NET4.0C; .NET4.0E)','eyJfdG9rZW4iOiJQU0xrSHNmamVFencxNHBYNXRwcE5QbHBIWGNGeUhrODlIQTRNUklIIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788709685),
+('2PmsMRXbDYxUHRLXpr0h5ML6QtAvjK70dLIDsYU4',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJXV2Z0Z2VlZFZra0VNZlplUGNhaGE0d3hNWUl6M2t2SHZIT2tEeVVBIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1788710998),
+('2tYaOE57iHTpt2qGHiKm7sVHOE8pArWvVBIWOO0I',NULL,'213.209.159.175','Mozilla/5.0 (Macintosh; U; PPC Mac OS X; fr-ch) AppleWebKit/312.1.1 (KHTML, like Gecko) Safari/312','eyJfdG9rZW4iOiJYekE2WUdoRVVrRG1TNFlXaUQyOWZtdzhJbjIySzJGSFpUTGhxYmduIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788636899),
+('4inW0R47hqz4ht3TSLP7zFtfuocClqtAqB9gvXT6',NULL,'185.93.89.167','Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36','eyJfdG9rZW4iOiJVR0w1ajVIYVJwU2FKb2NyckJyTTl2a3Z6aEROS3ZKT2RObEpudEhYIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpLnppcCIsInJvdXRlIjoiZ2VuZXJhdGVkOjo5VVFFWTRxNVhYN3UxTmhmIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1792074010),
+('6UO7qbPG7CSoukkpctKUItNX3TFUJuwCHIKaqEJn',NULL,'134.185.93.91','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36','eyJfdG9rZW4iOiJybkJRVThzbDBCSHZjSEpnVHVoN3oyS0hRZ2tRT1d0cFlpM1FSZHZPIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpLWRvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1789380065),
+('7dqZ4PW5VHOQcJj94OW3oddlwCh5WlZr9h6QWdFm',NULL,'34.175.231.120','Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36','eyJfdG9rZW4iOiI0ckYxaWNOTGVnUGdremxiZklKcEJYaGlhVXYyYkVxbUhrcHN3bkRoIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXMuanNvbiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1788739770),
+('7GLVTWvSgvZh8YPqOb2MEJxX4vwFUROMPbCwLCQ9',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJtYjBsOXhEZzliRzVXNndHWFpYbzBPdUtJNW4ySmU0WUh3eFBuUGhzIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1789244800),
+('7HSK7WaigXD03VMU8q9vBADPKqrY2SZsX4jS6fyR',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30; .NET CLR 3.0.04506.648; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)','eyJfdG9rZW4iOiJJV0hoanhnVWtOdlJxVTBlc25lYU1GV1dybzJFSGRaM3pqZHJZeWhkIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788677292),
+('8Rukx4Q99bz6tdJWmlqWqXF7g8VwK7LmgX1UAKdH',NULL,'213.209.159.175','Mozilla/5.0 (Linux; Android 4.4.2; RCT6773W22 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.84 Safari/537.36','eyJfdG9rZW4iOiJnZ0l6ekJpQUxFY3dTcGlwaURWUnEzYWpFNnU1N1NIc01xT0UwYmlKIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788669376),
+('8s0E6DgB3xUp7wG2065Y25rNDWqiBBpNoD0atJBf',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30; .NET CLR 3.0.04506.648; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)','eyJfdG9rZW4iOiJneWREMmFUWEpMWHFVSkJGUVdTamJWdFlWbWh5YkFZRzZBTUZCWUxGIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788677292),
+('9JY3NxCAIwU2gC0P2gHF0vpq6bIukIS7CHFJRPHd',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36 OPR/52.0.2871.64','eyJfdG9rZW4iOiJzMnoxaUxxWk0zbU5oMUlyUGc2T0Rxd0d6eWsxWVRFNG85OHUwSklZIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788661613),
+('aFDhEJQY6zXVQbnQ9LUkjYTq1SsM2AbERKKe3fOf',NULL,'213.209.159.175','Mozilla/5.0 (Linux; Android 4.4.2; RCT6773W22 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.84 Safari/537.36','eyJfdG9rZW4iOiJGbWtVMW9KOW5XWkMxcHgyM1JLUjNYYU82bm1lYkVtdTd3dVZVZ1ZEIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788669375),
+('aiykvyHxbPLORW5nKJPgf8vYnxpHeDTQnJV2UBW5',NULL,'134.185.92.177','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36','eyJfdG9rZW4iOiI0MWZQM21tMlVrSG9WQVFDOHZSV2Jhc3pRU0oxSmI5ZEtEQmg4N2RJIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpLWRvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1789163812),
+('aL8ynuI0NmQcNl2t6aKJJkPWiTDST6SW2jaOoGbm',NULL,'34.10.221.236','Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:143.0) Gecko/20100101 Firefox/143.0; compatible; Claude-User/1.0; +https://www.anthropic.com/claude-user','eyJfdG9rZW4iOiJDcUN0SDdsSEVrVXB5RnppS2tnbGxjTWVtUlBWRHNRazlPOGkySXZEIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXMuanNvbiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1788933126),
+('alEBt5tWHDQtpB6zKqapWu0e5syNzOdqaRmeJb74',NULL,'213.209.159.175','Mozilla/5.0 (Linux; Android 5.1.1; LGLS665 Build/LMY47V) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.93 Mobile Safari/537.36','eyJfdG9rZW4iOiIzZTdtWVp6MmtpZE9iWko0NGE5dTRjR21pdFBXVTRCdUw2U2Q2ZVRiIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788685394),
+('BgvIeWHeIApSWIhu0j4bAIbUWX7aEjacxeN53GVM',NULL,'172.105.24.10','Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML','eyJfdG9rZW4iOiJ6NHlqRTBJdGFYcGo5ck1TTlgwTHViVmR2MGgxdkRnd2g5Q3N3c2hpIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEzMS40My45NS4zNC5iYy5nb29nbGV1c2VyY29udGVudC5jb21cL2FwaS1kZXNjcmlwdGlvbiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1791780121),
+('C6hjtH61la2lScqkmCTpTCZfNwYLgLEc847l90Q5',NULL,'34.38.32.250','Mozilla/5.0 (compatible; Perplexity-User/1.0; +https://perplexity.ai/perplexity-user)','eyJfdG9rZW4iOiJkRnNac01sNjk2dzJSNzFuQnBHejNyUHdSYmtCMHVscTZUVnZSV0VoIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXMuanNvbiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1788847687),
+('cfNZKM3eWsnB54q34bjtFfZufAkRSVXWs39S4bdV',NULL,'213.209.159.175','Mozilla/5.0 (Linux; Android 4.4.2; RCT6773W22 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.84 Safari/537.36','eyJfdG9rZW4iOiJWT29tSnZrZEZLV09wUklHZ2dXUExsWVNmakc4WWlkSU9rWEZMUHlYIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788669375),
+('cu4v6ORMwrkiXPkVjpGYLto2HnrLy5QPDyy98QX5',NULL,'213.209.159.154','Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:11.0) Gecko/20100101 Firefox/11.0','eyJfdG9rZW4iOiJyR3JHVDdicXVqU0RxYzI2MmluT3pNcXg0a1VTMW1lMFBKdUZRUW94IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXMuZW52Iiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1789768721),
+('cvfprHRAp5Sfd6M08UfXfOrC9t4RS2FAqqLTyod9',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJGN0ZUc3MzMVJ6RVpKZ2pYV01CWXo1VEhmamdhMUt0UkhSU1RMV1VSIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1789273973),
+('czcS6qyiPuOAboqCsNEruEEqZP9miXCef07Aue1n',NULL,'213.209.159.175','Mozilla/5.0 (Linux; Android 5.1.1; LGLS665 Build/LMY47V) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.93 Mobile Safari/537.36','eyJfdG9rZW4iOiJGUVdlZnRUN01zTXFGQTk5TDVCUmxrcGJucDZCb1RrOXN4U3ZlaDFDIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788685394),
+('D18L076E2UJTcpKmP5fxwmdMdLquMxbqynJbiryD',NULL,'217.60.76.85','Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0','eyJfdG9rZW4iOiJkN1FuZVI3Z3AwZ0p5d2JITEwxeUEyNzlnNkZ0a0VpbjAyOVVZOXNmIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpLmpzIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1790324183),
+('DEZzk1V4YiPNyzXSz24TYOXvpbKCeTZcEWIwojbX',NULL,'213.209.159.175','Mozilla/5.0 (Macintosh; U; PPC Mac OS X; fr-ch) AppleWebKit/312.1.1 (KHTML, like Gecko) Safari/312','eyJfdG9rZW4iOiI3Y3hTZ1MxOGVOa1I1aDRSTFZza1lrTWZTZ1RENzBQWVRyU1ZFb25QIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788636899),
+('DPPKYL80VmOvbgAde71UzmzXUBs1R117iOVp3Yqu',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJWVHoxM3ZOb1ZEaVVUaVdsZU1lODd4WXJhYk9IUDRHWnVQNTJuR2ZBIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788922399),
+('E93K2jbAmpKRSomofEdhTS6aCI0ecNziPqD4rhwk',NULL,'213.209.159.175','Mozilla/5.0 (X11; U; Linux x86_64; en-US) AppleWebKit/534.13 (KHTML, like Gecko) Chrome/9.0.597.107 Safari/534.13 v1416748405.3871','eyJfdG9rZW4iOiJmWlFpRmVhVmhmRUVJdWQwR0FjTzRQaWtrZmR1Z0FBM1dnalRQVVNnIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788717606),
+('E95h5JnCxMxEx728hJ8yTtK9iypZLxgkgPghx1Qv',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36 OPR/52.0.2871.64','eyJfdG9rZW4iOiJKZnRyYklidlBES0VsOTNEYzUxZ3lVYjFCZHR5cXI5M0VVQmN6UUV4IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788661613),
+('EaVF2HjotpTGdC5tMUdHpD6QnL7m6mOIca4fZNxo',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30; .NET CLR 3.0.04506.648; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)','eyJfdG9rZW4iOiIwQkhualdWYUxmUFVyOUVoOHZpajVFZHJ3dWFpVTJyamJnZXM0QkFvIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788677292),
+('eEfE9dZXVV0VBXWUsp4NIJ6bVPKdI8ZiRxUa4rTi',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.1; Win64; x64; Trident/7.0; ATT-IE11; rv:11.0) like Gecko','eyJfdG9rZW4iOiJhMnlLNHljaXlFbEN0Y3pUUGtySTNKcVM5anBteEQ2YnI3ZERMSVI2IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788725596),
+('EFXTMetPm0IeNHCeogslWygwuYWCO9NVlgiqDLQG',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; InfoPath.2; MS-RTC S; MS-RTC LM 8; .NET CLR 1.1.4322; .NET4.0C; .NET4.0E)','eyJfdG9rZW4iOiI2VUFyenlqRkE3WmxqTGFjV1F6T0VDeHBYN2czQUQ3Q2ZqZnd0UUlHIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788709685),
+('EHjyT8uBNNjhywIOu76y4cc9ra0TqiapoUJA7pWx',NULL,'185.177.72.67','curl/8.7.1','eyJfdG9rZW4iOiJucHhmVVVvQUdoMDBQc2FhbGpTVTlkWGpRSjV5bkpJYnlTR3FPTGZ2IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpc1wvaW5kZXglMmVqcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1791396976),
+('ELYnfuiCWXsY3R7FDE9H1uehP3SPqzYfvgU0HKAX',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36 OPR/44.0.2510.1449','eyJfdG9rZW4iOiJVZm1TdHFuR0dGclhDMTVIcTVBUmRveWxwNnRBMzBNMEI5bEJwd1JyIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788653449),
+('EnY02dCWxSRbZmzG0TMRUZdHROJPTWUPm18lQsbb',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0 Cyberfox/47.0.2','eyJfdG9rZW4iOiJEak56R1lUS21aVTB6VUN4VGtNd3J5M0JBQktsZkh3MjVsRDFhY3oyIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788702086),
+('EOgt2UOQeA8DCFFlpUqjR4jhUa70U9AzDi8vjAmq',NULL,'213.209.159.175','Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_5_7; en-US) AppleWebKit/532.0 (KHTML, like Gecko) Chrome/3.0.198 Safari/532.0','eyJfdG9rZW4iOiJiQU1MUFoydHp6bHNIWHBRUGdLVEJoc2VEMEwwOUl0VlpmTWZ5WVRjIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788764182),
+('Ewhi4htvrNR0erXAC1xwSCXZS030yEQFrRtb9otb',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36','eyJfdG9rZW4iOiJZb0JOWUc2THhMQXV6T0RUOTJmdDQ4dTZWSDh0Y09oRHFiak5OUzF6IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788757107),
+('fbUvYboe0BuLo1RHBMI4yRNA08ZJu2rDqfagQWMA',NULL,'45.138.12.27','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36','eyJfdG9rZW4iOiJOVTBaWGtPRHJoVWw2bDdGc0hoVTFid2lwelN2eFNpbHFuUFF5YWVmIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpY29uZmlnLmpzb24iLCJyb3V0ZSI6ImdlbmVyYXRlZDo6OVVRRVk0cTVYWDd1MU5oZiJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1792141359),
+('FInzr3JMnQ1a5Op5rtyJdNESWTTd0ZD0hsFx6oBY',NULL,'213.209.159.175','Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.90 Safari/537.36 OPR/29.0.1795.47','eyJfdG9rZW4iOiJaeGk0aVd4c1RpRHZ4alFGdGNUVGNNZ1E1RmNpMnpNOW9XRTFac05NIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788733104),
+('FTIWrqiBVEmHgOE0ayTjktGsByyvjjWwNZPgnHlj',NULL,'34.158.109.130','Mozilla/5.0 (compatible; TelegramBot/1.0)','eyJfdG9rZW4iOiJtbnhQOXJJV2REM2hXMW84VlEzNm8xSmZ5ejlvRmpTbER5bkR6U3pXIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXMuanNvbiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1789183396),
+('fWKUbuLpbTyXjCKuOTxnmj4IUSAlskktV9WlQjue',NULL,'213.209.159.175','Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MAAU; MAAU)','eyJfdG9rZW4iOiJlZTQ2TzVFS05FWXNJM2VOY1NpNkpzMGtvSEFZM0x5cGlZOE1iWmEzIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788749133),
+('gbfIKGH8nvj2G3rQMVbQNMFUaXK4BzFcgAe0zZET',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0 Cyberfox/47.0.2','eyJfdG9rZW4iOiJDOFFuTzE1RlBVdDZIZG5peGYxY0J1ekJwWDhsemRsRnJvdlhpVzJVIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788702086),
+('gO7xDcFkVn9GB28yArFFDoTYq64Y1myfasoehF4P',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJqOXNra2FWUjN4eE1xVG5wTG1QT29lWGNHcFlHekJPUDZlU1o1R2lBIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkIiwicm91dGUiOiJnZW5lcmF0ZWQ6OjlVUUVZNHE1WFg3dTFOaGYifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1792260224),
+('Hek3sBzV27Dv38f5gcALwnwRIodfs6Cmi4FgmIJW',NULL,'127.0.0.1','curl/8.7.1','eyJfdG9rZW4iOiJ5RmhDTkR0T1lJcER3SVVpRzlIYUZHQTRLbjdoTE9hZ3V4cTh4bDlNIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBkYXRlLnNxbCIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1791554378),
+('hIjR0MlpCjoo9FifIQENK2lNEy4HxEmcUQ8oogRd',NULL,'213.209.159.175','Opera/9.02 (X11; Linux i686; U; en)','eyJfdG9rZW4iOiIzNlIxOU5MMldtUVBDaXU5QTU4NmdKT3NiSE9rNno4RmhodHBmRUR2IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788693986),
+('HlTlh8LO7tsRFqq55Bda0oPgSMTknCqWT4BSA7WX',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; de) Opera 9.50','eyJfdG9rZW4iOiJYUzEya2k1Y3VXZmc5bHJDTW5ZTkRocjdyUkV4QmE4TndBUkZNeHBNIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788741413),
+('hNiTUYuyNDtLdDByqAhahyJBo2jaJF2PiWVGxLmG',NULL,'213.209.159.175','Mozilla/5.0 (Linux; Android 5.1.1; LGLS665 Build/LMY47V) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.93 Mobile Safari/537.36','eyJfdG9rZW4iOiJaRDI2aWZ3UUJZaHVtMHpKcHJkUzU2Z0t1Q0cxSndORUxyZzFsQ1BrIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788685394),
+('HtZUhIAOPEUpK1xkWbU8h5HMtSwzQhdq062rbvnU',NULL,'213.209.159.175','Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MAAU; MAAU)','eyJfdG9rZW4iOiIzWHI5WkVPaVppZzN4VkdJVU4yN2Z3WEJYWlpMNTgyNloxYVRQS1JhIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788749133),
+('IPe8KhlwmxYeBL8lht23loM0gtCcFtYrdHQRIC03',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; CMDTDF; .NET4.0C; .NET4.0E; GWX:QUALIFIED)','eyJfdG9rZW4iOiJNSTI2eTAxS0l0c2pmQWR4S3I2czZrV2p6bXJhODVNN1dncVhBWXJzIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788644789),
+('IwtC94AsYWBOZ0GEYQnLH01ZZ6ZFqdgkXIApTTjf',NULL,'192.53.122.11','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML','eyJfdG9rZW4iOiJQd0pMUjN4UThvUDAzZm4waldQTUpvNTQ5Z1E4YWtaS2lvMm5ENXRiIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEzMS40My45NS4zNC5iYy5nb29nbGV1c2VyY29udGVudC5jb21cL2FwaS1kZXNjcmlwdGlvbiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1790419759),
+('j0d61fQMKJ5EIwRcQMXpOnFxYQ7iQ80ZRwBYWH4p',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; InfoPath.2; MS-RTC S; MS-RTC LM 8; .NET CLR 1.1.4322; .NET4.0C; .NET4.0E)','eyJfdG9rZW4iOiJKb1dMUVF2WmQxaXgwU1RuYVQyN1BxcmE4TFFsZmlaNUkxaUFUR1FKIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788709685),
+('J14FArpXdke9jiQJzo0qZS3qhFtk3rcedecrodWZ',NULL,'217.60.76.85','Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0','eyJfdG9rZW4iOiI5QklCb1J1OUhCZzNDWHFmWXhleUdaSGtXa1Jxa2NSMUxGQ1BQbUlhIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpLWRvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1790324187),
+('jb7wyNLztk64c2CbxnpsQlFZxiYNk9jKraTjDrpe',NULL,'213.209.159.154','Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.130 Safari/537.36','eyJfdG9rZW4iOiI1WHZPSFkwenRKWGhrMVRlY2tuSXNxVkFsNzNYOXpQaGY0MU9yYmk4IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpc1wvY29uZmlnLmVudiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1790134877),
+('JhUmlIvJcs1ybPMx5MORfy5NLpFXaiHqE8svUwgD',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; de) Opera 9.50','eyJfdG9rZW4iOiJjcWlqT25pTGlFY0hJT0ZKSzQ3WEM0WEZGNkl3SUhrZW1uMHFoNWUxIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788741413),
+('JOsqpDwVfEe7k4zDYVroyirAvxk5ePLfA7IhCba0',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.1; Win64; x64; Trident/7.0; ATT-IE11; rv:11.0) like Gecko','eyJfdG9rZW4iOiI3Smtzd1NXdmVwV1hoYUQwcmVlcG96WXZmWXJ1TmZrMThhaFhSWlJyIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788725595),
+('JS8uVnddIPRgWgXqc2thHyOsfkmf4MpZ6GKHvh1r',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJhcG9JY1Q1eUM5dWVUZVRqelRpZnFyckJiN2MzTGRGMVE5NjFUYWRwIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1788922399),
+('jssGNbemVFcsfWqNjRBsHYZLlBSEydWSy8F7FqjB',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36 OPR/44.0.2510.1449','eyJfdG9rZW4iOiJ4NjRjbHFOaXU4M0xRWnNWckRWSUdscmZiSm5WNDJlNjlFUnVUOU1xIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788653448),
+('jVb14EGsRxACUWpFzKcQqOxEhnyhwalYychKjuCI',NULL,'45.138.12.27','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36','eyJfdG9rZW4iOiJiU2hzMVRrN2FnRldpS29JVjRJN3hRSHE3S1RTNE5HdHpIaDNKaVZZIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpLWRvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6OVVRRVk0cTVYWDd1MU5oZiJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1792141403),
+('JwBaLDu0KjMz1TilpSwpTZCkuHBB6O68vm9vYmYI',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36 OPR/44.0.2510.1449','eyJfdG9rZW4iOiIwbENsNHczUUFOcWdjMmh5cThNTEM0WGpxZWoybmNBVGlSdFBURnZPIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788653449),
+('K0bAjzUo9VFwZmufdWIVS9enUIJlcmIJmfvknXIB',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJSZko4d2NXRWphaDBVTzRtbDhrRk1uZmI4MjBHRzhYRjNNM2c3dUR4IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788710999),
+('kAswNp80kys7XSCVUFisGnSDieG8RtUVjaPjvISv',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.1; Win64; x64; Trident/7.0; ATT-IE11; rv:11.0) like Gecko','eyJfdG9rZW4iOiI4b3loWkI1ZXFoRnBWeVpwY2liamtlTEdtTjNIWEo2V3I5a0hvZzNhIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788725596),
+('kqFbi0GPQDATbzpGriXuG169h1fTAThTZ2IuXrqt',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36','eyJfdG9rZW4iOiI1Y3h6d0VJNGRqd0JFUWtIYUcyVlpQcWM4ZFZGT1lWbTdUU1Zma1lrIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788757107),
+('lMWB65oz3OCM0rJxr6O2HKxehT9wNAz8hmXcCKSJ',NULL,'213.209.159.175','Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.90 Safari/537.36 OPR/29.0.1795.47','eyJfdG9rZW4iOiIxbkxnTnRmaHVoQzdIS0NOTXZta0tHWWZiTlhhamx4eUxYSDRSU2pXIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788733105),
+('lwX99plLM2Vg6suwtBwxXXCsWc7RbwxsUV2FrfEM',NULL,'185.177.72.56','curl/8.7.1','eyJfdG9rZW4iOiJDV3ZmWDNjbmV1VVdPdTJUZnd3UFhxWTZORGZ0dkFmWWtlbHNXTlN6IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXMlMmVqc29uIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1791554250),
+('m1DQg0Svn7EKsEmiq7iM96rTkCxuZRv8y5MTFnyr',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJBb2lBdTFGd2lyVnNYRWJsOHNTeFBKQmJjZExrNVE0VnVVZTV2WWI3IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1788951431),
+('m6efBW4pf5yzkTm5LBmDba7gY4h5N0Fr4aeUb1AY',NULL,'127.0.0.1','curl/8.7.1','eyJfdG9rZW4iOiJOalVpT0QyYXFLRDg1eENaeWtNTllqZGswSWI4ZHk3MG4xWHc5Nld2IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBkYXRlLnNxbCIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1791396941),
+('M8Wfb0mN6OX11FPAt3G24g495PtAn5bJe264Uci9',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJXazk3SzBpbTVJZzE1UUdYTFh1TWJnempjT2hTaktXbE84WGZVZnBjIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1789273974),
+('MCVUehshO7eQuzt6nzlkH2OkmCQ5FNwrFuA50ySB',NULL,'185.177.72.56','curl/8.7.1','eyJfdG9rZW4iOiJVeWk1R05tUzh0T01EaHFCZEplc0JQaG55ZHpNTlF0NUIxOGFrSDB4IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvJTJGJTYxJTcwJTY5Iiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1791554428),
+('MedXAfIR2FJPYT4zFCzBhkfORrHRAkSsyeyn4oiW',NULL,'213.209.159.175','Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.90 Safari/537.36 OPR/29.0.1795.47','eyJfdG9rZW4iOiJhM1Z2SmI2WTFVcjdOSHFrRklveDFsQ21WV1F0OWRQSTMwUVlVTUIwIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788733105),
+('mhpXPKco7W6cX0thmxqJ0DH1TkOpLtF1MZdwt1ah',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36','eyJfdG9rZW4iOiJVdzJVOTR4UmVDNlVodGR1bGRpVE5rNk5lazdlU0VyWVluV3RHYURIIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788757107),
+('MKA4kQeRcpFwHkYQSs3RdA0o5ZA1O9W8dIBwOpRV',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJSMVRaUEJoVk1YQWdOaXR3Zkl6dlYwU1ZsRUhmVmdRbDBCYURQNk9lIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788951432),
+('MNeT5gvAwRnyjFZ9mdfOYd3kKRs6aA89ggZumh7B',NULL,'213.209.159.175','Mozilla/5.0 (Macintosh; U; PPC Mac OS X; fr-ch) AppleWebKit/312.1.1 (KHTML, like Gecko) Safari/312','eyJfdG9rZW4iOiIwcXM4TUxMeXFHMFhSYnh3bjZyTTgyVElxaTZKZXJlc1NiQW1LVldtIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788636899),
+('MOgqvWEJFtowOBpFrZ821hOYveIcNjTSJAlTo48i',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36 OPR/52.0.2871.64','eyJfdG9rZW4iOiJQOUUzbzE2Z3RIdndvYm5Wc3FsV3pQZVg5eEVqeERHeXdITVpIeEI3IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788661613),
+('n2mfJG5Vr2jvXyedqT0qkgVWl5k06InoCqlCK08T',NULL,'213.209.159.175','Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MAAU; MAAU)','eyJfdG9rZW4iOiIwZ01oanNqbFBMekxPeFB1bmtSVHFseEpJb05aRHliZGVIOVFtaHNlIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788749132),
+('NXtnRpNtH96uQdUgXdg9xXpPd45c9Q62b3JQWfx7',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; de) Opera 9.50','eyJfdG9rZW4iOiI5NkM2ZERZOHROM0xFOHJmYzNNNUZ6cm16SVB4SGJMTkRMU2kwVEtsIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788741413),
+('nz7MTrOAKu4sDrC88eX85ULWtPiuqekoPUg3cgf0',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiIyalVURHpOZ3JBZGVqcnNib1ZMYlhyWVU1dHN1OEJPaDNiOGlXUURDIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1789244799),
+('o9E1F3wsXLpclI7ERxaY1izSGEWmO3RdlflNKFut',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJnMjl4Y1UxWjFqYWt0Yk16a0RQYmR2blJDY0dVNWZUZjZmUm1lTzROIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788739771),
+('oGX2uRTYBW0Tl0uXzf1Upx4QAgEF174tWUIBGoCr',NULL,'217.60.76.85','','eyJfdG9rZW4iOiJIWUNCVWtJdlZBV3lsckV6VEFseTc0M0owamtPZHBMaERjOU9tcTVPIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpLWRvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1790324182),
+('OKE9cbyuj0HdeIpK43ktod7s0v5lVo9gQRGnerTc',NULL,'213.209.159.175','Opera/9.02 (X11; Linux i686; U; en)','eyJfdG9rZW4iOiI5NmNZQjg1ZnJCQm9VeWJxOGswYzdtY1Npc0lNdFZWOW9POUswRjNsIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788693987),
+('OniBibWSEp24GyQxDCVtc0FdHGUPiUSCMFILKBhF',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30; .NET CLR 3.0.04506.648; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)','eyJfdG9rZW4iOiJMOTNqQkpDQjZkZVdaMXdUaHRzMmxLYTk5NVJ6UnIzUEVnUkFwUUdxIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788677292),
+('oYycCsFPVL3jPMwhISVAVo13eQG9f8cOyv1BJLQE',NULL,'213.209.159.175','Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_5_7; en-US) AppleWebKit/532.0 (KHTML, like Gecko) Chrome/3.0.198 Safari/532.0','eyJfdG9rZW4iOiJmcHV0ODJsTllySHBKQ1NtNzdidm05OEhUdHJEZHVBWEtOQzdZdEpPIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788764182),
+('PKpzkgjl9RbBVrhB0muzIcsXTiic57cTQK0qIqEZ',NULL,'213.209.159.175','Mozilla/5.0 (Linux; Android 4.4.2; RCT6773W22 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.84 Safari/537.36','eyJfdG9rZW4iOiJub2tNMzVIYjVIZ1JtNUxvNjVjTUJFcFJxNjhuWjNHTG41b29IYXZyIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788669375),
+('prRyh6CQWqBKGW68SkHDLGgz5LPnsWEZPxxWhReV',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; CMDTDF; .NET4.0C; .NET4.0E; GWX:QUALIFIED)','eyJfdG9rZW4iOiJTWjBqSzdWaXpMUVBHSXBzUnJKb2VNMkJPU0NXSHd2emw3RHJhWTVHIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788644789),
+('q7sYHwkivOK7fjGlz9Vlbpye9775rdmz3dkT9ncC',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0 Cyberfox/47.0.2','eyJfdG9rZW4iOiJWaXZzUDVPM1ptM0VINFgxbXFaNXpNV2tyazkzbXRNd29LTndpU0hRIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788702086),
+('QA013vAfQBLYFyjQPq29WoVsGeARSqfEGC6361Vn',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJ1YnlscUtpWDlQSWVPVXJrdzhyVGN1a0tvU1NZd2ExbzkwNUVLZ2RmIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1789434829),
+('QBUUsyiCV4iGzbKfaDW1fY4Q58IRoSZWAm7Q5tlH',NULL,'213.209.159.175','Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0; MAAU; MAAU)','eyJfdG9rZW4iOiJlSGhqN3Q3UDdYRWZRUExKMnBIUWEwNEd3NzB1NHExdXlMMnl5UzZtIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788749133),
+('QdSaRIYvpQjFh47ppUQcwfGH936IAl7kkUeWP5yh',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJSQ0xBS3NrdU9UZVBnSkJLV2Uxb1NUS3JENDlLNUxBMEI3MzZjamJ3IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjo5VVFFWTRxNVhYN3UxTmhmIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1792260222),
+('qvATfZuMTgbx7Yrq8DDijj949qEKfdnBxGU1ljyT',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiI3b01wUnZhUVVaMTlrNkdnbXg1Q05GSU1RVTFTVGJnalVCWWtDQXAxIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1788739770),
+('rGVsS3CZCWtI276YY0F08BmkYGB1OTpVDwV1okCn',NULL,'213.209.159.175','Opera/9.02 (X11; Linux i686; U; en)','eyJfdG9rZW4iOiI1WVo0alhNRFNWeUpWNVk4Q3FsUDJyR1pmRFRiUElwbEF6aTVKZXVtIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788693987),
+('RMmCleMbQv16GppavOmwxOWKVesV6UasZFfbOxrN',NULL,'213.209.159.175','Mozilla/5.0 (Macintosh; U; PPC Mac OS X; fr-ch) AppleWebKit/312.1.1 (KHTML, like Gecko) Safari/312','eyJfdG9rZW4iOiJGRldHMjh2RjRmWVZkN2ZTRDc1Nzk3TWlZQnRkZVZROWJGN3JQMmdNIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788636898),
+('rQKSTh7ZFAl81wrb1Jcj0Hf5oKBcgkARggDdu8li',NULL,'192.53.122.11','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML','eyJfdG9rZW4iOiIxaDN3M0hyNnZsRnR1R2pNM2d5S1lXck1aRlhRR1Rvd3dFcFFGN3AwIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzEzMS40My45NS4zNC5iYy5nb29nbGV1c2VyY29udGVudC5jb21cL2FwaS1kZXNjcmlwdGlvbiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1789269890),
+('Rs1NzOUAsbxTnbakWFCTKTLt3lVV4pSYVaNt5otq',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; CMDTDF; .NET4.0C; .NET4.0E; GWX:QUALIFIED)','eyJfdG9rZW4iOiJra2FpSWg5Q3ZlbDlsdExJbHBrTUxEVExzVVNyVkVXZVVqczlraUJQIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788644789),
+('RSPtfs788knVbee3ltPFxoKL42MNeTMRrf1dYPyJ',NULL,'213.209.159.175','Mozilla/5.0 (Linux; Android 5.1.1; LGLS665 Build/LMY47V) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.93 Mobile Safari/537.36','eyJfdG9rZW4iOiJiaks0UW94eVp6bVNXZ3ZYMjhVTFhNUWFtQThjUXVnbEFWYmpGaVFoIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788685394),
+('RWke36rVkqxFQWYzF3bE8rmB1EiLMWtnN2yXEtg8',NULL,'213.209.159.175','Mozilla/5.0 (X11; U; Linux x86_64; en-US) AppleWebKit/534.13 (KHTML, like Gecko) Chrome/9.0.597.107 Safari/534.13 v1416748405.3871','eyJfdG9rZW4iOiJPRTE3bU1GODNEOGVsZzZDdzZMSm5QSFBTb0tqZW45ck1EcXU5ZjdjIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788717606),
+('s3oMcNJ77UqXzwsD2sm419N66YJ6UroXs0VpY9Vc',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36 OPR/52.0.2871.64','eyJfdG9rZW4iOiJPSjJBcWVlc2o4ZHpLdUxRVk1yMnlCOG9vd2lheGZKUWx0amR5ZU9BIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGkiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788661613),
+('SDkqusXwKt5kBsuCkKPUyVJsRbqvf60qHtBXGQha',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.1; Win64; x64; Trident/7.0; ATT-IE11; rv:11.0) like Gecko','eyJfdG9rZW4iOiJnT0FGRFdvMDIzUXk2WHNLbTZHb3hGZ1BWWDlGMFFqWWhEMzAxaXZXIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788725595),
+('sGDgnFB5nVg3nJ4v6dLGBi2O1GubuTgL6juOdS64',NULL,'213.35.99.240','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36','eyJfdG9rZW4iOiJUdHdIRm5uQWFXNkloSjRHTEZ6S3QycjVUa1FwSXVaTnNXSkxOdEJJIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpLWRvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788761194),
+('szLtzr3TQPQMc7BAwKOe7mBJWHBOE2umcEipgpYr',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0 Cyberfox/47.0.2','eyJfdG9rZW4iOiI5NGtOOE94WU81NTR5UnFIRUR4SUZ4NW1XZ3pVWkVTSldYOGlzNXV5IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788702086),
+('T5IYAb4TTQe7pHdRsxH2pKS5sDIgeNXvvekcnxx5',NULL,'34.146.170.105','Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36','eyJfdG9rZW4iOiJTVUJyN1NQWHNlZzlOc3BWRHpERWZuOE1abEFCVm04V2xWWFpJeXI4IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXMuanNvbiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1788731973),
+('TGDyiU97eDPD9bOuJqvMxl0TnFcfViS4DY1FkCie',NULL,'161.118.222.78','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36','eyJfdG9rZW4iOiJMajlRVDBrQlNOSDFZYnlyaVdDbE9jMHpuQWVneVkwT1dZbHhvSVRkIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpLWRvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1790319640),
+('TJXqGd2fIu0HbNiLv56YnhvXCTpB9PhAME6mvhod',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJXU2taZ3Yyb1hMVXRTQ25mWk1seWJNblBsMGpSakFlWExsN01HZzY1IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1789434828),
+('TS9ehW7Z5ex5ldfIRqL623CyCvSCKkS6IddkWTRc',NULL,'185.177.72.67','curl/8.7.1','eyJfdG9rZW4iOiJET1pZakRnWFg1NU4xZG9BaGp5bkZyeklOTGQ3ZWkwMGx0c1BmSXRvIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXNcL3NlbmRncmlkX2tleXMlMmVqc29uIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1791396911),
+('tScg8Jm1KeelpH2A8guntoTKy1EOFGd6oJcmYK5E',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJxTVhYMmVTM0xGdHhzYkRKSzBCNlJ2WUpETEhRSzBKU2E5TGlFeTd0IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1789435941),
+('uoFFWKebdnZ5XRlGQY2pAUKCSvIa6glYu0nWMoXR',NULL,'185.177.72.56','curl/8.7.1','eyJfdG9rZW4iOiIzT21LUTIzanlNcWU3Sjd4OVRqNGMxZ05rSjJIbHk1YjZnbzJNS1FNIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpc1wvaW5kZXglMmVqcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1791554414),
+('vbdkGtHazagZhW9u05RxEzh2MC8oilaSbcOt7uCX',NULL,'213.209.159.175','Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_5_7; en-US) AppleWebKit/532.0 (KHTML, like Gecko) Chrome/3.0.198 Safari/532.0','eyJfdG9rZW4iOiJOWXUyTU1TOWw1SzNPWldzWEZFdVo5OE5CdVlHckIwQmc1ZXdjWFppIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788764182),
+('VE1lLCw7Oum5F1jLa2fo5z7LJeI85F38vIfqL2Z5',NULL,'213.209.159.175','Mozilla/5.0 (X11; U; Linux x86_64; en-US) AppleWebKit/534.13 (KHTML, like Gecko) Chrome/9.0.597.107 Safari/534.13 v1416748405.3871','eyJfdG9rZW4iOiJkUWdXTE1zamJiUlRtRlhkdnJDdU1yRno0dEJvc3ZKZjhxc1NrVXVWIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788717606),
+('vN0vExmKScib7NMBJp0cxgRU72GDMMvVQlJLFDSK',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJDYU1oUHBXMmEycnMyQjJqaU9CWEhqblh4bEpBbGdidGIzY2dDT0Y5IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1789435940),
+('vzyADGYeMBhKbEyAbbZGWK38Jjhp5rjpj6tchvjU',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJVekVtUDczNDdiT1lzUlN0cmRuV3hFakRrejVSTkZJQjlVWVlhdkNIIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkcyIsInJvdXRlIjoiZ2VuZXJhdGVkOjo5VVFFWTRxNVhYN3UxTmhmIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1792247595),
+('wvIuOkdDqoXeuzOhdLIJEaZjuVwsAImvftYnhYQN',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36','eyJfdG9rZW4iOiIweDlCWHl3Tkp1VWhaeGZJcnlLUXFnTFMyQU5lSG5SWU5UNjJWYXIxIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788757107),
+('wxonZ3A6L1qXHb49bAt9zCAIsar2VhuNAfVkKNLr',NULL,'213.209.159.175','Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.90 Safari/537.36 OPR/29.0.1795.47','eyJfdG9rZW4iOiIxeFY1NmJMRWJxUndvNWFBNVlWYjdtUzRXQTBHQkYySHp3VVp3Z1ZrIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788733105),
+('wXxnOBlc2mMBBKqA9Mw0KCg7wJG8BJ97e0ayOUpW',NULL,'213.209.159.175','Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36 OPR/44.0.2510.1449','eyJfdG9rZW4iOiJqak5TMm9WVEdPcTJDM3BaU2JuRjZrTGhaZ2F2M25pclVUU08wVjdMIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788653449),
+('XJIPa4UEShCjgdciSVupCi4RMF33YftloctOdbat',NULL,'8.235.115.159','Mozilla/5.0 (Macintosh; Intel Mac OS X 14.5; rv:105.7) Gecko/20100101 Firefox/105.7; compatible; Claude-SearchBot/1.0; +https://www.anthropic.com/claude-searchbot','eyJfdG9rZW4iOiJFWXdqWnhaa0VHODJsaTZidnJjSUZnZkdvS3F2Rm53bUIyeWFpYnNnIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXMuanNvbiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1789431971),
+('XSsZARy9777TI2f47DXxRL9lO1UgqM92krmiUEE3',NULL,'213.209.159.175','Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_5_7; en-US) AppleWebKit/532.0 (KHTML, like Gecko) Chrome/3.0.198 Safari/532.0','eyJfdG9rZW4iOiJKT0lYQ0FqQ0ozZnoyRERZSVhMWjNhWU9YbllPTDJNb1J6OE9xcFdYIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788764182),
+('xvgmCu8x38yzf1bkC99lGNDcHpNLygTltOLsxmGH',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; CMDTDF; .NET4.0C; .NET4.0E; GWX:QUALIFIED)','eyJfdG9rZW4iOiJOUkJHTUF1dGhxZDg0MVNDMHo0aVlLNk5UeVdSdUF3QW5ZS1NHQTQ5IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788644789),
+('Xxvxpv05EybG9wWSHrDt7vvj1vFJcxxaAGFO5F7G',NULL,'172.18.0.4','python-requests/2.27.1','eyJfdG9rZW4iOiJwd0x1Mmg1UE1IcmpSZVRMYXk5ZnpBeFJnN3lxVzZFeGQwd0I5RTRRIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cL2FwaVwvdXBsb2FkIiwicm91dGUiOiJnZW5lcmF0ZWQ6OjlVUUVZNHE1WFg3dTFOaGYifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1792247597),
+('Yblcspea4QY0nj6SFetFk8m3MmKs9L74pMQ076Sg',NULL,'213.209.159.175','Opera/9.02 (X11; Linux i686; U; en)','eyJfdG9rZW4iOiJ6b3FtbkJON3pRdHhON0VRV3dyb2Q4elVKTVN1cXNBVjNPZUhPakcwIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL2RvY3MiLCJyb3V0ZSI6ImdlbmVyYXRlZDo6alZ4QjA0UzdiZllST0RXWSJ9LCJfZmxhc2giOnsib2xkIjpbXSwibmV3IjpbXX19',1788693987),
+('ySZzYAQCyIW42I6rGrGSdKBfrAwNRm2uaTZhh6ob',NULL,'185.177.72.67','curl/8.7.1','eyJfdG9rZW4iOiJucHRBZkhHSjJqa08wekFlekdGaDZwTDVGdnpoR2xYNWVBZ2hsQmlwIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXMlMmVqc29uIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1791396812),
+('Zcn14fUraBeL2wxZqRWiFBaGpcQRlPcfCQDg1NmA',NULL,'35.196.147.90','Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/537.36 (KHTML, like Gecko; compatible; PerplexityBot/1.0; +https://perplexity.ai/perplexitybot) Chrome/124.0.8795.240 Safari/537.36 Edg/124.0.8795.240','eyJfdG9rZW4iOiI0UmlwVU5IOEZqcktkSTk2dGlWN25raTVIT2lxb1RXMmduUjkyY0x6IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXMuanNvbiIsInJvdXRlIjoiZ2VuZXJhdGVkOjpqVnhCMDRTN2JmWVJPRFdZIn0sIl9mbGFzaCI6eyJvbGQiOltdLCJuZXciOltdfX0=',1789092890),
+('zFdZf1LEk92kqtrlSgB55uBxxG9WpyO0iXyX9gAb',NULL,'213.209.159.175','Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; InfoPath.2; MS-RTC S; MS-RTC LM 8; .NET CLR 1.1.4322; .NET4.0C; .NET4.0E)','eyJfdG9rZW4iOiJwbWJKWVN4T010NGhKTmY4YzZIYnlHVGJEQlBkeVhpdnRGaTQ4dUp1IiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YyIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788709685),
+('ZL4UwPDsBLiByNmvPxY9m6YHrgpWb6DdwBUQq3cx',NULL,'213.209.159.175','Mozilla/5.0 (X11; U; Linux x86_64; en-US) AppleWebKit/534.13 (KHTML, like Gecko) Chrome/9.0.597.107 Safari/534.13 v1416748405.3871','eyJfdG9rZW4iOiJ0VDF6ck8xOGI2MG44ckk3M3dUZzhlV0VBejlmdlI4RGZpTkZwdWxVIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvXC9hcGlcL3YxIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1788717606),
+('zmx99Zg5JUPOPEw6ylvdrzdB7HU59PYi3rV4qFQv',NULL,'185.177.72.67','curl/8.7.1','eyJfdG9rZW4iOiI4YVR0UU10YUZxcjZZdHUydkNUQlNuQWpzRTR2bFZkRWN6UWpVc3lTIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvJTJGJTYxJTcwJTY5Iiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1791396990),
+('zryXUBcONepezvmyk2Qyj87wqc8kEYc6B9islbNW',NULL,'185.177.72.56','curl/8.7.1','eyJfdG9rZW4iOiJrQU5aOUpwWm1DY3o1ajBQT1NjdjlkUVBJZnR3YUlSTG8xdVRwcENFIiwiX3ByZXZpb3VzIjp7InVybCI6Imh0dHA6XC9cLzM0Ljk1LjQzLjEzMVwvYXBpX2tleXNcL3NlbmRncmlkX2tleXMlMmVqc29uIiwicm91dGUiOiJnZW5lcmF0ZWQ6OmpWeEIwNFM3YmZZUk9EV1kifSwiX2ZsYXNoIjp7Im9sZCI6W10sIm5ldyI6W119fQ==',1791554348);
+/*!40000 ALTER TABLE `sessions` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `solicitudes_archivo`
+--
+
+DROP TABLE IF EXISTS `solicitudes_archivo`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `solicitudes_archivo` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `codigo` varchar(255) NOT NULL,
+  `expediente_id` bigint(20) unsigned NOT NULL,
+  `solicitante_id` bigint(20) unsigned NOT NULL,
+  `solicitante_nombre` varchar(255) DEFAULT NULL,
+  `cargo` varchar(255) DEFAULT NULL,
+  `caso` varchar(255) DEFAULT NULL,
+  `motivo` text DEFAULT NULL,
+  `fecha_solicitud` date DEFAULT NULL,
+  `fecha_prestamo` date DEFAULT NULL,
+  `fecha_devolucion` date DEFAULT NULL,
+  `ubicacion_archivo` varchar(255) DEFAULT NULL,
+  `ubicacion_estante` varchar(255) DEFAULT NULL,
+  `ubicacion_nivel` varchar(255) DEFAULT NULL,
+  `ubicacion_caja` varchar(255) DEFAULT NULL,
+  `documentos_solicitados` text DEFAULT NULL,
+  `estatus` enum('Pendiente','En proceso','Completado','Rechazado','Disponible','Reservado','Prestado','Devuelto','En consulta','Extraviado','En digitalización') NOT NULL DEFAULT 'Pendiente',
+  `observaciones` text DEFAULT NULL,
+  `fecha_entrega` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `solicitudes_archivo_codigo_unique` (`codigo`),
+  KEY `solicitudes_archivo_expediente_id_foreign` (`expediente_id`),
+  KEY `solicitudes_archivo_solicitante_id_foreign` (`solicitante_id`),
+  CONSTRAINT `solicitudes_archivo_expediente_id_foreign` FOREIGN KEY (`expediente_id`) REFERENCES `expedientes` (`id`),
+  CONSTRAINT `solicitudes_archivo_solicitante_id_foreign` FOREIGN KEY (`solicitante_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `solicitudes_archivo`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `solicitudes_archivo` WRITE;
+/*!40000 ALTER TABLE `solicitudes_archivo` DISABLE KEYS */;
+/*!40000 ALTER TABLE `solicitudes_archivo` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+
+--
+-- Table structure for table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `users` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `username` varchar(255) NOT NULL,
+  `role` varchar(255) NOT NULL DEFAULT 'consejero',
+  `display_name` varchar(255) DEFAULT NULL,
+  `email` varchar(255) NOT NULL,
+  `email_verified_at` timestamp NULL DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
+  `pin` varchar(255) DEFAULT NULL,
+  `pin_configurado` tinyint(1) NOT NULL DEFAULT 0,
+  `remember_token` varchar(100) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `phone` varchar(255) DEFAULT NULL,
+  `position` varchar(255) DEFAULT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `users_email_unique` (`email`),
+  UNIQUE KEY `users_username_unique` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `users`
+--
+
+SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
+LOCK TABLES `users` WRITE;
+/*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES
+(1,'Administrador','admin','administrador','Administrador','admin@sicep.com',NULL,'$2y$12$b.yGSLQJdyyzqMDT2z2haeHRaxdtlNPv8.653D5FCUXS0fO9HSrz6','$2y$12$hIkUW2wuDZmcydz5jlrMeus35NNzvhIxAqBi2k5vhjvtWW0us3t06',1,NULL,'2026-08-14 02:45:50','2026-10-18 16:14:13','04161234567','Administrador',1),
+(2,'Supervisor','supervisor','supervisor','Supervisor','supervisor@sicep.com',NULL,'$2y$12$zRGeJDC2nl34i.KNEsIF.OBALLvU3PaOk1xvrQidZy4bi9ulyhboG','$2y$12$1LRgcRt4qGpZsdTuIqMai.4Q4L2tp7IERMCL75ud5Q1bsq5iP20oe',1,NULL,'2026-08-14 02:45:51','2026-10-18 16:13:51','04241234567','Supervisor',1),
+(3,'Consejero','consejero','consejero','Consejero','consejero@sicep.com',NULL,'$2y$12$K8uIwFYk2IDWBPYw1hnoJ.4rSw6FMFsacewNKns4LuGvWonyp66qa','$2y$12$6IdSkUDfSWtXvvJV.3B0F.nl7pxLDoSNhVocHwFqAPacvglfBMvhC',1,NULL,'2026-08-14 02:45:51','2026-10-18 16:13:27','04121234567','Consejero',1);
+/*!40000 ALTER TABLE `users` ENABLE KEYS */;
+UNLOCK TABLES;
+COMMIT;
+SET AUTOCOMMIT=@OLD_AUTOCOMMIT;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
+
+-- Dump completed on 2026-10-20 23:24:25

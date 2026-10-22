@@ -1,0 +1,39 @@
+digraph UC {
+  rankdir=LR; splines=true; nodesep=0.3; ranksep=1.5;
+  label=<<B>Consejero — Expedientes</B><BR/>SICEP-NNA (permisos predeterminados)>; labelloc=t; fontname="Helvetica"; fontsize=14;
+  node [fontname="Helvetica", fontsize=10];
+  edge [color="#1F3A5F", arrowhead=none];
+  "C" [label="Consejero", shape=box, style="rounded,filled", fillcolor="#FFF2CC", fontname="Helvetica", fontsize=12];
+  subgraph cluster_mod { label="Expedientes"; style="rounded"; color="#8EA9DB"; fontname="Helvetica"; fontsize=11;
+    "UC16" [label="UC16  Registrar expediente", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC17" [label="UC17  Consultar expedientes", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+    "UC18" [label="UC18  Editar datos del expediente", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC19" [label="UC19  Cambiar estatus del expediente", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC20" [label="UC20  Cambiar estatus físico", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC21" [label="UC21  Subir PDF resumen", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC22" [label="UC22  Consultar PDF resumen", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+    "UC23" [label="UC23  Quitar PDF resumen", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC24" [label="UC24  Registrar actuación en bitácora", shape=ellipse, style=filled, fillcolor="#E2EFD9", fontsize=10];
+    "UC25" [label="UC25  Consultar bitácora", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+    "UC27" [label="UC27  Consultar observaciones", shape=ellipse, style=filled, fillcolor="#D9E2F3", fontsize=10];
+  }
+  "PIN" [label="Confirmar con PIN", shape=ellipse, style=dashed, fontsize=10];
+  "C" -> "UC16";
+  "C" -> "UC17";
+  "C" -> "UC18";
+  "C" -> "UC19";
+  "C" -> "UC20";
+  "C" -> "UC21";
+  "C" -> "UC22";
+  "C" -> "UC23";
+  "C" -> "UC24";
+  "C" -> "UC25";
+  "C" -> "UC27";
+  "UC16" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+  "UC18" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+  "UC19" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+  "UC20" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+  "UC21" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+  "UC23" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+  "UC24" -> "PIN" [style=dashed, arrowhead=open, label="<<include>>", fontsize=8];
+}
