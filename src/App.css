@@ -1042,7 +1042,7 @@ tbody tr:hover{
 
 .login-shell{
   width:980px;
-  height:560px;
+  max-height:90vh;
   display:grid;
   grid-template-columns:1.1fr .9fr;
   border-radius:20px;
@@ -1113,7 +1113,8 @@ tbody tr:hover{
   padding:40px;
   display:flex;
   flex-direction:column;
-  justify-content:center;
+  justify-content:flex-start;
+  overflow-y:auto;
 }
 
 .login-head h1{
@@ -1193,6 +1194,20 @@ tbody tr:hover{
   transform:translateY(-2px);
 }
 
+.login-forgot-link{
+  margin-top:8px;
+  background:none;
+  border:none;
+  color:#2F80ED;
+  cursor:pointer;
+  text-decoration:underline;
+  font-size:12px;
+  padding:4px;
+}
+
+.login-forgot-link:hover{
+  color:#1a5fc4;
+}
 
 .login-secure-note{
   margin-top:20px;
@@ -1469,21 +1484,21 @@ table {
 
 
 .sidebar{
-  background: linear-gradient(180deg, #6A99C7 0%, #5B8EC2 100%) !important;
+  background: linear-gradient(180deg, #B8D4E8 0%, #A3C4D9 100%) !important;
 }
 
 .sidebar,
 .sidebar *{
-  color: #FFFFFF !important;
+  color: #1E3A5F !important;
 }
 
 .sidebar .nav-item:hover{
-  background: rgba(255,255,255,.18) !important;
+  background: rgba(255,255,255,.35) !important;
 }
 
 .sidebar .nav-item.active{
-  background: rgba(255,255,255,.25) !important;
-  border-color: rgba(255,255,255,.35) !important;
+  background: rgba(255,255,255,.5) !important;
+  border-color: rgba(255,255,255,.6) !important;
 }
 
 
