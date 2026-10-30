@@ -116,69 +116,73 @@ export default function RecuperarPassword({ onVolver, onExito }) {
             </p>
           </div>
 
-          <div className="login-form">
-            {paso === 1 && (
-              <>
-                <label>Usuario</label>
-                <input
-                  placeholder="Código institucional"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && buscarPreguntas()}
-                  autoFocus
-                />
-              </>
-            )}
+          <div className="login-form-scroll">
+            <div className="login-form">
+              {paso === 1 && (
+                <>
+                  <label>Usuario</label>
+                  <input
+                    placeholder="Código institucional"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && buscarPreguntas()}
+                    autoFocus
+                  />
+                </>
+              )}
 
-            {paso === 2 && (
-              <>
-                {preguntas.map((p) => (
-                  <div key={p.id}>
-                    <label>{p.pregunta}</label>
-                    <input
-                      type="text"
-                      value={respuestas[p.id] || ""}
-                      onChange={(e) =>
-                        setRespuestas({ ...respuestas, [p.id]: e.target.value })
-                      }
-                      autoFocus
-                    />
-                  </div>
-                ))}
+              {paso === 2 && (
+                <>
+                  {preguntas.map((p) => (
+                    <div key={p.id}>
+                      <label>{p.pregunta}</label>
+                      <input
+                        type="text"
+                        value={respuestas[p.id] || ""}
+                        onChange={(e) =>
+                          setRespuestas({ ...respuestas, [p.id]: e.target.value })
+                        }
+                        autoFocus
+                      />
+                    </div>
+                  ))}
 
-                <label style={{ marginTop: "1rem" }}>Nueva contraseña</label>
-                <input
-                  type="password"
-                  placeholder="Mínimo 8 caracteres, letras y números"
-                  value={passwordNueva}
-                  onChange={(e) => setPasswordNueva(e.target.value)}
-                />
+                  <label style={{ marginTop: "1rem" }}>Nueva contraseña</label>
+                  <input
+                    type="password"
+                    placeholder="Mínimo 8 caracteres, letras y números"
+                    value={passwordNueva}
+                    onChange={(e) => setPasswordNueva(e.target.value)}
+                  />
 
-                <label>Repetir nueva contraseña</label>
-                <input
-                  type="password"
-                  placeholder="Repita la contraseña"
-                  value={passwordRepetir}
-                  onChange={(e) => setPasswordRepetir(e.target.value)}
-                />
-              </>
-            )}
+                  <label>Repetir nueva contraseña</label>
+                  <input
+                    type="password"
+                    placeholder="Repita la contraseña"
+                    value={passwordRepetir}
+                    onChange={(e) => setPasswordRepetir(e.target.value)}
+                  />
+                </>
+              )}
 
-            {paso === 3 && (
-              <div style={{ textAlign: "center", padding: "2rem 0" }}>
-                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✓</div>
-                <p style={{ fontSize: "1.1rem", fontWeight: "500" }}>
-                  Su contraseña ha sido actualizada correctamente
-                </p>
-              </div>
-            )}
+              {paso === 3 && (
+                <div style={{ textAlign: "center", padding: "2rem 0" }}>
+                  <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✓</div>
+                  <p style={{ fontSize: "1.1rem", fontWeight: "500" }}>
+                    Su contraseña ha sido actualizada correctamente
+                  </p>
+                </div>
+              )}
 
-            {error && (
-              <div className="login-error" role="alert">
-                {error}
-              </div>
-            )}
+              {error && (
+                <div className="login-error" role="alert">
+                  {error}
+                </div>
+              )}
+            </div>
+          </div>
 
+          <div className="login-buttons">
             {paso < 3 && (
               <button
                 className="login-btn"
