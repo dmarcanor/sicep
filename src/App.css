@@ -1116,6 +1116,7 @@ tbody tr:hover{
   flex-direction:column;
   justify-content:flex-start;
   overflow-y:auto;
+  min-height:0;
 }
 
 .login-head h1{
