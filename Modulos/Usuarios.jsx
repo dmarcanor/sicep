@@ -18,7 +18,24 @@ const formVacio = {
   phone: "",
   position: "",
   active: true,
+  preguntas: [
+    { pregunta: "", respuesta: "" },
+    { pregunta: "", respuesta: "" },
+  ],
 };
+
+const PREGUNTAS_DISPONIBLES = [
+  "¿Cuál es el nombre de tu primera mascota?",
+  "¿En qué ciudad naciste?",
+  "¿Cuál es tu comida favorita?",
+  "¿Cuál es el nombre de tu mejor amigo de la infancia?",
+  "¿Cuál es tu película favorita?",
+  "¿En qué calle creciste?",
+  "¿Cuál es el segundo nombre de tu madre?",
+  "¿Cuál es tu libro favorito?",
+  "¿Cuál es el nombre de tu escuela primaria?",
+  "¿Cuál es tu color favorito?",
+];
 
 // Reflejan las reglas de UsuarioController@store; si cambian allí, cambian aquí.
 const AYUDAS = {
@@ -77,8 +94,8 @@ export default function Usuarios() {
     setMostrarModal(true);
   };
 
-  const abrirEdicion = (usuario) => {
-    setForm({ ...usuario, password: "", pin: "" });
+  const abrirEdicion = async (usuario) => {
+    setForm({ ...usuario, password: "", pin: "", preguntas: formVacio.preguntas.map(p => ({...p})) });
     setErrores({});
     setMostrarModal(true);
   };
@@ -136,6 +153,33 @@ export default function Usuarios() {
       } else if (pin.length < 4 || pin.length > 6) {
         err.pin = `El PIN debe tener entre 4 y 6 dígitos (tiene ${pin.length}).`;
       }
+
+      // Validar preguntas de seguridad (solo obligatorio para nuevos usuarios)
+      if (!form.id) {
+        if (!form.preguntas[0].pregunta) {
+          err.preguntas = "Seleccione la primera pregunta de seguridad.";
+        } else if (!form.preguntas[0].respuesta.trim()) {
+          err.preguntas = "Responda la primera pregunta de seguridad.";
+        } else if (!form.preguntas[1].pregunta) {
+          err.preguntas = "Seleccione la segunda pregunta de seguridad.";
+        } else if (!form.preguntas[1].respuesta.trim()) {
+          err.preguntas = "Responda la segunda pregunta de seguridad.";
+        } else if (form.preguntas[0].pregunta === form.preguntas[1].pregunta) {
+          err.preguntas = "Las dos preguntas deben ser diferentes.";
+        }
+      } else {
+        // Para usuarios existentes, si se están configurando preguntas, validarlas
+        if (form.preguntas[0].pregunta || form.preguntas[0].respuesta.trim() || 
+            form.preguntas[1].pregunta || form.preguntas[1].respuesta.trim()) {
+          if (!form.preguntas[0].pregunta || !form.preguntas[0].respuesta.trim()) {
+            err.preguntas = "Complete la primera pregunta y respuesta.";
+          } else if (!form.preguntas[1].pregunta || !form.preguntas[1].respuesta.trim()) {
+            err.preguntas = "Complete la segunda pregunta y respuesta.";
+          } else if (form.preguntas[0].pregunta === form.preguntas[1].pregunta) {
+            err.preguntas = "Las dos preguntas deben ser diferentes.";
+          }
+        }
+      }
     }
 
     if (!form.role.trim()) err.role = "Seleccione un rol.";
@@ -164,14 +208,24 @@ export default function Usuarios() {
         const datos = { ...form };
         if (!datos.password) delete datos.password;
         delete datos.pin;
+        delete datos.preguntas_configuradas; // No se envía este campo
+        
+        // Solo enviar preguntas si el administrador las configuró al editar
+        const tienePreguntas = form.preguntas[0].pregunta && form.preguntas[0].respuesta.trim() &&
+                               form.preguntas[1].pregunta && form.preguntas[1].respuesta.trim();
+        if (!tienePreguntas) {
+          delete datos.preguntas;
+        }
 
         await executeWithPin(async (pin) => {
           await api.updateUsuario(form.id, datos, pin);
         }, "Actualizar Usuario");
         setMensaje("Usuario actualizado correctamente");
       } else {
+        // Para nuevos usuarios, incluir las preguntas de seguridad
+        const datos = { ...form };
         await executeWithPin(async (pin) => {
-          await api.createUsuario(form, pin);
+          await api.createUsuario(datos, pin);
         }, "Crear Usuario");
         setMensaje("Usuario creado correctamente");
       }
@@ -386,18 +440,95 @@ export default function Usuarios() {
               </Campo>
 
               {!form.id && (
-                <>
-                  <Campo label="PIN de Seguridad *" ayuda={AYUDAS.pin} error={errores.pin}>
-                    <EntradaDigitos
-                      value={form.pin}
-                      maxLength={6}
-                      onChange={(valor) => setForm({ ...form, pin: valor })}
-                      className={errores.pin ? "error" : ""}
-                      placeholder="4 a 6 dígitos"
+                <Campo label="PIN de Seguridad *" ayuda={AYUDAS.pin} error={errores.pin}>
+                  <EntradaDigitos
+                    value={form.pin}
+                    maxLength={6}
+                    onChange={(valor) => setForm({ ...form, pin: valor })}
+                    className={errores.pin ? "error" : ""}
+                    placeholder="4 a 6 dígitos"
+                  />
+                </Campo>
+              )}
+
+              {/* Sección de preguntas de seguridad */}
+              <div className="preguntas-seguridad-seccion">
+                <h4 className="preguntas-seguridad-titulo">
+                  Preguntas de seguridad para recuperación de contraseña
+                </h4>
+                
+                <div className="pregunta-par">
+                  <Campo label="Pregunta 1 *" ayuda={form.id && form.preguntas_configuradas ? "Deje vacías para mantener las actuales" : "Seleccione una pregunta"} error={errores.preguntas}>
+                    <select
+                      value={form.preguntas[0].pregunta}
+                      onChange={(e) => {
+                        const nuevas = form.preguntas.map((p, idx) => 
+                          idx === 0 ? { ...p, pregunta: e.target.value } : p
+                        );
+                        setForm({ ...form, preguntas: nuevas });
+                      }}
+                      className={errores.preguntas ? "error" : ""}
+                    >
+                      <option value="">Seleccione una pregunta...</option>
+                      {PREGUNTAS_DISPONIBLES.map((p, idx) => (
+                        <option key={idx} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </Campo>
+
+                  <Campo label="Respuesta 1 *" error={null}>
+                    <input
+                      type="text"
+                      value={form.preguntas[0].respuesta}
+                      onChange={(e) => {
+                        const nuevas = form.preguntas.map((p, idx) => 
+                          idx === 0 ? { ...p, respuesta: e.target.value } : p
+                        );
+                        setForm({ ...form, preguntas: nuevas });
+                      }}
+                      className={errores.preguntas ? "error" : ""}
+                      placeholder="Respuesta a la pregunta"
                     />
                   </Campo>
-                </>
-              )}
+                </div>
+
+                <div className="pregunta-par">
+                  <Campo label="Pregunta 2 *" error={null}>
+                    <select
+                      value={form.preguntas[1].pregunta}
+                      onChange={(e) => {
+                        const nuevas = form.preguntas.map((p, idx) => 
+                          idx === 1 ? { ...p, pregunta: e.target.value } : p
+                        );
+                        setForm({ ...form, preguntas: nuevas });
+                      }}
+                    >
+                      <option value="">Seleccione una pregunta...</option>
+                      {PREGUNTAS_DISPONIBLES.map((p, idx) => (
+                        <option key={idx} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </Campo>
+
+                  <Campo label="Respuesta 2 *" error={null}>
+                    <input
+                      type="text"
+                      value={form.preguntas[1].respuesta}
+                      onChange={(e) => {
+                        const nuevas = form.preguntas.map((p, idx) => 
+                          idx === 1 ? { ...p, respuesta: e.target.value } : p
+                        );
+                        setForm({ ...form, preguntas: nuevas });
+                      }}
+                      placeholder="Respuesta a la pregunta"
+                    />
+                  </Campo>
+                </div>
+              </div>
 
               <Campo label="Rol *" error={errores.role}>
                 <select

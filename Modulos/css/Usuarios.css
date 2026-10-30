@@ -154,3 +154,28 @@
   /* Los modales los centra .modal-overlay con flex. Aquí había un
      margin-left: 100px !important que, por ser global y llevar !important,
      descentraba TODOS los modales del sistema, no sólo los de Usuarios. */
+
+  /* Sección de preguntas de seguridad */
+  .preguntas-seguridad-seccion{
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 16px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    margin: 8px 0;
+  }
+
+  .preguntas-seguridad-titulo{
+    grid-column: 1 / -1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    margin: 0 0 4px 0;
+  }
+
+  .pregunta-par{
+    display: contents;
+  }
