@@ -1047,11 +1047,11 @@ tbody tr:hover{
   display:grid;
   grid-template-columns:1.1fr .9fr;
   border-radius:20px;
-  overflow:hidden;
   box-shadow:0 30px 80px rgba(0,0,0,.45);
   backdrop-filter:blur(10px);
   border:1px solid rgba(255,255,255,.08);
   z-index:2;
+  overflow-y:auto;
 }
 
 
@@ -1114,9 +1114,24 @@ tbody tr:hover{
   padding:40px;
   display:flex;
   flex-direction:column;
-  justify-content:flex-start;
+  justify-content:space-between;
+  min-height:0;
+  overflow:hidden;
+}
+
+.login-form-scroll{
+  flex:1;
   overflow-y:auto;
   min-height:0;
+  padding:10px 0;
+}
+
+.login-buttons{
+  flex-shrink:0;
+  padding-top:10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
 }
 
 .login-head h1{
