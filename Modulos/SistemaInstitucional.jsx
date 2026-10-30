@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Perfil from "./Perfil";
 import Usuarios from "./Usuarios";
+import RecuperarPassword from "./RecuperarPassword";
 import "../src/App.css";
 import "./css/PanelPrincipal.css";
 
@@ -184,6 +185,7 @@ export default function SistemaInstitucional() {
 
   const [usuario, setUsuario] = useState(null);
   const [vista, setVista] = useState("login");
+  const [mostrarRecuperacion, setMostrarRecuperacion] = useState(false);
 
   const [loginData, setLoginData] = useState({
     user: "",
@@ -342,6 +344,15 @@ export default function SistemaInstitucional() {
   };
 
   if (vista === "login") {
+    if (mostrarRecuperacion) {
+      return (
+        <RecuperarPassword
+          onVolver={() => setMostrarRecuperacion(false)}
+          onExito={() => setMostrarRecuperacion(false)}
+        />
+      );
+    }
+
     return (
       <div className="login-root">
         <div className="login-bg">
@@ -425,6 +436,14 @@ export default function SistemaInstitucional() {
 
               <button className="login-btn" onClick={ingresar} disabled={ingresando}>
                 {ingresando ? "Verificando..." : "Acceder al sistema"}
+              </button>
+
+              <button
+                type="button"
+                className="login-forgot-link"
+                onClick={() => setMostrarRecuperacion(true)}
+              >
+                ¿Olvidaste tu contraseña?
               </button>
             </div>
 

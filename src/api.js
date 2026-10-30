@@ -599,4 +599,29 @@ export const api = {
     });
     return handleResponse(response);
   },
+
+  async configurarPreguntas(preguntas, pin = null) {
+    const response = await fetch(`${API_BASE}/preguntas/configurar`, {
+      method: 'POST',
+      headers: getHeaders(pin),
+      body: JSON.stringify({ preguntas }),
+    });
+    return handleResponse(response);
+  },
+
+  async obtenerPreguntas(username) {
+    const response = await fetch(`${API_BASE}/preguntas/${username}`, {
+      headers: { 'Accept': 'application/json' },
+    });
+    return handleResponse(response);
+  },
+
+  async recuperarPassword(username, respuestas, passwordNueva) {
+    const response = await fetch(`${API_BASE}/password/recuperar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ username, respuestas, password_nueva: passwordNueva }),
+    });
+    return handleResponse(response, { cerrarSesionSi401: false });
+  },
 };

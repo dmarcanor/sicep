@@ -1,4 +1,4 @@
-php
+<?php
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BitacoraController;
@@ -10,13 +10,13 @@ use App\Http\Controllers\Api\HistorialController;
 use App\Http\Controllers\Api\NnaController;
 use App\Http\Controllers\Api\ObservacionExpedienteController;
 use App\Http\Controllers\Api\PanelController;
-use App\Http<?\Controllers\Api\PlantillaController;
+use App\Http\Controllers\Api\PlantillaController;
 use App\Http\Controllers\Api\RepresentanteController;
 use App\Http\Controllers\Api\ResumenExpedienteController;
 use App\Http\Controllers\Api\ReporteController;
 use App\Http\Controllers\Api\SolicitudArchivoController;
 use App\Http\Controllers\Api\UsuarioController;
-use Illuminate\Spport\Facades\Route;
+use Illuminate\Support\Facades\Route;
 
 // El expediente es la fuente legal del caso: el sistema no expone borrado en
 // ninguna capa. Un registro sólo cambia de estatus (incluido "Cerrado").
@@ -34,6 +34,8 @@ use Illuminate\Spport\Facades\Route;
 
 // Única ruta sin control de rol: todavía no hay usuario autenticado.
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/preguntas/{username}', [AuthController::class, 'obtenerPreguntas']);
+Route::post('/password/recuperar', [AuthController::class, 'recuperarPassword']);
 
 Route::middleware(['auth:sanctum', 'role:administrador,supervisor,consejero'])->group(function () {
 
@@ -49,6 +51,7 @@ Route::middleware(['auth:sanctum', 'role:administrador,supervisor,consejero'])->
 
     Route::middleware('verify.pin')->put('/profile', [AuthController::class, 'updateProfile']);
     Route::middleware('verify.pin')->post('/me/password', [AuthController::class, 'changePassword']);
+    Route::middleware('verify.pin')->post('/preguntas/configurar', [AuthController::class, 'configurarPreguntas']);
 
     Route::middleware('permiso:principal')->get('/panel', [PanelController::class, 'index']);
 

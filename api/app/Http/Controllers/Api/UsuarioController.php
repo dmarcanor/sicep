@@ -30,7 +30,14 @@ class UsuarioController extends Controller
             $query->where('role', $request->role);
         }
 
-        return response()->json($query->orderByDesc('id')->get());
+        $users = $query->orderByDesc('id')->get()->map(function ($user) {
+            return [
+                ...$user->toArray(),
+                'preguntas_configuradas' => $user->preguntas_configuradas,
+            ];
+        });
+
+        return response()->json($users);
     }
 
     public function store(Request $request)
@@ -45,6 +52,9 @@ class UsuarioController extends Controller
             'display_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'position' => 'nullable|string|max:255',
+            'preguntas' => 'required|array|min:2|max:2',
+            'preguntas.*.pregunta' => 'required|string',
+            'preguntas.*.respuesta' => 'required|string|min:1',
         ]);
 
         $user = User::create([
@@ -61,6 +71,15 @@ class UsuarioController extends Controller
             'active' => true,
         ]);
 
+        // Crear preguntas de seguridad
+        foreach ($request->preguntas as $pregunta) {
+            $user->preguntasSeguridad()->create([
+                'pregunta' => $pregunta['pregunta'],
+                'respuesta' => Hash::make(\Illuminate\Support\Str::lower(trim($pregunta['respuesta']))),
+            ]);
+        }
+        $user->update(['preguntas_configuradas' => true]);
+
         Auditoria::registrar(
             $request,
             'Creación de usuario',
@@ -75,7 +94,10 @@ class UsuarioController extends Controller
 
     public function show(User $user)
     {
-        return response()->json($user);
+        return response()->json([
+            ...$user->toArray(),
+            'preguntas_configuradas' => $user->preguntas_configuradas,
+        ]);
     }
 
     public function update(Request $request, User $user)
@@ -94,6 +116,9 @@ class UsuarioController extends Controller
             'position' => 'sometimes|nullable|string|max:255',
             'active' => 'sometimes|boolean',
             'pin' => 'sometimes|string|min:4|max:6|regex:/^[0-9]+$/',
+            'preguntas' => 'sometimes|array|min:2|max:2',
+            'preguntas.*.pregunta' => 'required_with:preguntas|string',
+            'preguntas.*.respuesta' => 'required_with:preguntas|string|min:1',
         ]);
 
         if (isset($datos['password'])) {
@@ -105,6 +130,22 @@ class UsuarioController extends Controller
             $datos['pin_configurado'] = true;
         }
 
+        // Manejar preguntas de seguridad
+        if (isset($datos['preguntas'])) {
+            // Eliminar preguntas anteriores
+            $user->preguntasSeguridad()->delete();
+            
+            // Crear nuevas preguntas
+            foreach ($datos['preguntas'] as $pregunta) {
+                $user->preguntasSeguridad()->create([
+                    'pregunta' => $pregunta['pregunta'],
+                    'respuesta' => Hash::make(\Illuminate\Support\Str::lower(trim($pregunta['respuesta']))),
+                ]);
+            }
+            $user->update(['preguntas_configuradas' => true]);
+            unset($datos['preguntas']); // No incluir en auditoría de campos
+        }
+
         $cambios = Auditoria::actualizar($user, $datos);
 
         // Los valores nunca se guardan en el historial: sólo consta que cambiaron.
@@ -114,6 +155,10 @@ class UsuarioController extends Controller
 
         if (array_key_exists('pin', $datos)) {
             $cambios['pin'] = [null, 'cambiado'];
+        }
+
+        if ($request->has('preguntas')) {
+            $cambios['preguntas'] = [null, 'reconfiguradas'];
         }
 
         Auditoria::registrar(
