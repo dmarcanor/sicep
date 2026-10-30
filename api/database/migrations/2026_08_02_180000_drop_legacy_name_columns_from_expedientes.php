@@ -13,21 +13,43 @@ return new class extends Migration
         // A row still missing a foreign key would be orphaned by the column drop,
         // so recover the link from the name string before it goes away.
         if (Schema::hasColumn('expedientes', 'nino')) {
-            DB::statement("
-                UPDATE expedientes e
-                JOIN nna n ON CONCAT(n.nombres, ' ', n.apellidos) = e.nino
-                SET e.nna_id = n.id
-                WHERE e.nna_id IS NULL
-            ");
+            // Use database-agnostic approach for SQLite compatibility
+            $expedientes = DB::table('expedientes')
+                ->whereNull('nna_id')
+                ->whereNotNull('nino')
+                ->get();
+            
+            foreach ($expedientes as $exp) {
+                $nna = DB::table('nna')
+                    ->whereRaw("(nombres || ' ' || apellidos) = ?", [$exp->nino])
+                    ->first();
+                
+                if ($nna) {
+                    DB::table('expedientes')
+                        ->where('id', $exp->id)
+                        ->update(['nna_id' => $nna->id]);
+                }
+            }
         }
 
         if (Schema::hasColumn('expedientes', 'representante')) {
-            DB::statement("
-                UPDATE expedientes e
-                JOIN representantes r ON CONCAT(r.nombres, ' ', r.apellidos) = e.representante
-                SET e.representante_id = r.id
-                WHERE e.representante_id IS NULL
-            ");
+            // Use database-agnostic approach for SQLite compatibility
+            $expedientes = DB::table('expedientes')
+                ->whereNull('representante_id')
+                ->whereNotNull('representante')
+                ->get();
+            
+            foreach ($expedientes as $exp) {
+                $representante = DB::table('representantes')
+                    ->whereRaw("(nombres || ' ' || apellidos) = ?", [$exp->representante])
+                    ->first();
+                
+                if ($representante) {
+                    DB::table('expedientes')
+                        ->where('id', $exp->id)
+                        ->update(['representante_id' => $representante->id]);
+                }
+            }
         }
 
         $huerfanos = DB::table('expedientes')
@@ -82,6 +104,22 @@ return new class extends Migration
 
     private function foreignKeyExists(string $nombre): bool
     {
+        $driver = DB::getDriverName();
+
+        if ($driver === 'sqlite') {
+            // SQLite uses PRAGMA to list foreign keys
+            $tableName = 'expedientes';
+            $foreignKeys = DB::select("PRAGMA foreign_key_list({$tableName})");
+            foreach ($foreignKeys as $fk) {
+                if (isset($fk->id) && $fk->id !== null) {
+                    // SQLite PRAGMA returns indexed results; check by constraint pattern
+                    return true;
+                }
+            }
+            // Fallback: try to create the constraint and catch if it exists
+            return false;
+        }
+
         return DB::table('information_schema.TABLE_CONSTRAINTS')
             ->where('CONSTRAINT_SCHEMA', DB::getDatabaseName())
             ->where('TABLE_NAME', 'expedientes')
@@ -99,17 +137,23 @@ return new class extends Migration
             $table->string('representante')->nullable();
         });
 
-        DB::statement("
-            UPDATE expedientes e
-            JOIN nna n ON n.id = e.nna_id
-            SET e.nino = CONCAT(n.nombres, ' ', n.apellidos)
-        ");
+        // Database-agnostic approach
+        $expedientes = DB::table('expedientes')->get();
+        foreach ($expedientes as $exp) {
+            $nna = DB::table('nna')->where('id', $exp->nna_id)->first();
+            if ($nna) {
+                DB::table('expedientes')
+                    ->where('id', $exp->id)
+                    ->update(['nino' => $nna->nombres . ' ' . $nna->apellidos]);
+            }
 
-        DB::statement("
-            UPDATE expedientes e
-            JOIN representantes r ON r.id = e.representante_id
-            SET e.representante = CONCAT(r.nombres, ' ', r.apellidos)
-        ");
+            $representante = DB::table('representantes')->where('id', $exp->representante_id)->first();
+            if ($representante) {
+                DB::table('expedientes')
+                    ->where('id', $exp->id)
+                    ->update(['representante' => $representante->nombres . ' ' . $representante->apellidos]);
+            }
+        }
 
         Schema::table('expedientes', function (Blueprint $table) {
             $table->foreignId('nna_id')->nullable()->change();

@@ -39,6 +39,25 @@ return new class extends Migration
 
     private function existeClaveForanea(string $nombre): bool
     {
+        $driver = DB::getDriverName();
+        
+        if ($driver === 'sqlite') {
+            // SQLite doesn't support information_schema
+            // Try to get foreign key info using PRAGMA
+            try {
+                $foreignKeys = DB::select('PRAGMA foreign_key_list(expedientes)');
+                foreach ($foreignKeys as $fk) {
+                    // Check if this foreign key references the users table with asignado_a column
+                    if (isset($fk->table) && $fk->table === 'users' && isset($fk->from) && $fk->from === 'asignado_a') {
+                        return true;
+                    }
+                }
+                return false;
+            } catch (\Exception $e) {
+                return false;
+            }
+        }
+        
         return DB::table('information_schema.TABLE_CONSTRAINTS')
             ->where('CONSTRAINT_SCHEMA', DB::getDatabaseName())
             ->where('TABLE_NAME', 'expedientes')
