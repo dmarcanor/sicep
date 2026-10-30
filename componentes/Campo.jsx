@@ -1,4 +1,5 @@
 import "./css/Campo.css";
+import { formatearLabel } from "./formatearLabel.jsx";
 
 /**
  * Campo de formulario con su leyenda.
@@ -15,7 +16,7 @@ import "./css/Campo.css";
 export default function Campo({ label, ayuda, error, ancho = false, children }) {
   return (
     <div className={ancho ? "campo ancho" : "campo"}>
-      <label>{label}</label>
+      <label>{formatearLabel(label)}</label>
       {children}
       {error ? (
         <small className="campo-error">{error}</small>

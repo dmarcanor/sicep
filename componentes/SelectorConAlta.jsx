@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "./css/Campo.css";
 import "./css/SelectorConAlta.css";
 import { EntradaDigitos, EntradaDocumento, EntradaFecha, EntradaTelefono, LIMITES } from "./entradas";
+import { formatearLabel } from "./formatearLabel.jsx";
 
 // Sin acentos y en minúsculas: quien busca "perez" debe encontrar "Pérez".
 const normalizar = (texto) =>
@@ -206,7 +207,7 @@ export default function SelectorConAlta({
 
   return (
     <div className={ancho ? "campo ancho" : "campo"}>
-      <label>{label}</label>
+      <label>{formatearLabel(label)}</label>
 
       <div
         ref={contenedorRef}
@@ -318,7 +319,7 @@ export default function SelectorConAlta({
             <div key={campo.name} className="campo">
               <label style={{ fontSize: "12px" }}>
                 {campo.label}
-                {campo.required ? " *" : ""}
+                {campo.required ? <span className="req"> *</span> : ""}
               </label>
 
               {campo.type === "select" ? (

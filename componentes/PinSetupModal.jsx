@@ -58,7 +58,7 @@ export default function PinSetupModal({ isOpen, onClose, onSuccess }) {
         </p>
 
         <div className="pin-modal-campo">
-          <label>Nuevo PIN *</label>
+          <label>Nuevo PIN <span className="req">*</span></label>
           <input
             type="password"
             value={pin}
@@ -74,7 +74,7 @@ export default function PinSetupModal({ isOpen, onClose, onSuccess }) {
         </div>
 
         <div className="pin-modal-campo">
-          <label>Confirmar PIN *</label>
+          <label>Confirmar PIN <span className="req">*</span></label>
           <input
             type="password"
             value={confirmPin}

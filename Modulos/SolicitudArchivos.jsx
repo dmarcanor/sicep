@@ -155,7 +155,7 @@ export default function SolicitudArchivos() {
   const busquedaDiferida = useBusquedaDiferida(busqueda);
 
   useEffect(() => {
-    api.getExpedientes().then(setExpedientes).catch(console.error);
+    api.getExpedientes().then(res => setExpedientes(res.data || [])).catch(console.error);
     api.getUsuarios().then(setUsuarios).catch(console.error);
   }, []);
 
@@ -643,7 +643,7 @@ export default function SolicitudArchivos() {
 
           <div className="form-nuevo-expediente">
             <div className="campo">
-              <label>Archivo *</label>
+              <label>Archivo <span className="req">*</span></label>
               <input
                 value={ubicacionForm.archivo}
                 onChange={(e) => setUbicacionForm((prev) => ({ ...prev, archivo: e.target.value }))}
@@ -653,7 +653,7 @@ export default function SolicitudArchivos() {
             </div>
 
             <div className="campo">
-              <label>Estante *</label>
+              <label>Estante <span className="req">*</span></label>
               <input
                 value={ubicacionForm.estante}
                 onChange={(e) => setUbicacionForm((prev) => ({ ...prev, estante: e.target.value }))}
@@ -663,7 +663,7 @@ export default function SolicitudArchivos() {
             </div>
 
             <div className="campo">
-              <label>Nivel *</label>
+              <label>Nivel <span className="req">*</span></label>
               <input
                 value={ubicacionForm.nivel}
                 onChange={(e) => setUbicacionForm((prev) => ({ ...prev, nivel: e.target.value }))}
@@ -673,7 +673,7 @@ export default function SolicitudArchivos() {
             </div>
 
             <div className="campo">
-              <label>Caja *</label>
+              <label>Caja <span className="req">*</span></label>
               <input
                 value={ubicacionForm.caja}
                 onChange={(e) => setUbicacionForm((prev) => ({ ...prev, caja: e.target.value }))}
@@ -833,7 +833,7 @@ export default function SolicitudArchivos() {
             {nuevoPaso === 1 ? (
               <div className="form-nuevo-expediente">
                 <div className="campo ancho">
-                  <label>Expediente *</label>
+                  <label>Expediente <span className="req">*</span></label>
                   <select
                     name="expedienteId"
                     value={nuevaSolicitud.expedienteId}
@@ -853,7 +853,7 @@ export default function SolicitudArchivos() {
                 </div>
 
                 <div className="campo ">
-                  <label>Caso *</label>
+                  <label>Caso <span className="req">*</span></label>
                   <input
                     name="caso"
                     value={nuevaSolicitud.caso}
@@ -863,7 +863,7 @@ export default function SolicitudArchivos() {
                   />
                 </div>
                 <div className="campo">
-                  <label>Estatus *</label>
+                  <label>Estatus <span className="req">*</span></label>
                   <select
                     name="estatus"
                     value={nuevaSolicitud.estatus}
@@ -877,7 +877,7 @@ export default function SolicitudArchivos() {
                 </div>
 
                 <div className="campo">
-                  <label>Solicitante *</label>
+                  <label>Solicitante <span className="req">*</span></label>
                   <select
                     name="solicitanteId"
                     value={nuevaSolicitud.solicitanteId}
@@ -894,7 +894,7 @@ export default function SolicitudArchivos() {
                 </div>
 
                 <div className="campo">
-                  <label>Fecha *</label>
+                  <label>Fecha <span className="req">*</span></label>
                   <input
                     type="date"
                     name="fechaSolicitud"
@@ -928,7 +928,7 @@ export default function SolicitudArchivos() {
                 </div>
 
                 <div className="campo">
-                  <label>Cargo *</label>
+                  <label>Cargo <span className="req">*</span></label>
                   <input
                     name="cargo"
                     value={nuevaSolicitud.cargo}
@@ -939,7 +939,7 @@ export default function SolicitudArchivos() {
                 </div>
 
                 <div className="campo">
-                  <label>Archivo *</label>
+                  <label>Archivo <span className="req">*</span></label>
                   <input
                     name="ubicacion.archivo"
                     value={nuevaSolicitud.ubicacion.archivo}
@@ -950,7 +950,7 @@ export default function SolicitudArchivos() {
                 </div>
 
                 <div className="campo">
-                  <label>Estante *</label>
+                  <label>Estante <span className="req">*</span></label>
                   <input
                     name="ubicacion.estante"
                     value={nuevaSolicitud.ubicacion.estante}
@@ -961,7 +961,7 @@ export default function SolicitudArchivos() {
                 </div>
 
                 <div className="campo">
-                  <label>Nivel *</label>
+                  <label>Nivel <span className="req">*</span></label>
                   <input
                     name="ubicacion.nivel"
                     value={nuevaSolicitud.ubicacion.nivel}
@@ -972,7 +972,7 @@ export default function SolicitudArchivos() {
                 </div>
 
                 <div className="campo">
-                  <label>Caja *</label>
+                  <label>Caja <span className="req">*</span></label>
                   <input
                     name="ubicacion.caja"
                     value={nuevaSolicitud.ubicacion.caja}
@@ -983,7 +983,7 @@ export default function SolicitudArchivos() {
                 </div>
 
                 <div className="campo ">
-                  <label>Motivo *</label>
+                  <label>Motivo <span className="req">*</span></label>
                   <textarea
                     name="motivo"
                     rows="3"

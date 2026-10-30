@@ -4,6 +4,19 @@ import { api } from "../src/api";
 import { usePinAction } from "../src/hooks/usePinAction";
 import { EntradaDigitos, EntradaTelefono } from "../componentes/entradas";
 
+const PREGUNTAS_DISPONIBLES = [
+  "¿Cuál es el nombre de tu primera mascota?",
+  "¿En qué ciudad naciste?",
+  "¿Cuál es tu comida favorita?",
+  "¿Cuál es el nombre de tu mejor amigo de la infancia?",
+  "¿Cuál es tu película favorita?",
+  "¿En qué calle creciste?",
+  "¿Cuál es el segundo nombre de tu madre?",
+  "¿Cuál es tu libro favorito?",
+  "¿Cuál es el nombre de tu escuela primaria?",
+  "¿Cuál es tu color favorito?",
+];
+
 export default function Perfil({ usuarioBase }) {
 
   const [perfil, setPerfil] = useState({
@@ -24,6 +37,14 @@ export default function Perfil({ usuarioBase }) {
   const [claves, setClaves] = useState({ actual: "", nueva: "", repetir: "" });
   const [errorClave, setErrorClave] = useState("");
   const [cambiandoClave, setCambiandoClave] = useState(false);
+
+  const [preguntasConfig, setPreguntasConfig] = useState([
+    { pregunta: "", respuesta: "" },
+    { pregunta: "", respuesta: "" },
+  ]);
+  const [errorPreguntas, setErrorPreguntas] = useState("");
+  const [guardandoPreguntas, setGuardandoPreguntas] = useState(false);
+  const [preguntasCargadas, setPreguntasCargadas] = useState(false);
 
   const cambiarContrasena = async () => {
     if (!claves.actual) {
@@ -92,7 +113,47 @@ export default function Perfil({ usuarioBase }) {
     }
   };
 
-  
+  const guardarPreguntas = async () => {
+    // Validar que ambas preguntas estén seleccionadas y respondidas
+    if (!preguntasConfig[0].pregunta || !preguntasConfig[1].pregunta) {
+      setErrorPreguntas("Seleccione dos preguntas de seguridad.");
+      return;
+    }
+    if (!preguntasConfig[0].respuesta.trim() || !preguntasConfig[1].respuesta.trim()) {
+      setErrorPreguntas("Responda ambas preguntas de seguridad.");
+      return;
+    }
+    if (preguntasConfig[0].respuesta.trim().length < 2 || preguntasConfig[1].respuesta.trim().length < 2) {
+      setErrorPreguntas("Las respuestas deben tener al menos 2 caracteres.");
+      return;
+    }
+
+    setErrorPreguntas("");
+    setGuardandoPreguntas(true);
+
+    try {
+      await executeWithPin(
+        (pin) =>
+          api.configurarPreguntas(
+            preguntasConfig.map((p) => ({
+              pregunta: p.pregunta,
+              respuesta: p.respuesta.trim(),
+            })),
+            pin
+          ),
+        "Configurar preguntas de seguridad"
+      );
+      setMensaje("Preguntas de seguridad configuradas correctamente");
+      setTimeout(() => setMensaje(""), 4000);
+    } catch (error) {
+      if (error.message !== "Acción cancelada") {
+        setErrorPreguntas(error.message || "No se pudieron configurar las preguntas.");
+      }
+    } finally {
+      setGuardandoPreguntas(false);
+    }
+  };
+
   useEffect(() => {
     cargarPerfil();
   }, []);
@@ -191,7 +252,7 @@ export default function Perfil({ usuarioBase }) {
 
         <div className="perfil-grid">
           <div className="campo">
-            <label>Contraseña actual *</label>
+            <label>Contraseña actual <span className="req">*</span></label>
             <input
               type="password"
               value={claves.actual}
@@ -201,7 +262,7 @@ export default function Perfil({ usuarioBase }) {
           </div>
 
           <div className="campo">
-            <label>Contraseña nueva *</label>
+            <label>Contraseña nueva <span className="req">*</span></label>
             <input
               type="password"
               value={claves.nueva}
@@ -211,7 +272,7 @@ export default function Perfil({ usuarioBase }) {
           </div>
 
           <div className="campo">
-            <label>Repetir contraseña nueva *</label>
+            <label>Repetir contraseña nueva <span className="req">*</span></label>
             <input
               type="password"
               value={claves.repetir}
@@ -240,7 +301,7 @@ export default function Perfil({ usuarioBase }) {
 
         <div className="perfil-grid">
           <div className="campo">
-            <label>PIN actual *</label>
+            <label>PIN actual <span className="req">*</span></label>
             <EntradaDigitos
               value={pines.actual}
               maxLength={6}
@@ -251,7 +312,7 @@ export default function Perfil({ usuarioBase }) {
           </div>
 
           <div className="campo">
-            <label>PIN nuevo *</label>
+            <label>PIN nuevo <span className="req">*</span></label>
             <EntradaDigitos
               value={pines.nuevo}
               maxLength={6}
@@ -262,7 +323,7 @@ export default function Perfil({ usuarioBase }) {
           </div>
 
           <div className="campo">
-            <label>Repetir PIN nuevo *</label>
+            <label>Repetir PIN nuevo <span className="req">*</span></label>
             <EntradaDigitos
               value={pines.repetir}
               maxLength={6}
@@ -281,13 +342,109 @@ export default function Perfil({ usuarioBase }) {
         </div>
       </div>
 
+      <div className="perfil-card">
+        <h3>Preguntas de seguridad</h3>
+        <p className="perfil-nota">
+          Configure dos preguntas de seguridad para recuperar su contraseña en caso de olvido.
+          Estas preguntas le permitirán restablecer su acceso sin intervención de un administrador.
+        </p>
+
+        <div className="perfil-grid">
+          <div className="campo">
+            <label>Pregunta 1 <span className="req">*</span></label>
+            <select
+              value={preguntasConfig[0].pregunta}
+              onChange={(e) =>
+                setPreguntasConfig([
+                  { ...preguntasConfig[0], pregunta: e.target.value },
+                  preguntasConfig[1],
+                ])
+              }
+              className={errorPreguntas ? "error" : ""}
+            >
+              <option value="">Seleccione una pregunta...</option>
+              {PREGUNTAS_DISPONIBLES.map((p, idx) => (
+                <option key={idx} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="campo">
+            <label>Respuesta 1 <span className="req">*</span></label>
+            <input
+              type="text"
+              value={preguntasConfig[0].respuesta}
+              onChange={(e) =>
+                setPreguntasConfig([
+                  { ...preguntasConfig[0], respuesta: e.target.value },
+                  preguntasConfig[1],
+                ])
+              }
+              placeholder="Su respuesta"
+              className={errorPreguntas ? "error" : ""}
+            />
+          </div>
+
+          <div className="campo">
+            <label>Pregunta 2 <span className="req">*</span></label>
+            <select
+              value={preguntasConfig[1].pregunta}
+              onChange={(e) =>
+                setPreguntasConfig([
+                  preguntasConfig[0],
+                  { ...preguntasConfig[1], pregunta: e.target.value },
+                ])
+              }
+              className={errorPreguntas ? "error" : ""}
+            >
+              <option value="">Seleccione una pregunta...</option>
+              {PREGUNTAS_DISPONIBLES.map((p, idx) => (
+                <option key={idx} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="campo">
+            <label>Respuesta 2 <span className="req">*</span></label>
+            <input
+              type="text"
+              value={preguntasConfig[1].respuesta}
+              onChange={(e) =>
+                setPreguntasConfig([
+                  preguntasConfig[0],
+                  { ...preguntasConfig[1], respuesta: e.target.value },
+                ])
+              }
+              placeholder="Su respuesta"
+              className={errorPreguntas ? "error" : ""}
+            />
+          </div>
+        </div>
+
+        {errorPreguntas && <small className="campo-error">{errorPreguntas}</small>}
+
+        <div className="perfil-actions-top">
+          <button
+            className="btn-primary"
+            onClick={guardarPreguntas}
+            disabled={guardandoPreguntas}
+          >
+            {guardandoPreguntas ? "Guardando..." : "Guardar preguntas"}
+          </button>
+        </div>
+      </div>
+
       
       <div className="perfil-card">
 
         <div className="perfil-grid">
 
           <div className="campo ancho">
-            <label>Nombre completo *</label>
+            <label>Nombre completo <span className="req">*</span></label>
             <input
               name="name"
               value={perfil.name}
@@ -297,7 +454,7 @@ export default function Perfil({ usuarioBase }) {
           </div>
 
           <div className="campo ancho">
-            <label>Correo *</label>
+            <label>Correo <span className="req">*</span></label>
             <input
               name="email"
               value={perfil.email}
@@ -307,7 +464,7 @@ export default function Perfil({ usuarioBase }) {
           </div>
 
           <div className="campo">
-            <label>Teléfono *</label>
+            <label>Teléfono <span className="req">*</span></label>
             <EntradaTelefono
               value={perfil.phone}
               onChange={(valor) => manejarCambio({ target: { name: "phone", value: valor } })}

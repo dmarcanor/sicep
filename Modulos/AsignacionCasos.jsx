@@ -114,7 +114,7 @@ export default function AsignacionCasosConsejeros() {
     }
 
     if (expedientesRes.status === "fulfilled") {
-      setExpedientes(expedientesRes.value);
+      setExpedientes(expedientesRes.value.data || []);
     } else {
       fallos.push("los expedientes");
       console.error("Error cargando expedientes:", expedientesRes.reason);
@@ -487,7 +487,7 @@ export default function AsignacionCasosConsejeros() {
 
             <div className="form-nuevo-expediente">
               <div className="campo ancho">
-                <label>Expediente *</label>
+                <label>Expediente <span className="req">*</span></label>
                 <select
                   value={formNuevo.expedienteId}
                   onChange={(e) => setFormNuevo((p) => ({ ...p, expedienteId: e.target.value }))}

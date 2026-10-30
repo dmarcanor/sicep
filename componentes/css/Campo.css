@@ -13,6 +13,13 @@
   color: #c0392b;
 }
 
+/* Asterisco de campo obligatorio en rojo para destacar la exigencia de captura. */
+.req {
+  color: #c0392b;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
 /* Nacionalidad + número: se leen como un solo control. */
 .entrada-compuesta {
   display: flex;
