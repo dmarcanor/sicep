@@ -44,7 +44,7 @@ export default function PanelPrincipal() {
     try {
       setCargando(true);
       const data = await api.getExpedientes();
-      setExpedientes(data);
+      setExpedientes(data.data || []);
     } catch (error) {
       console.error('Error cargando expedientes:', error);
     } finally {

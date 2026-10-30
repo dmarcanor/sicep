@@ -328,3 +328,184 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+/* Botón que abre la modal de selección de expedientes. */
+.plantillas-btn-expediente {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border: 1px solid #D6E1EC;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 13px;
+  color: #1E3A5F;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 280px;
+  text-align: left;
+}
+
+.plantillas-btn-expediente:hover {
+  border-color: #7EA7E8;
+  background: #F8FBFF;
+}
+
+.plantillas-btn-exp-ico {
+  font-size: 16px;
+}
+
+.plantillas-btn-exp-cambia {
+  margin-left: auto;
+  font-size: 11px;
+  color: #2F6FB2;
+  font-weight: 500;
+}
+
+/* Modal de expedientes */
+.modal-expedientes {
+  width: 1300px !important;
+  max-width: 95vw !important;
+  max-height: 90vh !important;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6B7C93;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.modal-close-btn:hover {
+  color: #1E3A5F;
+}
+
+.expedientes-buscador {
+  padding: 16px;
+  border-bottom: 1px solid #E6EDF5;
+  background: #F9FAFB;
+}
+
+.expedientes-buscador-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #D6E1EC;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+
+.expedientes-buscador-input:focus {
+  outline: none;
+  border-color: #2F6FB2;
+}
+
+.expedientes-tabla-wrap {
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.expedientes-cargando,
+.expedientes-vacio-modal {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6B7C93;
+  font-size: 14px;
+}
+
+.expedientes-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.expedientes-tabla thead {
+  background: #F5F7FA;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.expedientes-tabla th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1E3A5F;
+  border-bottom: 2px solid #E6EDF5;
+}
+
+.expedientes-tabla td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #1E2A38;
+  border-bottom: 1px solid #E6EDF5;
+}
+
+.expedientes-tabla tbody tr:hover {
+  background: #F8FBFF;
+}
+
+.expedientes-tabla-accion {
+  text-align: right;
+  width: 120px;
+}
+
+.expedientes-btn-seleccionar {
+  padding: 6px 14px;
+  border: 1px solid #2F6FB2;
+  border-radius: 6px;
+  background: #2F6FB2;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.expedientes-btn-seleccionar:hover {
+  background: #1F5C99;
+  border-color: #1F5C99;
+}
+
+.expedientes-paginacion-info {
+  font-size: 13px;
+  color: #6B7C93;
+}
+
+.expedientes-paginacion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expedientes-paginacion button {
+  padding: 6px 12px;
+  border: 1px solid #D6E1EC;
+  border-radius: 6px;
+  background: #fff;
+  color: #1E3A5F;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.expedientes-paginacion button:hover:not(:disabled) {
+  background: #F5F7FA;
+  border-color: #2F6FB2;
+}
+
+.expedientes-paginacion button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.expedientes-paginacion-actual {
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1E3A5F;
+}

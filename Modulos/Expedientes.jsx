@@ -84,7 +84,7 @@ export default function Expedientes() {
     if (q) params.search = q;
     if (filtro !== "Todos") params.estatus = filtro;
 
-    return api.getExpedientes(params).then(setExpedientesAPI).catch(console.error);
+    return api.getExpedientes(params).then(res => setExpedientesAPI(res.data || [])).catch(console.error);
   };
 
   // El estatus es el ciclo de vida legal del expediente
@@ -142,7 +142,7 @@ export default function Expedientes() {
     const params = {};
     if (busquedaDiferida.trim()) params.search = busquedaDiferida.trim();
     if (filtro !== "Todos") params.estatus = filtro;
-    api.getExpedientes(params).then(setExpedientesAPI).catch(console.error);
+    api.getExpedientes(params).then(res => setExpedientesAPI(res.data || [])).catch(console.error);
   }, [busquedaDiferida, filtro]);
 
   const expedientes = expedientesAPI;

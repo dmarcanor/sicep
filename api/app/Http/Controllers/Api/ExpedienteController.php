@@ -55,7 +55,9 @@ class ExpedienteController extends Controller
             });
         }
 
-        return response()->json($query->orderByDesc('id')->get());
+        $perPage = $request->input('per_page', 10);
+
+        return response()->json($query->orderByDesc('id')->paginate($perPage));
     }
 
     public function store(Request $request)

@@ -980,7 +980,18 @@ export default function Plantillas() {
 
   const [formulario, setFormulario] = useState(formularioVacio);
 
-  const [expedientes, setExpedientes] = useState([]);
+  /* Paginación del backend para el selector de expedientes. Por defecto se
+   * muestran 10 por página; se pide al backend la página, el total y los
+   * resultados filtrados por texto. */
+  const [expedientesPagina, setExpedientesPagina] = useState([]);
+  const [paginaExpedientes, setPaginaExpedientes] = useState(1);
+  const [totalPaginasExp, setTotalPaginasExp] = useState(1);
+  const [totalRegistrosExp, setTotalRegistrosExp] = useState(0);
+  const [busquedaExp, setBusquedaExp] = useState("");
+  const [modalExpAbierta, setModalExpAbierta] = useState(false);
+  const [cargandoExp, setCargandoExp] = useState(false);
+  const POR_PAGINA_EXP = 10;
+
   const [documentoId, setDocumentoId] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState("");
@@ -993,8 +1004,55 @@ export default function Plantillas() {
   const recargarBorradores = () =>
     api.getDocumentos({ estado: "Borrador" }).then(setBorradores).catch(console.error);
 
+  /*
+   * Pide al backend una página de expedientes con la búsqueda aplicada. El
+   * backend devuelve { data, current_page, last_page, total }. Se llama al
+   * abrir la modal, al cambiar de página y al escribir en el buscador.
+   */
+  const cargarExpedientesPagina = async (pagina = 1, busqueda = "") => {
+    setCargandoExp(true);
+    try {
+      const params = { page: pagina, per_page: POR_PAGINA_EXP };
+      if (busqueda.trim()) params.search = busqueda.trim();
+      const data = await api.getExpedientes(params);
+      setExpedientesPagina(data.data || data || []);
+      setPaginaExpedientes(data.current_page || pagina);
+      setTotalPaginasExp(data.last_page || 1);
+      setTotalRegistrosExp(data.total || 0);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCargandoExp(false);
+    }
+  };
+
+  const abrirModalExpedientes = () => {
+    setModalExpAbierta(true);
+    setBusquedaExp("");
+    cargarExpedientesPagina(1, "");
+  };
+
+  const cerrarModalExpedientes = () => {
+    setModalExpAbierta(false);
+  };
+
+  const seleccionarExpediente = (exp) => {
+    elegirExpediente(exp);
+    cerrarModalExpedientes();
+  };
+
+  const buscarExpedientes = (texto) => {
+    setBusquedaExp(texto);
+    setPaginaExpedientes(1);
+    cargarExpedientesPagina(1, texto);
+  };
+
+  const cambiarPaginaExpedientes = (nuevaPagina) => {
+    setPaginaExpedientes(nuevaPagina);
+    cargarExpedientesPagina(nuevaPagina, busquedaExp);
+  };
+
   useEffect(() => {
-    api.getExpedientes().then(setExpedientes).catch(console.error);
     api.getMe().then(setUsuario).catch(console.error);
     recargarBorradores();
   }, []);
@@ -1004,8 +1062,8 @@ export default function Plantillas() {
    * abrir un borrador guardado también se fija el expediente, y un efecto
    * habría machacado con la semilla los datos que el borrador traía escritos.
    */
-  const elegirExpediente = (id) => {
-    const elegido = expedientes.find((x) => String(x.id) === String(id)) ?? null;
+  const elegirExpediente = (expediente) => {
+    const elegido = expediente ?? null;
     setExpedienteActivo(elegido);
     if (!elegido) return;
 
@@ -1432,22 +1490,20 @@ export default function Plantillas() {
         </div>
 
         <div className="plantillas-acciones-cabecera">
-          {/* Elegir el expediente es lo que dispara el auto-llenado. Antes
-              dependía de que otro módulo lo hubiera dejado en el navegador. */}
-          <label className="plantillas-selector">
-            Expediente
-            <select
-              value={expedienteActivo?.id ?? ""}
-              onChange={(e) => elegirExpediente(e.target.value)}
-            >
-              <option value="">Sin expediente</option>
-              {expedientes.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.codigo} — {e.nna_nombre || "Sin NNA"}
-                </option>
-              ))}
-            </select>
-          </label>
+          {/* Elegir el expediente es lo que dispara el auto-llenado. Se abre
+              una modal con búsqueda y paginación del backend para evitar
+              listas largas que ralenticen la selección. */}
+          <button
+            type="button"
+            className="plantillas-btn-expediente"
+            onClick={abrirModalExpedientes}
+          >
+            <span className="plantillas-btn-exp-ico">🗂️</span>
+            {expedienteActivo
+              ? `${expedienteActivo.codigo} — ${expedienteActivo.nna_nombre || "Sin NNA"}`
+              : "Seleccionar expediente"}
+            <span className="plantillas-btn-exp-cambia">Cambiar</span>
+          </button>
 
           <button className="botonPrincipal chico" onClick={guardarBorrador} disabled={guardando}>
             {guardando ? "Guardando..." : documentoId ? "Actualizar borrador" : "Guardar borrador"}
@@ -1626,6 +1682,112 @@ export default function Plantillas() {
             )}
           </div>
         </section>
+      )}
+
+      {modalExpAbierta && (
+        <div className="modal-overlay" onClick={cerrarModalExpedientes}>
+          <div
+            className="modal-content modal-expedientes"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div>
+                <h3>Seleccionar expediente</h3>
+                <span>{totalRegistrosExp} registro{totalRegistrosExp !== 1 ? "s" : ""} encontrado{totalRegistrosExp !== 1 ? "s" : ""}</span>
+              </div>
+              <button className="modal-close-btn" onClick={cerrarModalExpedientes}>✕</button>
+            </div>
+
+            <div className="modal-body">
+              <div className="expedientes-buscador">
+                <input
+                  type="text"
+                  className="expedientes-buscador-input"
+                  placeholder="Buscar por código, NNA o representante..."
+                  value={busquedaExp}
+                  onChange={(e) => buscarExpedientes(e.target.value)}
+                  autoFocus
+                />
+              </div>
+
+              <div className="expedientes-tabla-wrap">
+                {cargandoExp ? (
+                  <div className="expedientes-cargando">Cargando expedientes...</div>
+                ) : expedientesPagina.length === 0 ? (
+                  <div className="expedientes-vacio-modal">No se encontraron expedientes.</div>
+                ) : (
+                  <table className="expedientes-tabla">
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>NNA</th>
+                        <th>Representante</th>
+                        <th>Fecha</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {expedientesPagina.map((exp) => (
+                        <tr key={exp.id}>
+                          <td><strong>{exp.codigo}</strong></td>
+                          <td>{exp.nna_nombre || "—"}</td>
+                          <td>{exp.representante_nombre || "—"}</td>
+                          <td>{exp.fecha || "—"}</td>
+                          <td className="expedientes-tabla-accion">
+                            <button
+                              type="button"
+                              className="expedientes-btn-seleccionar"
+                              onClick={() => seleccionarExpediente(exp)}
+                            >
+                              Seleccionar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <div className="expedientes-paginacion-info">
+                Página {paginaExpedientes} de {totalPaginasExp}
+              </div>
+              <div className="expedientes-paginacion">
+                <button
+                  type="button"
+                  disabled={paginaExpedientes <= 1 || cargandoExp}
+                  onClick={() => cambiarPaginaExpedientes(1)}
+                >
+                  ««
+                </button>
+                <button
+                  type="button"
+                  disabled={paginaExpedientes <= 1 || cargandoExp}
+                  onClick={() => cambiarPaginaExpedientes(paginaExpedientes - 1)}
+                >
+                  «
+                </button>
+                <span className="expedientes-paginacion-actual">{paginaExpedientes}</span>
+                <button
+                  type="button"
+                  disabled={paginaExpedientes >= totalPaginasExp || cargandoExp}
+                  onClick={() => cambiarPaginaExpedientes(paginaExpedientes + 1)}
+                >
+                  »
+                </button>
+                <button
+                  type="button"
+                  disabled={paginaExpedientes >= totalPaginasExp || cargandoExp}
+                  onClick={() => cambiarPaginaExpedientes(totalPaginasExp)}
+                >
+                  »»
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <PinModalWrapper />
