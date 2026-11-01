@@ -23,6 +23,9 @@ export default function RecuperarPassword({ onVolver, onExito }) {
 
     try {
       const data = await api.obtenerPreguntas(username);
+      if (!Array.isArray(data.preguntas)) {
+        throw new Error("Respuesta inválida del servidor");
+      }
       setPreguntas(data.preguntas);
       setPaso(2);
     } catch (err) {
@@ -131,7 +134,7 @@ export default function RecuperarPassword({ onVolver, onExito }) {
                 </>
               )}
 
-              {paso === 2 && (
+              {paso === 2 && Array.isArray(preguntas) && (
                 <>
                   {preguntas.map((p) => (
                     <div key={p.id}>
@@ -163,6 +166,19 @@ export default function RecuperarPassword({ onVolver, onExito }) {
                     onChange={(e) => setPasswordRepetir(e.target.value)}
                   />
                 </>
+              )}
+
+              {paso === 2 && !Array.isArray(preguntas) && (
+                <div style={{ textAlign: "center", padding: "2rem 0", color: "#dc2626" }}>
+                  <p>No se pudieron cargar las preguntas de seguridad.</p>
+                  <button
+                    className="login-btn"
+                    style={{ marginTop: "1rem" }}
+                    onClick={() => setPaso(1)}
+                  >
+                    Volver a intentar
+                  </button>
+                </div>
               )}
 
               {paso === 3 && (
