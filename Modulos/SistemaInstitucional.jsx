@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import ErrorBoundary from "./ErrorBoundary";
 import Perfil from "./Perfil";
 import Usuarios from "./Usuarios";
 import RecuperarPassword from "./RecuperarPassword";
@@ -346,10 +347,12 @@ export default function SistemaInstitucional() {
   if (vista === "login") {
     if (mostrarRecuperacion) {
       return (
-        <RecuperarPassword
-          onVolver={() => setMostrarRecuperacion(false)}
-          onExito={() => setMostrarRecuperacion(false)}
-        />
+        <ErrorBoundary>
+          <RecuperarPassword
+            onVolver={() => setMostrarRecuperacion(false)}
+            onExito={() => setMostrarRecuperacion(false)}
+          />
+        </ErrorBoundary>
       );
     }
 
