@@ -18,17 +18,24 @@ export default function RecuperarPassword({ onVolver, onExito }) {
       return;
     }
 
+    console.log("[RecuperarPassword] Iniciando búsqueda de preguntas para:", username);
     setCargando(true);
     setError("");
 
     try {
+      console.log("[RecuperarPassword] Llamando a api.obtenerPreguntas...");
       const data = await api.obtenerPreguntas(username);
+      console.log("[RecuperarPassword] Respuesta recibida:", data);
       if (!Array.isArray(data.preguntas)) {
+        console.error("[RecuperarPassword] data.preguntas no es array:", data.preguntas);
         throw new Error("Respuesta inválida del servidor");
       }
+      console.log("[RecuperarPassword] Preguntas recibidas:", data.preguntas.length);
       setPreguntas(data.preguntas);
       setPaso(2);
+      console.log("[RecuperarPassword] Cambio a paso 2 exitoso");
     } catch (err) {
+      console.error("[RecuperarPassword] Error:", err);
       setError(err.message || "No se pudieron obtener las preguntas de seguridad.");
     } finally {
       setCargando(false);
