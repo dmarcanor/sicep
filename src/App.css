@@ -996,13 +996,24 @@ tbody tr:hover{
 
 
 .login-root{
+  min-height:100vh;
   height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
   position:relative;
-  overflow:hidden;
+  overflow-y:auto;
   background:#0B1220;
+}
+
+/* En móvil, usar 100dvh (dynamic viewport height) para que se ajuste
+   cuando aparece el teclado virtual. También permitir scroll vertical
+   para que el contenido no se recorte. */
+@supports (height: 100dvh){
+  .login-root{
+    min-height:100dvh;
+    height:auto;
+  }
 }
 
 
