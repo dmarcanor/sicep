@@ -613,7 +613,7 @@ export const api = {
     const response = await fetch(`${API_BASE}/preguntas/${username}`, {
       headers: { 'Accept': 'application/json' },
     });
-    return handleResponse(response);
+    return handleResponse(response, { cerrarSesionSi401: false });
   },
 
   async recuperarPassword(username, respuestas, passwordNueva) {
