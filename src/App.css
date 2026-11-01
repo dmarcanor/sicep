@@ -1054,6 +1054,7 @@ tbody tr:hover{
 
 .login-shell{
   width:980px;
+  max-width:95vw;
   max-height:90vh;
   display:grid;
   grid-template-columns:1.1fr .9fr;
@@ -1370,8 +1371,8 @@ body,
 }
 
 #root {
-  width: 100vw !important;
-  max-width: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
   margin: 0 !important;
   padding: 0 !important;
   text-align: left !important;
@@ -1429,8 +1430,11 @@ body,
 .historial-modulo,
 .expedientes,
 .reportes,
+.reportes-modulo,
 .configuracion,
-.plantillas {
+.plantillas,
+.asignacion-casos,
+.solicitudArchivos {
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
@@ -1819,6 +1823,12 @@ Prueba  login */
   flex:none;
   white-space:nowrap;
 }
+
+.header-chips-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
 /* Fila de tabla que abre su detalle al pulsarla. */
 .fila-clicable { cursor: pointer; }
 .fila-clicable:hover { background: #f4f7fb; }
@@ -1860,6 +1870,150 @@ Prueba  login */
   .contenidoPrincipal,
   .contenidoPrincipal.contraido{
     margin-left:0 !important;
-    padding:10px;
+    padding:10px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Cabecera superior en móvil: auto height, nunca sobreponerse a módulos */
+  .header{
+    height: auto !important;
+    min-height: 56px !important;
+    max-height: none !important;
+    padding: 10px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+    border-radius: 14px !important;
+    position: relative !important;
+    z-index: var(--capa-cabecera) !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  .header-left{
+    width: 100% !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .header-left .title-block{
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    overflow: hidden !important;
+  }
+
+  .header-left .system-name{
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .header-left .module-name{
+    font-size: 11px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .header-right{
+    width: 100% !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px 8px !important;
+    flex-wrap: wrap !important;
+    white-space: normal !important;
+  }
+
+  .header-chips-wrap{
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .header-chip{
+    padding: 5px 9px !important;
+    font-size: 11px !important;
+    gap: 5px !important;
+    border-radius: 999px !important;
+  }
+
+  .icon-btn,
+  .user-btn{
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+  }
+
+  .user-menu{
+    top: 42px !important;
+    right: 0 !important;
+    z-index: 70 !important;
+  }
+
+  /* Encabezados y toolbars de módulos */
+  .cabeceraModulo{
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .expedientes-header{
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+
+  .datatable-toolbar{
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  /* Rejillas responsive generales */
+  .rejillaTarjetas{
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .stats-grid,
+  .quick-grid,
+  .split-grid,
+  .dobleColumna,
+  .bottom-grid{
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .form-grid,
+  .rejillaFormulario{
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Login en pantallas móviles */
+  .login-shell{
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    max-width: 460px !important;
+    max-height: 95vh !important;
+  }
+
+  .login-info{
+    padding: 24px !important;
+  }
+
+  .login-panel{
+    padding: 24px !important;
   }
 }

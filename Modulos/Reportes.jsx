@@ -288,13 +288,13 @@ export default function Reportes() {
               <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
                   <Pie data={vulneraciones} dataKey="valor" nameKey="motivo"
-                       cx="50%" cy="50%" outerRadius={110} innerRadius={60} paddingAngle={3}>
+                       cx="50%" cy="45%" outerRadius={75} innerRadius={42} paddingAngle={3}>
                     {vulneraciones.map((entry, index) => (
                       <Cell key={entry.motivo} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip />
-                  <Legend />
+                  <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -312,12 +312,12 @@ export default function Reportes() {
               <p className="reporte-vacio">Sin expedientes en este período.</p>
             ) : (
               <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={sectores}>
+                <BarChart data={sectores} margin={{ top: 10, right: 15, left: -10, bottom: 35 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="sector" />
-                  <YAxis allowDecimals={false} />
+                  <XAxis dataKey="sector" tick={{ fontSize: 11 }} interval={0} angle={-25} textAnchor="end" height={45} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="total" name="Expedientes" fill="#2457A6" />
+                  <Bar dataKey="total" name="Expedientes" fill="#2457A6" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

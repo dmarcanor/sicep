@@ -149,18 +149,20 @@ function EncabezadoSuperior({
       </div>
 
       <div className="header-right">
-        <div className="header-chip">
-          <span className="chip-dot" />
-          {tituloModulo}
-        </div>
+        <div className="header-chips-wrap">
+          <div className="header-chip">
+            <span className="chip-dot" />
+            {tituloModulo}
+          </div>
 
-        <div className="header-chip" title="Rol activo">
-          <span className="chip-dot" />
-          {rolVisible}
+          <div className="header-chip" title="Rol activo">
+            <span className="chip-dot" />
+            {rolVisible}
+          </div>
         </div>
 
         <div className="user-menu-wrap">
-          <button className="user-btn" onClick={alternarMenuUsuario}>
+          <button className="user-btn" onClick={alternarMenuUsuario} aria-label="Menú de usuario">
             👤
           </button>
 
